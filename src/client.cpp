@@ -1,5 +1,8 @@
 #include "client.hpp"
 #include <stdexcept>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
 namespace eppoclient {
 
@@ -9,9 +12,11 @@ namespace eppoclient {
 
 EppoClient::EppoClient(std::shared_ptr<ConfigurationStore> configStore,
                        std::shared_ptr<AssignmentLogger> assignmentLogger,
+                       std::shared_ptr<BanditLogger> banditLogger,
                        std::shared_ptr<ApplicationLogger> applicationLogger)
     : configurationStore_(configStore),
       assignmentLogger_(assignmentLogger),
+      banditLogger_(banditLogger),
       applicationLogger_(applicationLogger ? applicationLogger : std::make_shared<NoOpApplicationLogger>()) {}
 
 bool EppoClient::getBoolAssignment(const std::string& flagKey,
@@ -143,6 +148,107 @@ void EppoClient::logAssignment(const std::optional<AssignmentEvent>& event) {
     } catch (...) {
         applicationLogger_->error("Unknown error logging assignment");
     }
+}
+
+void EppoClient::logBanditAction(const BanditEvent& event) {
+    if (!banditLogger_) {
+        return;
+    }
+
+    try {
+        banditLogger_->logBanditAction(event);
+    } catch (const std::exception& e) {
+        if (applicationLogger_) {
+            applicationLogger_->error(std::string("Error logging bandit action: ") + e.what());
+        }
+    } catch (...) {
+        if (applicationLogger_) {
+            applicationLogger_->error("Unknown error logging bandit action");
+        }
+    }
+}
+
+BanditResult EppoClient::getBanditAction(const std::string& flagKey,
+                                        const std::string& subjectKey,
+                                        const ContextAttributes& subjectAttributes,
+                                        const std::map<std::string, ContextAttributes>& actions,
+                                        const std::string& defaultVariation) {
+    return getBanditActionInternal(flagKey, subjectKey, subjectAttributes, actions, defaultVariation);
+}
+
+BanditResult EppoClient::getBanditActionInternal(const std::string& flagKey,
+                                                 const std::string& subjectKey,
+                                                 const ContextAttributes& subjectAttributes,
+                                                 const std::map<std::string, ContextAttributes>& actions,
+                                                 const std::string& defaultVariation) {
+    Configuration config = configurationStore_->getConfiguration();
+
+    // Ignoring the error here as we can always proceed with default variation
+    std::string variation = defaultVariation;
+    try {
+        auto assignmentValue = getAssignment(config, flagKey, subjectKey,
+                                            toGenericAttributes(subjectAttributes),
+                                            VariationType::STRING);
+        if (assignmentValue.has_value() && std::holds_alternative<std::string>(*assignmentValue)) {
+            variation = std::get<std::string>(*assignmentValue);
+        }
+    } catch (...) {
+        // Silently ignore errors and use default variation
+    }
+
+    // If no actions have been passed, return the variation with no action
+    if (actions.empty()) {
+        return BanditResult(variation, std::nullopt);
+    }
+
+    // Get bandit variation
+    BanditVariation banditVariation;
+    if (!config.getBanditVariant(flagKey, variation, banditVariation)) {
+        return BanditResult(variation, std::nullopt);
+    }
+
+    // Get bandit configuration
+    const BanditConfiguration* bandit = config.getBanditConfiguration(banditVariation.key);
+    if (bandit == nullptr) {
+        return BanditResult(variation, std::nullopt);
+    }
+
+    // Evaluate bandit
+    BanditEvaluationContext evalContext;
+    evalContext.flagKey = flagKey;
+    evalContext.subjectKey = subjectKey;
+    evalContext.subjectAttributes = subjectAttributes;
+    evalContext.actions = actions;
+
+    BanditEvaluationDetails evaluation = evaluateBandit(bandit->modelData, evalContext);
+
+    // Get current timestamp in ISO 8601 format
+    auto now = std::chrono::system_clock::now();
+    auto tt = std::chrono::system_clock::to_time_t(now);
+    std::tm tm = *std::gmtime(&tt);
+    std::ostringstream timestamp;
+    timestamp << std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
+
+    // Log bandit action
+    BanditEvent event;
+    event.flagKey = flagKey;
+    event.banditKey = bandit->banditKey;
+    event.subject = subjectKey;
+    event.action = evaluation.actionKey;
+    event.actionProbability = evaluation.actionWeight;
+    event.optimalityGap = evaluation.optimalityGap;
+    event.modelVersion = bandit->modelVersion;
+    event.timestamp = timestamp.str();
+    event.subjectNumericAttributes = evaluation.subjectAttributes.numericAttributes;
+    event.subjectCategoricalAttributes = evaluation.subjectAttributes.categoricalAttributes;
+    event.actionNumericAttributes = evaluation.actionAttributes.numericAttributes;
+    event.actionCategoricalAttributes = evaluation.actionAttributes.categoricalAttributes;
+    event.metaData["sdkLanguage"] = "cpp";
+    event.metaData["sdkVersion"] = "0.1.0";  // TODO: Use actual SDK version
+
+    logBanditAction(event);
+
+    return BanditResult(variation, evaluation.actionKey);
 }
 
 } // namespace eppoclient

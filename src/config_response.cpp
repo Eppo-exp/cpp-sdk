@@ -467,17 +467,24 @@ void ConfigResponse::precompute() {
     for (auto& [key, flagConfig] : flags) {
         flagConfig.precompute();
     }
+
+    // Bandit variations don't require precomputation as they're simple data structures
 }
 
 void to_json(nlohmann::json& j, const ConfigResponse& cr) {
     j = nlohmann::json{
-        {"flags", cr.flags}
+        {"flags", cr.flags},
+        {"bandits", cr.bandits}
     };
 }
 
 void from_json(const nlohmann::json& j, ConfigResponse& cr) {
     if (j.contains("flags")) {
         j.at("flags").get_to(cr.flags);
+    }
+
+    if (j.contains("bandits")) {
+        j.at("bandits").get_to(cr.bandits);
     }
 }
 

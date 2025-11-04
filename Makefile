@@ -69,7 +69,7 @@ build:
 branchName := main
 .PHONY: test-data
 test-data:
-	rm -rf $(testDataDir)
+	rm -rf test/data
 	git clone -b ${branchName} --depth 1 --single-branch https://github.com/Eppo-exp/sdk-test-data.git test/data/
 
 # Run all tests (primary test target)
