@@ -115,11 +115,6 @@ public:
     std::shared_ptr<ConfigurationStore> getConfigurationStore() const {
         return configurationStore_;
     }
-
-    // Check if initialized
-    bool isInitialized() const {
-        return configurationStore_ && configurationStore_->isInitialized();
-    }
 };
 
 } // namespace eppoclient

@@ -1,10 +1,8 @@
 #ifndef CONFIGURATION_STORE_H
 #define CONFIGURATION_STORE_H
 
-#include <atomic>
 #include <memory>
 #include <mutex>
-#include <condition_variable>
 #include "configuration.hpp"
 
 namespace eppoclient {
@@ -33,39 +31,16 @@ public:
     Configuration getConfiguration() const;
 
     /**
-     * Sets the configuration and marks the store as initialized.
+     * Sets the configuration.
      * Thread-safe operation that can be called from multiple threads.
      */
     void setConfiguration(const Configuration& config);
-
-    /**
-     * Blocks until the configuration store is initialized.
-     * Returns immediately if already initialized.
-     */
-    void waitForInitialization() const;
-
-    /**
-     * Checks if the configuration store has been initialized.
-     */
-    bool isInitialized() const;
 
 private:
     // Current configuration protected by mutex
     // Using shared_ptr for memory management
     std::shared_ptr<Configuration> configuration_;
     mutable std::mutex configMutex_;
-
-    // Flag to track initialization state
-    std::atomic<bool> isInitialized_;
-
-    // Condition variable and mutex for waiting on initialization
-    mutable std::condition_variable initCV_;
-    mutable std::mutex initMutex_;
-
-    /**
-     * Set the initialized flag to true and notify any waiting threads.
-     */
-    void setInitialized();
 };
 
 } // namespace eppoclient
