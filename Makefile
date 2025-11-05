@@ -63,9 +63,18 @@ $(TEST_EXECUTABLE): $(LIBRARY) $(TEST_SOURCES) $(CATCH_OBJECTS) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(TEST_SOURCES) $(CATCH_OBJECTS) $(LIBRARY) $(LDFLAGS) -o $@
 	@echo "Test runner built: $(TEST_EXECUTABLE)"
 
+## test-data
+testDataDir := test/data/
+branchName := main
+githubRepoLink := https://github.com/Eppo-exp/sdk-test-data.git
+.PHONY: test-data
+test-data:
+	rm -rf $(testDataDir)
+	git clone -b ${branchName} --depth 1 --single-branch ${githubRepoLink} ${testDataDir}
+
 # Run all tests (primary test target)
 .PHONY: test
-test: build
+test: test-data build
 	@$(MAKE) $(TEST_EXECUTABLE)
 	@echo "Running all tests..."
 	@./$(TEST_EXECUTABLE)
