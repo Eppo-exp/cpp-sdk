@@ -24,7 +24,7 @@ The SDK vendors a small MD5 implementation (picohash) in `third_party/` for non-
 ## Targets
 
 - `make` or `make all` - Build the static library (`build/libeppoclient.a`)
-- `make build` - Clean build with IDE support (generates `compile_commands.json`)
+- `make build` - Build the library with IDE support (generates `compile_commands.json`)
 - `make test` - Build and run all tests
 - `make clean` - Remove build artifacts
 - `make help` - Show available targets

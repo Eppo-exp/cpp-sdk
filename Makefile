@@ -14,18 +14,43 @@ BUILD_DIR = build
 LIB_SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
 LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(LIB_SOURCES))
 
-# MD5 wrapper (C code)
-MD5_WRAPPER = $(BUILD_DIR)/md5_wrapper.o
+# Third party files (dynamically discovered)
+THIRD_PARTY_CPP_SOURCES = $(wildcard third_party/*.cpp)
+THIRD_PARTY_C_SOURCES = $(wildcard third_party/*.c)
+THIRD_PARTY_OBJECTS = $(patsubst third_party/%.cpp,$(BUILD_DIR)/%.o,$(THIRD_PARTY_CPP_SOURCES)) \
+                      $(patsubst third_party/%.c,$(BUILD_DIR)/%.o,$(THIRD_PARTY_C_SOURCES))
 
 # Auto-discover all test files
 TEST_SOURCES = $(wildcard $(TEST_DIR)/test_*.cpp)
 TEST_EXECUTABLE = $(BUILD_DIR)/test_runner
 
-# Catch2 test framework
-CATCH_OBJECTS = $(BUILD_DIR)/catch_amalgamated.o
-
 # Library output
 LIBRARY = $(BUILD_DIR)/libeppoclient.a
+
+# Build library object files
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Pattern rule for third_party C++ files
+$(BUILD_DIR)/%.o: third_party/%.cpp
+	@mkdir -p $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Pattern rule for third_party C files
+$(BUILD_DIR)/%.o: third_party/%.c
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Create static library
+$(LIBRARY): $(LIB_OBJECTS) $(THIRD_PARTY_OBJECTS)
+	ar rcs $@ $^
+	@echo "Library built: $(LIBRARY)"
+
+# Build test runner executable
+$(TEST_EXECUTABLE): $(LIBRARY) $(TEST_SOURCES) $(THIRD_PARTY_OBJECTS) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(TEST_SOURCES) $(THIRD_PARTY_OBJECTS) $(LIBRARY) $(LDFLAGS) -o $@
+	@echo "Test runner built: $(TEST_EXECUTABLE)"
 
 # Default target
 .PHONY: all
@@ -33,48 +58,22 @@ all: $(LIBRARY)
 
 # Build/compile targets for checking compilation errors
 .PHONY: build compile
-build: clean
+build: 
 	@echo "Generating compile_commands.json for IDE support..."
+	rm -f compile_commands.json
 	./scripts/generate_compile_commands.sh
 	@mkdir -p $(BUILD_DIR)
 	@$(MAKE) all
 
-# Build library object files
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
-	@mkdir -p $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# Build MD5 wrapper (C code)
-$(BUILD_DIR)/md5_wrapper.o: third_party/md5_wrapper.c
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Create static library
-$(LIBRARY): $(LIB_OBJECTS) $(MD5_WRAPPER)
-	ar rcs $@ $^
-	@echo "Library built: $(LIBRARY)"
-
-# Build Catch2 framework
-$(BUILD_DIR)/catch_amalgamated.o: third_party/catch_amalgamated.cpp | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# Build test runner executable
-$(TEST_EXECUTABLE): $(LIBRARY) $(TEST_SOURCES) $(CATCH_OBJECTS) | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $(TEST_SOURCES) $(CATCH_OBJECTS) $(LIBRARY) $(LDFLAGS) -o $@
-	@echo "Test runner built: $(TEST_EXECUTABLE)"
-
 ## test-data
-testDataDir := test/data/
-branchName := main
-githubRepoLink := https://github.com/Eppo-exp/sdk-test-data.git
 .PHONY: test-data
 test-data:
-	rm -rf $(testDataDir)
-	git clone -b ${branchName} --depth 1 --single-branch ${githubRepoLink} ${testDataDir}
+	rm -rf test/data
+	git clone -b main --depth 1 --single-branch https://github.com/Eppo-exp/sdk-test-data.git test/data/
 
 # Run all tests (primary test target)
 .PHONY: test
-test: test-data build
+test: test-data
 	@$(MAKE) $(TEST_EXECUTABLE)
 	@echo "Running all tests..."
 	@./$(TEST_EXECUTABLE)
@@ -82,7 +81,6 @@ test: test-data build
 # Clean build artifacts
 .PHONY: clean
 clean:
-	rm -f compile_commands.json
 	rm -rf $(BUILD_DIR)
 	@echo "Build directory cleaned"
 
@@ -91,7 +89,7 @@ clean:
 help:
 	@echo "Available targets:"
 	@echo "  all              - Build the library (default)"
-	@echo "  build            - Clean-build and configure IDE support"
-	@echo "  test             - Clean-build and run all tests"
+	@echo "  build            - Build and configure IDE support"
+	@echo "  test             - Build and run all tests"
 	@echo "  clean            - Remove build artifacts"
 	@echo "  help             - Show this help message"
