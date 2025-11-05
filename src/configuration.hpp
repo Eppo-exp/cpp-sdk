@@ -1,7 +1,6 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
-#include <map>
 #include <string>
 #include "config_response.hpp"
 

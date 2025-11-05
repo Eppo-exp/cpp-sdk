@@ -21,7 +21,7 @@ enum class VariationType {
     JSON
 };
 
-// Convert VariationType to/from JSON
+// serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const VariationType& vt);
 void from_json(const nlohmann::json& j, VariationType& vt);
 
@@ -35,6 +35,7 @@ struct ShardRange {
     int end;
 };
 
+// serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const ShardRange& sr);
 void from_json(const nlohmann::json& j, ShardRange& sr);
 
@@ -44,6 +45,7 @@ struct Shard {
     std::vector<ShardRange> ranges;
 };
 
+// serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Shard& s);
 void from_json(const nlohmann::json& j, Shard& s);
 
@@ -54,6 +56,7 @@ struct Split {
     nlohmann::json extraLogging;
 };
 
+// serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Split& s);
 void from_json(const nlohmann::json& j, Split& s);
 
@@ -73,6 +76,7 @@ struct Condition {
     void precompute();
 };
 
+// serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Condition& c);
 void from_json(const nlohmann::json& j, Condition& c);
 
@@ -81,6 +85,7 @@ struct Rule {
     std::vector<Condition> conditions;
 };
 
+// serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Rule& r);
 void from_json(const nlohmann::json& j, Rule& r);
 
@@ -94,6 +99,7 @@ struct Allocation {
     std::optional<bool> doLog;
 };
 
+// serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Allocation& a);
 void from_json(const nlohmann::json& j, Allocation& a);
 
@@ -102,6 +108,7 @@ struct JsonVariationValue {
     nlohmann::json value;
 };
 
+// serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const JsonVariationValue& jvv);
 void from_json(const nlohmann::json& j, JsonVariationValue& jvv);
 
@@ -111,6 +118,7 @@ struct Variation {
     nlohmann::json value;
 };
 
+// serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Variation& v);
 void from_json(const nlohmann::json& j, Variation& v);
 
@@ -130,6 +138,7 @@ struct FlagConfiguration {
     void precompute();
 };
 
+// serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const FlagConfiguration& fc);
 void from_json(const nlohmann::json& j, FlagConfiguration& fc);
 
@@ -140,6 +149,7 @@ struct ConfigResponse {
     void precompute();
 };
 
+// serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const ConfigResponse& cr);
 void from_json(const nlohmann::json& j, ConfigResponse& cr);
 
