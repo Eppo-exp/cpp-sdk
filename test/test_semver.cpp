@@ -6,7 +6,7 @@ using namespace eppoclient;
 
 TEST_CASE("SemVer: Version 2.0.0 > 1.5.0", "[semver]") {
     Condition condition;
-    condition.operatorStr = "GT";
+    condition.op = Operator::GT;
     condition.attribute = "app_version";
     condition.value = "1.5.0";
     condition.precompute();
@@ -20,7 +20,7 @@ TEST_CASE("SemVer: Version 2.0.0 > 1.5.0", "[semver]") {
 
 TEST_CASE("SemVer: Version 1.2.3 < 1.5.0", "[semver]") {
     Condition condition;
-    condition.operatorStr = "LT";
+    condition.op = Operator::LT;
     condition.attribute = "app_version";
     condition.value = "1.5.0";
     condition.precompute();
@@ -34,7 +34,7 @@ TEST_CASE("SemVer: Version 1.2.3 < 1.5.0", "[semver]") {
 
 TEST_CASE("SemVer: Version 1.5.0 >= 1.5.0", "[semver]") {
     Condition condition;
-    condition.operatorStr = "GTE";
+    condition.op = Operator::GTE;
     condition.attribute = "app_version";
     condition.value = "1.5.0";
     condition.precompute();
@@ -48,7 +48,7 @@ TEST_CASE("SemVer: Version 1.5.0 >= 1.5.0", "[semver]") {
 
 TEST_CASE("SemVer: Version 1.4.9 <= 1.5.0", "[semver]") {
     Condition condition;
-    condition.operatorStr = "LTE";
+    condition.op = Operator::LTE;
     condition.attribute = "app_version";
     condition.value = "1.5.0";
     condition.precompute();
@@ -62,7 +62,7 @@ TEST_CASE("SemVer: Version 1.4.9 <= 1.5.0", "[semver]") {
 
 TEST_CASE("Numeric fallback when not a valid semver", "[semver]") {
     Condition condition;
-    condition.operatorStr = "GT";
+    condition.op = Operator::GT;
     condition.attribute = "score";
     condition.value = 100;
     condition.precompute();

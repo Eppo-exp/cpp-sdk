@@ -10,6 +10,7 @@
 namespace eppoclient {
 
 // Forward declarations from config_response.h
+enum class Operator;
 struct Condition;
 struct Rule;
 
@@ -56,12 +57,12 @@ bool isOne(const AttributeValue& attributeValue, const std::string& s);
 // Semantic version comparison
 // Returns true/false for comparison, or throws exception on error
 bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValue,
-                             const std::string& operatorStr);
+                             Operator op);
 
 // Numeric comparison
 // Returns true/false for comparison, or throws exception on error
 bool evaluateNumericCondition(double subjectValue, double conditionValue,
-                              const std::string& operatorStr);
+                              Operator op);
 
 // Type conversion utilities
 // Convert AttributeValue to double, throws exception on failure

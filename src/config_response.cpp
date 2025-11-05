@@ -58,6 +58,64 @@ void from_json(const nlohmann::json& j, VariationType& vt) {
     }
 }
 
+// Operator JSON conversion
+void to_json(nlohmann::json& j, const Operator& op) {
+    switch (op) {
+        case Operator::IS_NULL:
+            j = "IS_NULL";
+            break;
+        case Operator::MATCHES:
+            j = "MATCHES";
+            break;
+        case Operator::NOT_MATCHES:
+            j = "NOT_MATCHES";
+            break;
+        case Operator::ONE_OF:
+            j = "ONE_OF";
+            break;
+        case Operator::NOT_ONE_OF:
+            j = "NOT_ONE_OF";
+            break;
+        case Operator::GTE:
+            j = "GTE";
+            break;
+        case Operator::GT:
+            j = "GT";
+            break;
+        case Operator::LTE:
+            j = "LTE";
+            break;
+        case Operator::LT:
+            j = "LT";
+            break;
+    }
+}
+
+void from_json(const nlohmann::json& j, Operator& op) {
+    std::string opStr = j.get<std::string>();
+    if (opStr == "IS_NULL") {
+        op = Operator::IS_NULL;
+    } else if (opStr == "MATCHES") {
+        op = Operator::MATCHES;
+    } else if (opStr == "NOT_MATCHES") {
+        op = Operator::NOT_MATCHES;
+    } else if (opStr == "ONE_OF") {
+        op = Operator::ONE_OF;
+    } else if (opStr == "NOT_ONE_OF") {
+        op = Operator::NOT_ONE_OF;
+    } else if (opStr == "GTE") {
+        op = Operator::GTE;
+    } else if (opStr == "GT") {
+        op = Operator::GT;
+    } else if (opStr == "LTE") {
+        op = Operator::LTE;
+    } else if (opStr == "LT") {
+        op = Operator::LT;
+    } else {
+        throw std::runtime_error("Unknown operator: " + opStr);
+    }
+}
+
 // Parse variation value based on type
 std::variant<std::string, int64_t, double, bool, nlohmann::json>
 parseVariationValue(const nlohmann::json& value, VariationType type) {
@@ -183,8 +241,8 @@ void Condition::precompute() {
 
     // Try to parse as semantic version if operator indicates version comparison
     semVerValueValid = false;
-    if (operatorStr == "GTE" || operatorStr == "GT" ||
-        operatorStr == "LTE" || operatorStr == "LT") {
+    if (op == Operator::GTE || op == Operator::GT ||
+        op == Operator::LTE || op == Operator::LT) {
 
         // Try to parse the condition value as a semantic version
         if (value.is_string()) {
@@ -204,14 +262,14 @@ void Condition::precompute() {
 
 void to_json(nlohmann::json& j, const Condition& c) {
     j = nlohmann::json{
-        {"operator", c.operatorStr},
+        {"operator", c.op},
         {"attribute", c.attribute},
         {"value", c.value}
     };
 }
 
 void from_json(const nlohmann::json& j, Condition& c) {
-    j.at("operator").get_to(c.operatorStr);
+    j.at("operator").get_to(c.op);
     j.at("attribute").get_to(c.attribute);
     j.at("value").get_to(c.value);
 }

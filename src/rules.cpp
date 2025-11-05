@@ -22,7 +22,7 @@ bool ruleMatches(const Rule& rule, const Attributes& subjectAttributes,
 bool conditionMatches(const Condition& condition, const Attributes& subjectAttributes,
                       ApplicationLogger* logger) {
     // Handle IS_NULL operator specially
-    if (condition.operatorStr == "IS_NULL") {
+    if (condition.op == Operator::IS_NULL) {
         auto it = subjectAttributes.find(condition.attribute);
         bool isNull = (it == subjectAttributes.end() || std::holds_alternative<std::monostate>(it->second));
 
@@ -50,7 +50,7 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
     const AttributeValue& subjectValue = it->second;
 
     // Handle different operators
-    if (condition.operatorStr == "MATCHES") {
+    if (condition.op == Operator::MATCHES) {
         std::string conditionValueStr;
         try {
             conditionValueStr = condition.value.get<std::string>();
@@ -59,7 +59,7 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
         }
         return matches(subjectValue, conditionValueStr);
 
-    } else if (condition.operatorStr == "NOT_MATCHES") {
+    } else if (condition.op == Operator::NOT_MATCHES) {
         std::string conditionValueStr;
         try {
             conditionValueStr = condition.value.get<std::string>();
@@ -68,16 +68,16 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
         }
         return !matches(subjectValue, conditionValueStr);
 
-    } else if (condition.operatorStr == "ONE_OF") {
+    } else if (condition.op == Operator::ONE_OF) {
         std::vector<std::string> conditionArray = convertToStringArray(condition.value);
         return isOneOf(subjectValue, conditionArray);
 
-    } else if (condition.operatorStr == "NOT_ONE_OF") {
+    } else if (condition.op == Operator::NOT_ONE_OF) {
         std::vector<std::string> conditionArray = convertToStringArray(condition.value);
         return !isOneOf(subjectValue, conditionArray);
 
-    } else if (condition.operatorStr == "GTE" || condition.operatorStr == "GT" ||
-               condition.operatorStr == "LTE" || condition.operatorStr == "LT") {
+    } else if (condition.op == Operator::GTE || condition.op == Operator::GT ||
+               condition.op == Operator::LTE || condition.op == Operator::LT) {
 
         // Try semver comparison first if subject is a string and condition has valid semver
         if (std::holds_alternative<std::string>(subjectValue) && condition.semVerValueValid) {
@@ -88,7 +88,7 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
                 auto result = semver::parse(subjectValueStr, subjectSemVer);
                 if (result) {
                     return evaluateSemVerCondition(&subjectSemVer, condition.semVerValue.get(),
-                                                  condition.operatorStr);
+                                                  condition.op);
                 }
             } catch (...) {
                 // Failed to parse as semver, fall through to numeric comparison
@@ -100,7 +100,7 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
             double subjectValueNumeric = toDouble(subjectValue);
             if (condition.numericValueValid) {
                 return evaluateNumericCondition(subjectValueNumeric, condition.numericValue,
-                                               condition.operatorStr);
+                                               condition.op);
             }
         } catch (...) {
             // Not a numeric value either
@@ -112,7 +112,7 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
     } else {
         // Unknown operator
         if (logger != nullptr) {
-            logger->error("Unknown condition operator: " + condition.operatorStr);
+            logger->error("Unknown condition operator");
         }
         return false;
     }
@@ -209,21 +209,21 @@ bool isOne(const AttributeValue& attributeValue, const std::string& s) {
 
 // Semantic version comparison
 bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValue,
-                             const std::string& operatorStr) {
+                             Operator op) {
     const semver::version<>* subject = static_cast<const semver::version<>*>(subjectValue);
     const semver::version<>* condition = static_cast<const semver::version<>*>(conditionValue);
 
     bool result = false;
-    if (operatorStr == "GT") {
+    if (op == Operator::GT) {
         result = *subject > *condition;
-    } else if (operatorStr == "GTE") {
+    } else if (op == Operator::GTE) {
         result = *subject >= *condition;
-    } else if (operatorStr == "LT") {
+    } else if (op == Operator::LT) {
         result = *subject < *condition;
-    } else if (operatorStr == "LTE") {
+    } else if (op == Operator::LTE) {
         result = *subject <= *condition;
     } else {
-        throw std::runtime_error("Unknown operator for semver comparison: " + operatorStr);
+        throw std::runtime_error("Unknown operator for semver comparison");
     }
 
     return result;
@@ -231,17 +231,17 @@ bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValu
 
 // Numeric comparison
 bool evaluateNumericCondition(double subjectValue, double conditionValue,
-                              const std::string& operatorStr) {
-    if (operatorStr == "GT") {
+                              Operator op) {
+    if (op == Operator::GT) {
         return subjectValue > conditionValue;
-    } else if (operatorStr == "GTE") {
+    } else if (op == Operator::GTE) {
         return subjectValue >= conditionValue;
-    } else if (operatorStr == "LT") {
+    } else if (op == Operator::LT) {
         return subjectValue < conditionValue;
-    } else if (operatorStr == "LTE") {
+    } else if (op == Operator::LTE) {
         return subjectValue <= conditionValue;
     } else {
-        throw std::runtime_error("Incorrect condition operator: " + operatorStr);
+        throw std::runtime_error("Incorrect condition operator");
     }
 }
 

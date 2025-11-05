@@ -39,6 +39,23 @@ struct ShardRange {
 void to_json(nlohmann::json& j, const ShardRange& sr);
 void from_json(const nlohmann::json& j, ShardRange& sr);
 
+// Operator enum
+enum class Operator {
+    IS_NULL,
+    MATCHES,
+    NOT_MATCHES,
+    ONE_OF,
+    NOT_ONE_OF,
+    GTE,
+    GT,
+    LTE,
+    LT
+};
+
+// serialization/deserialization for the nlohmann::json library
+void to_json(nlohmann::json& j, const Operator& op);
+void from_json(const nlohmann::json& j, Operator& op);
+
 // Shard structure
 struct Shard {
     std::string salt;
@@ -62,7 +79,7 @@ void from_json(const nlohmann::json& j, Split& s);
 
 // Condition structure
 struct Condition {
-    std::string operatorStr;  // "operator" is a C++ keyword, using operatorStr
+    Operator op; // operator is a C++ keyword, using op
     std::string attribute;
     nlohmann::json value;
 
