@@ -18,13 +18,6 @@ bool EppoClient::getBoolAssignment(const std::string& flagKey,
                                    const std::string& subjectKey,
                                    const Attributes& subjectAttributes,
                                    bool defaultValue) {
-    return getBoolAssignmentInternal(flagKey, subjectKey, subjectAttributes, defaultValue);
-}
-
-bool EppoClient::getBoolAssignmentInternal(const std::string& flagKey,
-                                           const std::string& subjectKey,
-                                           const Attributes& subjectAttributes,
-                                           bool defaultValue) {
     try {
         Configuration config = configurationStore_->getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::BOOLEAN);
@@ -52,13 +45,6 @@ double EppoClient::getNumericAssignment(const std::string& flagKey,
                                         const std::string& subjectKey,
                                         const Attributes& subjectAttributes,
                                         double defaultValue) {
-    return getNumericAssignmentInternal(flagKey, subjectKey, subjectAttributes, defaultValue);
-}
-
-double EppoClient::getNumericAssignmentInternal(const std::string& flagKey,
-                                                const std::string& subjectKey,
-                                                const Attributes& subjectAttributes,
-                                                double defaultValue) {
     try {
         Configuration config = configurationStore_->getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::NUMERIC);
@@ -86,13 +72,6 @@ int64_t EppoClient::getIntegerAssignment(const std::string& flagKey,
                                          const std::string& subjectKey,
                                          const Attributes& subjectAttributes,
                                          int64_t defaultValue) {
-    return getIntegerAssignmentInternal(flagKey, subjectKey, subjectAttributes, defaultValue);
-}
-
-int64_t EppoClient::getIntegerAssignmentInternal(const std::string& flagKey,
-                                                 const std::string& subjectKey,
-                                                 const Attributes& subjectAttributes,
-                                                 int64_t defaultValue) {
     try {
         Configuration config = configurationStore_->getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::INTEGER);
@@ -120,13 +99,6 @@ std::string EppoClient::getStringAssignment(const std::string& flagKey,
                                            const std::string& subjectKey,
                                            const Attributes& subjectAttributes,
                                            const std::string& defaultValue) {
-    return getStringAssignmentInternal(flagKey, subjectKey, subjectAttributes, defaultValue);
-}
-
-std::string EppoClient::getStringAssignmentInternal(const std::string& flagKey,
-                                                    const std::string& subjectKey,
-                                                    const Attributes& subjectAttributes,
-                                                    const std::string& defaultValue) {
     try {
         Configuration config = configurationStore_->getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::STRING);
@@ -154,13 +126,6 @@ nlohmann::json EppoClient::getJSONAssignment(const std::string& flagKey,
                                             const std::string& subjectKey,
                                             const Attributes& subjectAttributes,
                                             const nlohmann::json& defaultValue) {
-    return getJSONAssignmentInternal(flagKey, subjectKey, subjectAttributes, defaultValue);
-}
-
-nlohmann::json EppoClient::getJSONAssignmentInternal(const std::string& flagKey,
-                                                     const std::string& subjectKey,
-                                                     const Attributes& subjectAttributes,
-                                                     const nlohmann::json& defaultValue) {
     try {
         Configuration config = configurationStore_->getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);

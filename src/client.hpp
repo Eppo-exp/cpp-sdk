@@ -46,36 +46,6 @@ private:
     // Internal method to log assignment
     void logAssignment(const std::optional<AssignmentEvent>& event);
 
-    // Internal method for boolean assignment
-    bool getBoolAssignmentInternal(const std::string& flagKey,
-                                   const std::string& subjectKey,
-                                   const Attributes& subjectAttributes,
-                                   bool defaultValue);
-
-    // Internal method for numeric assignment
-    double getNumericAssignmentInternal(const std::string& flagKey,
-                                       const std::string& subjectKey,
-                                       const Attributes& subjectAttributes,
-                                       double defaultValue);
-
-    // Internal method for integer assignment
-    int64_t getIntegerAssignmentInternal(const std::string& flagKey,
-                                        const std::string& subjectKey,
-                                        const Attributes& subjectAttributes,
-                                        int64_t defaultValue);
-
-    // Internal method for string assignment
-    std::string getStringAssignmentInternal(const std::string& flagKey,
-                                           const std::string& subjectKey,
-                                           const Attributes& subjectAttributes,
-                                           const std::string& defaultValue);
-
-    // Internal method for JSON assignment
-    nlohmann::json getJSONAssignmentInternal(const std::string& flagKey,
-                                            const std::string& subjectKey,
-                                            const Attributes& subjectAttributes,
-                                            const nlohmann::json& defaultValue);
-
 public:
     // Constructor
     EppoClient(std::shared_ptr<ConfigurationStore> configStore,
