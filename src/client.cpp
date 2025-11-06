@@ -26,14 +26,13 @@ bool EppoClient::getBoolAssignment(const std::string& flagKey,
             return defaultValue;
         }
 
-        // Try to extract bool from variant
-        if (std::holds_alternative<bool>(*variation)) {
-            return std::get<bool>(*variation);
+        // Check for type mismatch
+        if (!std::holds_alternative<bool>(*variation)) {
+            applicationLogger_->error("Failed to cast variation to bool for flag: " + flagKey);
+            return defaultValue;
         }
 
-        // Type mismatch
-        applicationLogger_->error("Failed to cast variation to bool for flag: " + flagKey);
-        return defaultValue;
+        return std::get<bool>(*variation);
 
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getBoolAssignment: ") + e.what());
@@ -53,14 +52,12 @@ double EppoClient::getNumericAssignment(const std::string& flagKey,
             return defaultValue;
         }
 
-        // Try to extract double from variant
-        if (std::holds_alternative<double>(*variation)) {
-            return std::get<double>(*variation);
+        if (!std::holds_alternative<double>(*variation)) {
+            applicationLogger_->error("Failed to cast variation to double for flag: " + flagKey);
+            return defaultValue;
         }
 
-        // Type mismatch
-        applicationLogger_->error("Failed to cast variation to double for flag: " + flagKey);
-        return defaultValue;
+        return std::get<double>(*variation);
 
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getNumericAssignment: ") + e.what());
@@ -80,14 +77,12 @@ int64_t EppoClient::getIntegerAssignment(const std::string& flagKey,
             return defaultValue;
         }
 
-        // Try to extract int64_t from variant
-        if (std::holds_alternative<int64_t>(*variation)) {
-            return std::get<int64_t>(*variation);
+        if (!std::holds_alternative<int64_t>(*variation)) {
+            applicationLogger_->error("Failed to cast variation to int64_t for flag: " + flagKey);
+            return defaultValue;
         }
 
-        // Type mismatch
-        applicationLogger_->error("Failed to cast variation to int64_t for flag: " + flagKey);
-        return defaultValue;
+        return std::get<int64_t>(*variation);
 
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getIntegerAssignment: ") + e.what());
@@ -107,14 +102,12 @@ std::string EppoClient::getStringAssignment(const std::string& flagKey,
             return defaultValue;
         }
 
-        // Try to extract string from variant
-        if (std::holds_alternative<std::string>(*variation)) {
-            return std::get<std::string>(*variation);
+        if (!std::holds_alternative<std::string>(*variation)) {
+            applicationLogger_->error("Failed to cast variation to string for flag: " + flagKey);
+            return defaultValue;
         }
 
-        // Type mismatch
-        applicationLogger_->error("Failed to cast variation to string for flag: " + flagKey);
-        return defaultValue;
+        return std::get<std::string>(*variation);
 
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getStringAssignment: ") + e.what());
@@ -134,14 +127,12 @@ nlohmann::json EppoClient::getJSONAssignment(const std::string& flagKey,
             return defaultValue;
         }
 
-        // Try to extract json from variant
-        if (std::holds_alternative<nlohmann::json>(*variation)) {
-            return std::get<nlohmann::json>(*variation);
+        if (!std::holds_alternative<nlohmann::json>(*variation)) {
+            applicationLogger_->error("Failed to cast variation to json for flag: " + flagKey);
+            return defaultValue;
         }
 
-        // Type mismatch
-        applicationLogger_->error("Failed to cast variation to json for flag: " + flagKey);
-        return defaultValue;
+        return std::get<nlohmann::json>(*variation);
 
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getJSONAssignment: ") + e.what());
