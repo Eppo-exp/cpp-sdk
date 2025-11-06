@@ -3,7 +3,7 @@
 [Eppo](https://geteppo.com) is a modular flagging and experimentation analysis tool.
 
 > [!WARNING]  
-> This SDK is under active development and is not yet ready for produciton use.
+> This SDK is under active development and is not yet ready for production use.
 
 ## Building
 

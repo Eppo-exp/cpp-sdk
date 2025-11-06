@@ -8,7 +8,7 @@
 namespace eppoclient {
 
 // Helper function to parse ISO 8601 timestamp
-static std::chrono::system_clock::time_point parseTimestamp(const std::string& timestamp) {
+static std::chrono::system_clock::time_point parseISOTimestamp(const std::string& timestamp) {
     std::tm tm = {};
     std::istringstream ss(timestamp);
     ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
@@ -319,12 +319,12 @@ void from_json(const nlohmann::json& j, Allocation& a) {
 
     if (j.contains("startAt")) {
         auto timeStr = j.at("startAt").get<std::string>();
-        a.startAt = parseTimestamp(timeStr);
+        a.startAt = parseISOTimestamp(timeStr);
     }
 
     if (j.contains("endAt")) {
         auto timeStr = j.at("endAt").get<std::string>();
-        a.endAt = parseTimestamp(timeStr);
+        a.endAt = parseISOTimestamp(timeStr);
     }
 
     if (j.contains("doLog")) {
@@ -357,8 +357,8 @@ void from_json(const nlohmann::json& j, Variation& v) {
 // FlagConfiguration implementation
 FlagConfiguration::FlagConfiguration()
     : enabled(false),
-      variationType(VariationType::STRING),
-      totalShards(10000) {}
+      variationType(),
+      totalShards() {}
 
 void FlagConfiguration::precompute() {
     // Parse and cache all variations for performance
@@ -400,12 +400,7 @@ void from_json(const nlohmann::json& j, FlagConfiguration& fc) {
     j.at("variationType").get_to(fc.variationType);
     j.at("variations").get_to(fc.variations);
     j.at("allocations").get_to(fc.allocations);
-
-    if (j.contains("totalShards")) {
-        j.at("totalShards").get_to(fc.totalShards);
-    } else {
-        fc.totalShards = 10000;
-    }
+    j.at("totalShards").get_to(fc.totalShards);
 }
 
 // ConfigResponse implementation
