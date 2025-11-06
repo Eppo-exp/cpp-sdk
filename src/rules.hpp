@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <variant>
 #include <nlohmann/json.hpp>
+#include "application_logger.hpp"
 
 namespace eppoclient {
 
@@ -25,16 +26,6 @@ using AttributeValue = std::variant<
 >;
 
 using Attributes = std::unordered_map<std::string, AttributeValue>;
-
-// Application logger interface for logging
-class ApplicationLogger {
-public:
-    virtual ~ApplicationLogger() = default;
-    virtual void debug(const std::string& message) = 0;
-    virtual void info(const std::string& message) = 0;
-    virtual void warn(const std::string& message) = 0;
-    virtual void error(const std::string& message) = 0;
-};
 
 // Rule matching functions
 // Check if a rule matches the given subject attributes

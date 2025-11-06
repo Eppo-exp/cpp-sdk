@@ -8,6 +8,7 @@
 #include <chrono>
 #include <stdexcept>
 #include <nlohmann/json.hpp>
+#include "application_logger.hpp"
 #include "config_response.hpp"
 #include "rules.hpp"
 

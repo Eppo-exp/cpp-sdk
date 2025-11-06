@@ -12,7 +12,7 @@ EppoClient::EppoClient(std::shared_ptr<ConfigurationStore> configStore,
                        std::shared_ptr<ApplicationLogger> applicationLogger)
     : configurationStore_(configStore),
       assignmentLogger_(assignmentLogger),
-      applicationLogger_(applicationLogger) {}
+      applicationLogger_(applicationLogger ? applicationLogger : std::make_shared<NoOpApplicationLogger>()) {}
 
 bool EppoClient::getBoolAssignment(const std::string& flagKey,
                                    const std::string& subjectKey,
@@ -39,15 +39,11 @@ bool EppoClient::getBoolAssignmentInternal(const std::string& flagKey,
         }
 
         // Type mismatch
-        if (applicationLogger_) {
-            applicationLogger_->error("Failed to cast variation to bool for flag: " + flagKey);
-        }
+        applicationLogger_->error("Failed to cast variation to bool for flag: " + flagKey);
         return defaultValue;
 
     } catch (const std::exception& e) {
-        if (applicationLogger_) {
-            applicationLogger_->error(std::string("Error in getBoolAssignment: ") + e.what());
-        }
+        applicationLogger_->error(std::string("Error in getBoolAssignment: ") + e.what());
         return defaultValue;
     }
 }
@@ -77,15 +73,11 @@ double EppoClient::getNumericAssignmentInternal(const std::string& flagKey,
         }
 
         // Type mismatch
-        if (applicationLogger_) {
-            applicationLogger_->error("Failed to cast variation to double for flag: " + flagKey);
-        }
+        applicationLogger_->error("Failed to cast variation to double for flag: " + flagKey);
         return defaultValue;
 
     } catch (const std::exception& e) {
-        if (applicationLogger_) {
-            applicationLogger_->error(std::string("Error in getNumericAssignment: ") + e.what());
-        }
+        applicationLogger_->error(std::string("Error in getNumericAssignment: ") + e.what());
         return defaultValue;
     }
 }
@@ -115,15 +107,11 @@ int64_t EppoClient::getIntegerAssignmentInternal(const std::string& flagKey,
         }
 
         // Type mismatch
-        if (applicationLogger_) {
-            applicationLogger_->error("Failed to cast variation to int64_t for flag: " + flagKey);
-        }
+        applicationLogger_->error("Failed to cast variation to int64_t for flag: " + flagKey);
         return defaultValue;
 
     } catch (const std::exception& e) {
-        if (applicationLogger_) {
-            applicationLogger_->error(std::string("Error in getIntegerAssignment: ") + e.what());
-        }
+        applicationLogger_->error(std::string("Error in getIntegerAssignment: ") + e.what());
         return defaultValue;
     }
 }
@@ -153,15 +141,11 @@ std::string EppoClient::getStringAssignmentInternal(const std::string& flagKey,
         }
 
         // Type mismatch
-        if (applicationLogger_) {
-            applicationLogger_->error("Failed to cast variation to string for flag: " + flagKey);
-        }
+        applicationLogger_->error("Failed to cast variation to string for flag: " + flagKey);
         return defaultValue;
 
     } catch (const std::exception& e) {
-        if (applicationLogger_) {
-            applicationLogger_->error(std::string("Error in getStringAssignment: ") + e.what());
-        }
+        applicationLogger_->error(std::string("Error in getStringAssignment: ") + e.what());
         return defaultValue;
     }
 }
@@ -191,15 +175,11 @@ nlohmann::json EppoClient::getJSONAssignmentInternal(const std::string& flagKey,
         }
 
         // Type mismatch
-        if (applicationLogger_) {
-            applicationLogger_->error("Failed to cast variation to json for flag: " + flagKey);
-        }
+        applicationLogger_->error("Failed to cast variation to json for flag: " + flagKey);
         return defaultValue;
 
     } catch (const std::exception& e) {
-        if (applicationLogger_) {
-            applicationLogger_->error(std::string("Error in getJSONAssignment: ") + e.what());
-        }
+        applicationLogger_->error(std::string("Error in getJSONAssignment: ") + e.what());
         return defaultValue;
     }
 }
@@ -212,25 +192,19 @@ EppoClient::getAssignment(const Configuration& config,
                          VariationType variationType) {
     // Validate inputs
     if (subjectKey.empty()) {
-        if (applicationLogger_) {
-            applicationLogger_->error("No subject key provided");
-        }
+        applicationLogger_->error("No subject key provided");
         throw std::invalid_argument("no subject key provided");
     }
 
     if (flagKey.empty()) {
-        if (applicationLogger_) {
-            applicationLogger_->error("No flag key provided");
-        }
+        applicationLogger_->error("No flag key provided");
         throw std::invalid_argument("no flag key provided");
     }
 
     // Get flag configuration
     const FlagConfiguration* flag = config.getFlagConfiguration(flagKey);
     if (flag == nullptr) {
-        if (applicationLogger_) {
-            applicationLogger_->info("Failed to get flag configuration for: " + flagKey);
-        }
+        applicationLogger_->info("Failed to get flag configuration for: " + flagKey);
         throw FlagConfigurationNotFoundException();
     }
 
@@ -238,9 +212,7 @@ EppoClient::getAssignment(const Configuration& config,
     try {
         verifyType(*flag, variationType);
     } catch (const std::exception& e) {
-        if (applicationLogger_) {
-            applicationLogger_->warn(std::string("Failed to verify flag type: ") + e.what());
-        }
+        applicationLogger_->warn(std::string("Failed to verify flag type: ") + e.what());
         throw;
     }
 
@@ -249,9 +221,7 @@ EppoClient::getAssignment(const Configuration& config,
     try {
         result = evalFlag(*flag, subjectKey, subjectAttributes, applicationLogger_.get());
     } catch (const std::exception& e) {
-        if (applicationLogger_) {
-            applicationLogger_->error(std::string("Failed to evaluate flag: ") + e.what());
-        }
+        applicationLogger_->error(std::string("Failed to evaluate flag: ") + e.what());
         throw;
     }
 
@@ -269,13 +239,9 @@ void EppoClient::logAssignment(const std::optional<AssignmentEvent>& event) {
     try {
         assignmentLogger_->logAssignment(*event);
     } catch (const std::exception& e) {
-        if (applicationLogger_) {
-            applicationLogger_->error(std::string("Error logging assignment: ") + e.what());
-        }
+        applicationLogger_->error(std::string("Error logging assignment: ") + e.what());
     } catch (...) {
-        if (applicationLogger_) {
-            applicationLogger_->error("Unknown error logging assignment");
-        }
+        applicationLogger_->error("Unknown error logging assignment");
     }
 }
 

@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include "application_logger.hpp"
 #include "config_response.hpp"
 #include "rules.hpp"
 #include "evalflags.hpp"
