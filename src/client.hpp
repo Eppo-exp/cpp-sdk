@@ -46,6 +46,27 @@ private:
     // Internal method to log assignment
     void logAssignment(const std::optional<AssignmentEvent>& event);
 
+    // Template helper to extract and validate variation value
+    template<typename T>
+    T extractVariation(const std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>>& variation,
+                       const std::string& flagKey,
+                       VariationType variationType,
+                       const T& defaultValue) {
+        if (!variation.has_value()) {
+            return defaultValue;
+        }
+
+        if (!std::holds_alternative<T>(*variation)) {
+            std::string actualType = detectVariationType(*variation);
+            std::string expectedType = variationTypeToString(variationType);
+            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
+                                    ", but expected " + expectedType + " for flag " + flagKey);
+            return defaultValue;
+        }
+
+        return std::get<T>(*variation);
+    }
+
 public:
     // Constructor
     EppoClient(std::shared_ptr<ConfigurationStore> configStore,

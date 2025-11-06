@@ -21,22 +21,7 @@ bool EppoClient::getBoolAssignment(const std::string& flagKey,
     try {
         Configuration config = configurationStore_->getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::BOOLEAN);
-
-        if (!variation.has_value()) {
-            return defaultValue;
-        }
-
-        // Check for type mismatch
-        if (!std::holds_alternative<bool>(*variation)) {
-            std::string actualType = detectVariationType(*variation);
-            std::string expectedType = variationTypeToString(VariationType::BOOLEAN);
-            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
-                                    ", but expected " + expectedType + " for flag " + flagKey);
-            return defaultValue;
-        }
-
-        return std::get<bool>(*variation);
-
+        return extractVariation(variation, flagKey, VariationType::BOOLEAN, defaultValue);
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getBoolAssignment: ") + e.what());
         return defaultValue;
@@ -50,21 +35,7 @@ double EppoClient::getNumericAssignment(const std::string& flagKey,
     try {
         Configuration config = configurationStore_->getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::NUMERIC);
-
-        if (!variation.has_value()) {
-            return defaultValue;
-        }
-
-        if (!std::holds_alternative<double>(*variation)) {
-            std::string actualType = detectVariationType(*variation);
-            std::string expectedType = variationTypeToString(VariationType::NUMERIC);
-            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
-                                    ", but expected " + expectedType + " for flag " + flagKey);
-            return defaultValue;
-        }
-
-        return std::get<double>(*variation);
-
+        return extractVariation(variation, flagKey, VariationType::NUMERIC, defaultValue);
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getNumericAssignment: ") + e.what());
         return defaultValue;
@@ -78,21 +49,7 @@ int64_t EppoClient::getIntegerAssignment(const std::string& flagKey,
     try {
         Configuration config = configurationStore_->getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::INTEGER);
-
-        if (!variation.has_value()) {
-            return defaultValue;
-        }
-
-        if (!std::holds_alternative<int64_t>(*variation)) {
-            std::string actualType = detectVariationType(*variation);
-            std::string expectedType = variationTypeToString(VariationType::INTEGER);
-            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
-                                    ", but expected " + expectedType + " for flag " + flagKey);
-            return defaultValue;
-        }
-
-        return std::get<int64_t>(*variation);
-
+        return extractVariation(variation, flagKey, VariationType::INTEGER, defaultValue);
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getIntegerAssignment: ") + e.what());
         return defaultValue;
@@ -106,21 +63,7 @@ std::string EppoClient::getStringAssignment(const std::string& flagKey,
     try {
         Configuration config = configurationStore_->getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::STRING);
-
-        if (!variation.has_value()) {
-            return defaultValue;
-        }
-
-        if (!std::holds_alternative<std::string>(*variation)) {
-            std::string actualType = detectVariationType(*variation);
-            std::string expectedType = variationTypeToString(VariationType::STRING);
-            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
-                                    ", but expected " + expectedType + " for flag " + flagKey);
-            return defaultValue;
-        }
-
-        return std::get<std::string>(*variation);
-
+        return extractVariation(variation, flagKey, VariationType::STRING, defaultValue);
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getStringAssignment: ") + e.what());
         return defaultValue;
@@ -134,21 +77,7 @@ nlohmann::json EppoClient::getJSONAssignment(const std::string& flagKey,
     try {
         Configuration config = configurationStore_->getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
-
-        if (!variation.has_value()) {
-            return defaultValue;
-        }
-
-        if (!std::holds_alternative<nlohmann::json>(*variation)) {
-            std::string actualType = detectVariationType(*variation);
-            std::string expectedType = variationTypeToString(VariationType::JSON);
-            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
-                                    ", but expected " + expectedType + " for flag " + flagKey);
-            return defaultValue;
-        }
-
-        return std::get<nlohmann::json>(*variation);
-
+        return extractVariation(variation, flagKey, VariationType::JSON, defaultValue);
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getJSONAssignment: ") + e.what());
         return defaultValue;
