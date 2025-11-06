@@ -1,8 +1,27 @@
-name: Run Tests
+name: Test SDK
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    paths:
+      - '**/*'
+
+  workflow_dispatch:
+
+  workflow_call:
+    inputs:
+      test_data_branch:
+        type: string
+        description: The branch in sdk-test-data to target for testcase files
+        required: false
+        default: main
+      sdk_branch:
+        type: string
+        description: The branch of the SDK to test
+        required: false  
+
+env:
+  SDK_BRANCH_NAME: ${{ inputs.sdk_branch  || github.head_ref || github.ref_name || 'main' }}
+  TEST_DATA_BRANCH_NAME: ${{ inputs.test_data_branch || 'main' }}
 
 jobs:
   test:
@@ -11,11 +30,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        with:
+          repository: Eppo-exp/cpp-sdk
+          ref: ${{ env.SDK_BRANCH_NAME }}
       - name: Set up build environment
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential g++
 
       - name: Run tests
-        run: make test
+        run: make test branchName=${{env.TEST_DATA_BRANCH_NAME}}
