@@ -25,6 +25,10 @@ enum class VariationType {
 void to_json(nlohmann::json& j, const VariationType& vt);
 void from_json(const nlohmann::json& j, VariationType& vt);
 
+// Helper functions for VariationType
+std::string variationTypeToString(VariationType type);
+std::string detectVariationType(const std::variant<std::string, int64_t, double, bool, nlohmann::json>& variation);
+
 // Parse variation value based on type
 std::variant<std::string, int64_t, double, bool, nlohmann::json>
 parseVariationValue(const nlohmann::json& value, VariationType type);

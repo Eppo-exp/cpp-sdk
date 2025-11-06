@@ -28,7 +28,10 @@ bool EppoClient::getBoolAssignment(const std::string& flagKey,
 
         // Check for type mismatch
         if (!std::holds_alternative<bool>(*variation)) {
-            applicationLogger_->error("Failed to cast variation to bool for flag: " + flagKey);
+            std::string actualType = detectVariationType(*variation);
+            std::string expectedType = variationTypeToString(VariationType::BOOLEAN);
+            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
+                                    ", but expected " + expectedType + " for flag " + flagKey);
             return defaultValue;
         }
 
@@ -53,7 +56,10 @@ double EppoClient::getNumericAssignment(const std::string& flagKey,
         }
 
         if (!std::holds_alternative<double>(*variation)) {
-            applicationLogger_->error("Failed to cast variation to double for flag: " + flagKey);
+            std::string actualType = detectVariationType(*variation);
+            std::string expectedType = variationTypeToString(VariationType::NUMERIC);
+            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
+                                    ", but expected " + expectedType + " for flag " + flagKey);
             return defaultValue;
         }
 
@@ -78,7 +84,10 @@ int64_t EppoClient::getIntegerAssignment(const std::string& flagKey,
         }
 
         if (!std::holds_alternative<int64_t>(*variation)) {
-            applicationLogger_->error("Failed to cast variation to int64_t for flag: " + flagKey);
+            std::string actualType = detectVariationType(*variation);
+            std::string expectedType = variationTypeToString(VariationType::INTEGER);
+            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
+                                    ", but expected " + expectedType + " for flag " + flagKey);
             return defaultValue;
         }
 
@@ -103,7 +112,10 @@ std::string EppoClient::getStringAssignment(const std::string& flagKey,
         }
 
         if (!std::holds_alternative<std::string>(*variation)) {
-            applicationLogger_->error("Failed to cast variation to string for flag: " + flagKey);
+            std::string actualType = detectVariationType(*variation);
+            std::string expectedType = variationTypeToString(VariationType::STRING);
+            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
+                                    ", but expected " + expectedType + " for flag " + flagKey);
             return defaultValue;
         }
 
@@ -128,7 +140,10 @@ nlohmann::json EppoClient::getJSONAssignment(const std::string& flagKey,
         }
 
         if (!std::holds_alternative<nlohmann::json>(*variation)) {
-            applicationLogger_->error("Failed to cast variation to json for flag: " + flagKey);
+            std::string actualType = detectVariationType(*variation);
+            std::string expectedType = variationTypeToString(VariationType::JSON);
+            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
+                                    ", but expected " + expectedType + " for flag " + flagKey);
             return defaultValue;
         }
 

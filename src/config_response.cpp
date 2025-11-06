@@ -94,6 +94,28 @@ void from_json(const nlohmann::json& j, VariationType& vt) {
     }
 }
 
+// Helper function to convert VariationType to string
+std::string variationTypeToString(VariationType type) {
+    switch (type) {
+        case VariationType::STRING: return "STRING";
+        case VariationType::INTEGER: return "INTEGER";
+        case VariationType::NUMERIC: return "NUMERIC";
+        case VariationType::BOOLEAN: return "BOOLEAN";
+        case VariationType::JSON: return "JSON";
+        default: return "UNKNOWN";
+    }
+}
+
+// Helper function to detect the variation type
+std::string detectVariationType(const std::variant<std::string, int64_t, double, bool, nlohmann::json>& variation) {
+    if (std::holds_alternative<std::string>(variation)) return "STRING";
+    if (std::holds_alternative<int64_t>(variation)) return "INTEGER";
+    if (std::holds_alternative<double>(variation)) return "NUMERIC";
+    if (std::holds_alternative<bool>(variation)) return "BOOLEAN";
+    if (std::holds_alternative<nlohmann::json>(variation)) return "JSON";
+    return "UNKNOWN";
+}
+
 // Operator JSON conversion
 void to_json(nlohmann::json& j, const Operator& op) {
     switch (op) {
