@@ -1,5 +1,8 @@
-# Build artifacts
+# Build and test artifacts
 build/
+.cache/
+test/data/
+compile_commands.json
 
 # Object files
 *.o
@@ -20,8 +23,6 @@ build/
 *.dll
 
 # IDE and editor files
-.vscode/
-.idea/
 *.swp
 *.swo
 *~
