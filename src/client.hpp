@@ -124,6 +124,12 @@ public:
                                     const Attributes& subjectAttributes,
                                     const nlohmann::json& defaultValue);
 
+                                        // Get serialized JSON assignment (returns stringified JSON)
+    std::string getSerializedJSONAssignment(const std::string& flagKey,
+        const std::string& subjectKey,
+        const Attributes& subjectAttributes,
+        const std::string& defaultValue);
+
     // Get bandit action
     BanditResult getBanditAction(const std::string& flagKey,
                                 const std::string& subjectKey,

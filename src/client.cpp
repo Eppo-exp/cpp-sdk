@@ -2,8 +2,6 @@
 #include "time_utils.hpp"
 #include <stdexcept>
 #include <chrono>
-#include <iomanip>
-#include <sstream>
 
 namespace eppoclient {
 
@@ -86,6 +84,33 @@ nlohmann::json EppoClient::getJSONAssignment(const std::string& flagKey,
         return extractVariation(variation, flagKey, VariationType::JSON, defaultValue);
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getJSONAssignment: ") + e.what());
+        return defaultValue;
+    }
+}
+
+std::string EppoClient::getSerializedJSONAssignment(const std::string& flagKey,
+                                                   const std::string& subjectKey,
+                                                   const Attributes& subjectAttributes,
+                                                   const std::string& defaultValue) {
+    try {
+        Configuration config = configurationStore_->getConfiguration();
+        auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
+
+        if (!variation.has_value()) {
+            return defaultValue;
+        }
+
+        if (!std::holds_alternative<nlohmann::json>(*variation)) {
+            std::string actualType = detectVariationType(*variation);
+            std::string expectedType = variationTypeToString(VariationType::JSON);
+            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
+                                    ", but expected " + expectedType + " for flag " + flagKey);
+            return defaultValue;
+        }
+
+        return std::get<nlohmann::json>(*variation).dump();
+    } catch (const std::exception& e) {
+        applicationLogger_->error(std::string("Error in getSerializedJSONAssignment: ") + e.what());
         return defaultValue;
     }
 }
