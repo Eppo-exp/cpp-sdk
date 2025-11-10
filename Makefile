@@ -66,10 +66,11 @@ build:
 	@$(MAKE) all
 
 ## test-data
+branchName := main
 .PHONY: test-data
 test-data:
-	rm -rf test/data
-	git clone -b main --depth 1 --single-branch https://github.com/Eppo-exp/sdk-test-data.git test/data/
+	rm -rf $(testDataDir)
+	git clone -b ${branchName} --depth 1 --single-branch https://github.com/Eppo-exp/sdk-test-data.git test/data/
 
 # Run all tests (primary test target)
 .PHONY: test
