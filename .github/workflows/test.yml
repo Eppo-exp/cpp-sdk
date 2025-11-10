@@ -31,7 +31,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          repository: Eppo-exp/cpp-sdk
+          repository: ${{ github.event.pull_request.head.repo.full_name || 'Eppo-exp/cpp-sdk' }}
           ref: ${{ env.SDK_BRANCH_NAME }}
       - name: Set up build environment
         run: |
