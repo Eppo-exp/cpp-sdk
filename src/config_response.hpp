@@ -1,5 +1,5 @@
-#ifndef CONFIG_RESPONSE_H
-#define CONFIG_RESPONSE_H
+#ifndef CONFIG_RESPONSE_HPP
+#define CONFIG_RESPONSE_HPP
 
 #include <string>
 #include <vector>

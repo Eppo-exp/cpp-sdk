@@ -1,5 +1,5 @@
-#ifndef APPLICATION_LOGGER_H
-#define APPLICATION_LOGGER_H
+#ifndef APPLICATION_LOGGER_HPP
+#define APPLICATION_LOGGER_HPP
 
 #include <string>
 

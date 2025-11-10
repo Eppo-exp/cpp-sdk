@@ -1,5 +1,5 @@
-#ifndef EVALBANDITS_H
-#define EVALBANDITS_H
+#ifndef EVALBANDITS_HPP
+#define EVALBANDITS_HPP
 
 #include <string>
 #include <map>

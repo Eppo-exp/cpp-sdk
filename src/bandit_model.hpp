@@ -1,5 +1,5 @@
-#ifndef BANDIT_MODEL_H
-#define BANDIT_MODEL_H
+#ifndef BANDIT_MODEL_HPP
+#define BANDIT_MODEL_HPP
 
 #include <string>
 #include <vector>

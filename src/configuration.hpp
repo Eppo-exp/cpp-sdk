@@ -1,5 +1,5 @@
-#ifndef CONFIGURATION_H
-#define CONFIGURATION_H
+#ifndef CONFIGURATION_HPP
+#define CONFIGURATION_HPP
 
 #include <string>
 #include "config_response.hpp"

@@ -1,5 +1,5 @@
-#ifndef CONFIGURATION_STORE_H
-#define CONFIGURATION_STORE_H
+#ifndef CONFIGURATION_STORE_HPP
+#define CONFIGURATION_STORE_HPP
 
 #include <memory>
 #include <mutex>
