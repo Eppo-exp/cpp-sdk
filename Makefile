@@ -1,8 +1,8 @@
 # Compiler and flags
 CXX = g++
 CC = gcc
-CXXFLAGS = -std=c++17 -Wall -Wextra -I. -Ithird_party
-CFLAGS = -std=c99 -Wall -Wextra -I. -Ithird_party
+CXXFLAGS = -std=c++17 -Wall -Wextra -I. -Ithird_party -MMD -MP
+CFLAGS = -std=c99 -Wall -Wextra -I. -Ithird_party -MMD -MP
 LDFLAGS =
 
 # Directories
@@ -26,6 +26,14 @@ TEST_EXECUTABLE = $(BUILD_DIR)/test_runner
 
 # Library output
 LIBRARY = $(BUILD_DIR)/libeppoclient.a
+
+# Dependency files
+DEPFILES = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.d,$(LIB_SOURCES)) \
+           $(patsubst third_party/%.cpp,$(BUILD_DIR)/%.d,$(THIRD_PARTY_CPP_SOURCES)) \
+           $(patsubst third_party/%.c,$(BUILD_DIR)/%.d,$(THIRD_PARTY_C_SOURCES))
+
+# Include dependency files if they exist
+-include $(DEPFILES)
 
 # Build library object files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
@@ -75,6 +83,8 @@ test-data:
 # Run all tests (primary test target)
 .PHONY: test
 test: test-data
+	rm -f compile_commands.json
+	./scripts/generate_compile_commands.sh
 	@$(MAKE) $(TEST_EXECUTABLE)
 	@echo "Running all tests..."
 	@./$(TEST_EXECUTABLE)
@@ -83,6 +93,7 @@ test: test-data
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR)
+	rm -f compile_commands.json
 	@echo "Build directory cleaned"
 
 # Help target
