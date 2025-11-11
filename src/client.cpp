@@ -16,7 +16,8 @@ EppoClient::EppoClient(std::shared_ptr<ConfigurationStore> configStore,
     : configurationStore_(configStore),
       assignmentLogger_(assignmentLogger),
       banditLogger_(banditLogger),
-      applicationLogger_(applicationLogger ? applicationLogger : std::make_shared<NoOpApplicationLogger>()) {}
+      applicationLogger_(applicationLogger ? applicationLogger : std::make_shared<NoOpApplicationLogger>()),
+      isGracefulFailureMode_(true) {}
 
 bool EppoClient::getBoolAssignment(const std::string& flagKey,
                                    const std::string& subjectKey,
@@ -28,6 +29,9 @@ bool EppoClient::getBoolAssignment(const std::string& flagKey,
         return extractVariation(variation, flagKey, VariationType::BOOLEAN, defaultValue);
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getBoolAssignment: ") + e.what());
+        if (!isGracefulFailureMode_) {
+            throw;
+        }
         return defaultValue;
     }
 }
@@ -42,6 +46,9 @@ double EppoClient::getNumericAssignment(const std::string& flagKey,
         return extractVariation(variation, flagKey, VariationType::NUMERIC, defaultValue);
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getNumericAssignment: ") + e.what());
+        if (!isGracefulFailureMode_) {
+            throw;
+        }
         return defaultValue;
     }
 }
@@ -56,6 +63,9 @@ int64_t EppoClient::getIntegerAssignment(const std::string& flagKey,
         return extractVariation(variation, flagKey, VariationType::INTEGER, defaultValue);
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getIntegerAssignment: ") + e.what());
+        if (!isGracefulFailureMode_) {
+            throw;
+        }
         return defaultValue;
     }
 }
@@ -70,6 +80,9 @@ std::string EppoClient::getStringAssignment(const std::string& flagKey,
         return extractVariation(variation, flagKey, VariationType::STRING, defaultValue);
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getStringAssignment: ") + e.what());
+        if (!isGracefulFailureMode_) {
+            throw;
+        }
         return defaultValue;
     }
 }
@@ -84,6 +97,9 @@ nlohmann::json EppoClient::getJSONAssignment(const std::string& flagKey,
         return extractVariation(variation, flagKey, VariationType::JSON, defaultValue);
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getJSONAssignment: ") + e.what());
+        if (!isGracefulFailureMode_) {
+            throw;
+        }
         return defaultValue;
     }
 }
@@ -111,6 +127,9 @@ std::string EppoClient::getSerializedJSONAssignment(const std::string& flagKey,
         return std::get<nlohmann::json>(*variation).dump();
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getSerializedJSONAssignment: ") + e.what());
+        if (!isGracefulFailureMode_) {
+            throw;
+        }
         return defaultValue;
     }
 }
@@ -268,6 +287,10 @@ BanditResult EppoClient::getBanditActionInternal(const std::string& flagKey,
     logBanditAction(event);
 
     return BanditResult(variation, evaluation.actionKey);
+}
+
+void EppoClient::setIsGracefulFailureMode(bool isGracefulFailureMode) {
+    isGracefulFailureMode_ = isGracefulFailureMode;
 }
 
 } // namespace eppoclient
