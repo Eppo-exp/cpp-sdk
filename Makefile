@@ -9,6 +9,7 @@ LDFLAGS =
 SRC_DIR = src
 TEST_DIR = test
 BUILD_DIR = build
+EXAMPLES_DIR = examples
 
 # Source files
 LIB_SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
@@ -96,6 +97,61 @@ clean:
 	rm -f compile_commands.json
 	@echo "Build directory cleaned"
 
+# Example executables
+EXAMPLE_BANDITS = $(BUILD_DIR)/bandits
+EXAMPLE_FLAGS = $(BUILD_DIR)/flag_assignments
+
+# Build example executables
+$(EXAMPLE_BANDITS): $(LIBRARY) $(EXAMPLES_DIR)/bandits.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(EXAMPLES_DIR)/bandits.cpp $(LIBRARY) $(LDFLAGS) -o $@
+	@echo "Example built: $(EXAMPLE_BANDITS)"
+
+$(EXAMPLE_FLAGS): $(LIBRARY) $(EXAMPLES_DIR)/flag_assignments.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(EXAMPLES_DIR)/flag_assignments.cpp $(LIBRARY) $(LDFLAGS) -o $@
+	@echo "Example built: $(EXAMPLE_FLAGS)"
+
+# Build all examples
+.PHONY: examples
+examples: $(EXAMPLE_BANDITS) $(EXAMPLE_FLAGS)
+	@echo "All examples built successfully"
+
+# Run specific examples (must be run from examples directory for config paths)
+.PHONY: run-bandits
+run-bandits: $(EXAMPLE_BANDITS)
+	@echo "Running bandits example..."
+	@cd $(EXAMPLES_DIR) && ../$(EXAMPLE_BANDITS)
+
+.PHONY: run-flags
+run-flags: $(EXAMPLE_FLAGS)
+	@echo "Running flag_assignments example..."
+	@cd $(EXAMPLES_DIR) && ../$(EXAMPLE_FLAGS)
+
+# Interactive example runner
+.PHONY: run-example
+run-example:
+	@echo "Available examples:"
+	@echo "  1) bandits           - Demonstrates bandit functionality"
+	@echo "  2) flag_assignments  - Demonstrates flag assignment functionality"
+	@echo ""
+	@echo "Usage:"
+	@echo "  make run-bandits        - Run the bandits example"
+	@echo "  make run-flags          - Run the flag assignments example"
+	@echo ""
+	@echo "Or specify EXAMPLE variable:"
+	@echo "  make run-example EXAMPLE=bandits"
+	@echo "  make run-example EXAMPLE=flags"
+	@if [ -n "$(EXAMPLE)" ]; then \
+		if [ "$(EXAMPLE)" = "bandits" ]; then \
+			$(MAKE) run-bandits; \
+		elif [ "$(EXAMPLE)" = "flags" ]; then \
+			$(MAKE) run-flags; \
+		else \
+			echo "Error: Unknown example '$(EXAMPLE)'"; \
+			echo "Valid options: bandits, flags"; \
+			exit 1; \
+		fi \
+	fi
+
 # Help target
 .PHONY: help
 help:
@@ -103,5 +159,9 @@ help:
 	@echo "  all              - Build the library (default)"
 	@echo "  build            - Build and configure IDE support"
 	@echo "  test             - Build and run all tests"
+	@echo "  examples         - Build all examples"
+	@echo "  run-example      - Show available examples and usage"
+	@echo "  run-bandits      - Run the bandits example"
+	@echo "  run-flags        - Run the flag assignments example"
 	@echo "  clean            - Remove build artifacts"
 	@echo "  help             - Show this help message"
