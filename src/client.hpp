@@ -43,6 +43,7 @@ private:
     std::shared_ptr<AssignmentLogger> assignmentLogger_;
     std::shared_ptr<BanditLogger> banditLogger_;
     std::shared_ptr<ApplicationLogger> applicationLogger_;
+    bool isGracefulFailureMode_;
 
     // Internal method to get assignment value
     std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>>
@@ -136,6 +137,9 @@ public:
                                 const ContextAttributes& subjectAttributes,
                                 const std::map<std::string, ContextAttributes>& actions,
                                 const std::string& defaultVariation);
+
+    // Set graceful failure mode
+    void setIsGracefulFailureMode(bool isGracefulFailureMode);
 
     // Get configuration store
     std::shared_ptr<ConfigurationStore> getConfigurationStore() const {
