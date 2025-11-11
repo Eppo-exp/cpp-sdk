@@ -1,4 +1,5 @@
 #include "client.hpp"
+#include "time_utils.hpp"
 #include <stdexcept>
 #include <chrono>
 #include <iomanip>
@@ -222,13 +223,6 @@ BanditResult EppoClient::getBanditActionInternal(const std::string& flagKey,
 
     BanditEvaluationDetails evaluation = evaluateBandit(bandit->modelData, evalContext);
 
-    // Get current timestamp in ISO 8601 format
-    auto now = std::chrono::system_clock::now();
-    auto tt = std::chrono::system_clock::to_time_t(now);
-    std::tm tm = *std::gmtime(&tt);
-    std::ostringstream timestamp;
-    timestamp << std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
-
     // Log bandit action
     BanditEvent event;
     event.flagKey = flagKey;
@@ -238,7 +232,7 @@ BanditResult EppoClient::getBanditActionInternal(const std::string& flagKey,
     event.actionProbability = evaluation.actionWeight;
     event.optimalityGap = evaluation.optimalityGap;
     event.modelVersion = bandit->modelVersion;
-    event.timestamp = timestamp.str();
+    event.timestamp = formatISOTimestamp(std::chrono::system_clock::now());
     event.subjectNumericAttributes = evaluation.subjectAttributes.numericAttributes;
     event.subjectCategoricalAttributes = evaluation.subjectAttributes.categoricalAttributes;
     event.actionNumericAttributes = evaluation.actionAttributes.numericAttributes;

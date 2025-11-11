@@ -1,60 +1,12 @@
 #include "config_response.hpp"
 #include "rules.hpp"
+#include "time_utils.hpp"
 #include <stdexcept>
 #include <semver/semver.hpp>
 #include <sstream>
 #include <iomanip>
 
 namespace eppoclient {
-
-// Helper function to parse ISO 8601 timestamp
-// Parses ISO8601 timestamps with optional millisecond precision: e.g. "2024-06-09T14:23:11.123"
-static std::chrono::system_clock::time_point parseISOTimestamp(const std::string& timestamp) {
-    std::tm tm = {};
-    char dot = '\0';
-    int milliseconds = 0;
-
-    // Try parsing with optional fractional seconds
-    std::istringstream ss(timestamp);
-
-    // Read up to seconds first
-    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-
-    if (ss.fail()) {
-        return std::chrono::system_clock::time_point();
-    }
-
-    // Check if the next character is '.'
-    if (ss.peek() == '.') {
-        ss >> dot;
-        // Parse digits after '.'
-        std::string msDigits;
-        // ISO8601 spec allows 1-6+ subsecond digits, but we want 3 (ms)
-        for (int i = 0; i < 3; ++i) {
-            char c = static_cast<char>(ss.peek());
-            if (std::isdigit(c)) {
-                msDigits.push_back(static_cast<char>(ss.get()));
-            } else {
-                break;
-            }
-        }
-        // If less than 3 digits, pad with zeros
-        while (msDigits.size() < 3) msDigits.push_back('0');
-        milliseconds = std::stoi(msDigits);
-        // The rest (additional sub-ms) is ignored
-    }
-
-    // If timestamp contains a timezone, ignore (assume UTC/local as per std::mktime).
-    // Adjust as needed if project uses TZ indication.
-
-    auto time_c = std::mktime(&tm);
-    if (time_c == -1) {
-        return std::chrono::system_clock::time_point();
-    }
-    auto tp = std::chrono::system_clock::from_time_t(time_c);
-    tp += std::chrono::milliseconds(milliseconds);
-    return tp;
-}
 
 // VariationType JSON conversion
 void to_json(nlohmann::json& j, const VariationType& vt) {

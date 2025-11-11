@@ -1,31 +1,7 @@
 #include "bandit_model.hpp"
+#include "time_utils.hpp"
 #include <chrono>
-#include <iomanip>
-#include <sstream>
-
 namespace eppoclient {
-
-// Helper function to parse ISO 8601 timestamp
-std::chrono::system_clock::time_point parseTimestamp(const std::string& timestamp) {
-    std::tm tm = {};
-    std::istringstream ss(timestamp);
-    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-
-    if (ss.fail()) {
-        return std::chrono::system_clock::time_point();
-    }
-
-    return std::chrono::system_clock::from_time_t(std::mktime(&tm));
-}
-
-// Helper function to format timestamp to ISO 8601
-std::string formatTimestamp(const std::chrono::system_clock::time_point& tp) {
-    auto tt = std::chrono::system_clock::to_time_t(tp);
-    std::tm tm = *std::gmtime(&tt);
-    std::ostringstream ss;
-    ss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
-    return ss.str();
-}
 
 // BanditNumericAttributeCoefficient serialization
 void to_json(nlohmann::json& j, const BanditNumericAttributeCoefficient& bnac) {
@@ -102,7 +78,7 @@ void to_json(nlohmann::json& j, const BanditConfiguration& bc) {
         {"modelName", bc.modelName},
         {"modelVersion", bc.modelVersion},
         {"modelData", bc.modelData},
-        {"updatedAt", formatTimestamp(bc.updatedAt)}
+        {"updatedAt", formatISOTimestamp(bc.updatedAt)}
     };
 }
 
@@ -113,7 +89,7 @@ void from_json(const nlohmann::json& j, BanditConfiguration& bc) {
     j.at("modelData").get_to(bc.modelData);
 
     if (j.contains("updatedAt") && j["updatedAt"].is_string()) {
-        bc.updatedAt = parseTimestamp(j["updatedAt"].get<std::string>());
+        bc.updatedAt = parseISOTimestamp(j["updatedAt"].get<std::string>());
     }
 }
 
@@ -121,7 +97,7 @@ void from_json(const nlohmann::json& j, BanditConfiguration& bc) {
 void to_json(nlohmann::json& j, const BanditResponse& br) {
     j = nlohmann::json{
         {"bandits", br.bandits},
-        {"updatedAt", formatTimestamp(br.updatedAt)}
+        {"updatedAt", formatISOTimestamp(br.updatedAt)}
     };
 }
 
@@ -129,7 +105,7 @@ void from_json(const nlohmann::json& j, BanditResponse& br) {
     j.at("bandits").get_to(br.bandits);
 
     if (j.contains("updatedAt") && j["updatedAt"].is_string()) {
-        br.updatedAt = parseTimestamp(j["updatedAt"].get<std::string>());
+        br.updatedAt = parseISOTimestamp(j["updatedAt"].get<std::string>());
     }
 }
 
