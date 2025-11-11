@@ -80,6 +80,15 @@ private:
     cache::TwoQueueCache<AssignmentCacheKey, AssignmentCacheValue> cache_;
     std::shared_ptr<AssignmentLogger> inner_;
 
+    /**
+     * Determines whether an assignment should be logged based on cache state.
+     *
+     * @param key The cache key for the assignment
+     * @param value The cache value for the assignment
+     * @return true if the assignment should be logged, false otherwise
+     */
+    bool shouldLog(const AssignmentCacheKey& key, const AssignmentCacheValue& value);
+
 public:
     /**
      * Creates a new LruAssignmentLogger.

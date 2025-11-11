@@ -11,13 +11,16 @@ LruBanditLogger::LruBanditLogger(
     }
 }
 
+bool LruBanditLogger::shouldLog(const BanditCacheKey& key, const BanditCacheValue& value) {
+    auto [previousValue, recentlyLogged] = cache_.Get(key);
+    return !recentlyLogged || previousValue != value;
+}
+
 void LruBanditLogger::logBanditAction(const BanditEvent& event) {
     BanditCacheKey key(event.flagKey, event.subject);
     BanditCacheValue value(event.banditKey, event.action);
 
-    auto [previousValue, recentlyLogged] = cache_.Get(key);
-
-    if (!recentlyLogged || previousValue != value) {
+    if (shouldLog(key, value)) {
         // Log the bandit action first, then add to cache
         // This ensures that if logging throws an exception,
         // we don't cache it (matching Go behavior)

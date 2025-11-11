@@ -80,6 +80,15 @@ private:
     cache::TwoQueueCache<BanditCacheKey, BanditCacheValue> cache_;
     std::shared_ptr<BanditLogger> inner_;
 
+    /**
+     * Determines whether a bandit action should be logged based on cache state.
+     *
+     * @param key The cache key for the bandit action
+     * @param value The cache value for the bandit action
+     * @return true if the bandit action should be logged, false otherwise
+     */
+    bool shouldLog(const BanditCacheKey& key, const BanditCacheValue& value);
+
 public:
     /**
      * Creates a new LruBanditLogger.

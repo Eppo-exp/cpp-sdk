@@ -12,13 +12,16 @@ LruAssignmentLogger::LruAssignmentLogger(
     }
 }
 
+bool LruAssignmentLogger::shouldLog(const AssignmentCacheKey& key, const AssignmentCacheValue& value) {
+    auto [previousValue, recentlyLogged] = cache_.Get(key);
+    return !recentlyLogged || previousValue != value;
+}
+
 void LruAssignmentLogger::logAssignment(const AssignmentEvent& event) {
     AssignmentCacheKey key(event.featureFlag, event.subject);
     AssignmentCacheValue value(event.allocation, event.variation);
 
-    auto [previousValue, recentlyLogged] = cache_.Get(key);
-
-    if (!recentlyLogged || previousValue != value) {
+    if (shouldLog(key, value)) {
         // Log the assignment first, then add to cache
         // This ensures that if logging throws an exception,
         // we don't cache it (matching Go behavior)
