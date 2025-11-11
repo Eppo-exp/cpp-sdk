@@ -1,5 +1,5 @@
-#ifndef CONFIGURATION_STORE_H
-#define CONFIGURATION_STORE_H
+#ifndef CONFIGURATION_STORE_HPP
+#define CONFIGURATION_STORE_HPP
 
 #include <memory>
 #include <mutex>
@@ -10,7 +10,7 @@ namespace eppoclient {
 /**
  * ConfigurationStore is a thread-safe in-memory storage. It stores
  * the currently active configuration and provides access to multiple
- * readers (e.g., flag evaluation) and writers (e.g.,
+ * readers (e.g., flag/bandit evaluation) and writers (e.g.,
  * configuration requestor).
  */
 class ConfigurationStore {

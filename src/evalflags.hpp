@@ -1,5 +1,5 @@
-#ifndef EVALFLAGS_H
-#define EVALFLAGS_H
+#ifndef EVALFLAGS_HPP
+#define EVALFLAGS_HPP
 
 #include <string>
 #include <unordered_map>

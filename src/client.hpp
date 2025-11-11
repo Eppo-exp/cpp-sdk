@@ -1,5 +1,5 @@
-#ifndef CLIENT_H
-#define CLIENT_H
+#ifndef CLIENT_HPP
+#define CLIENT_HPP
 
 #include <string>
 #include <memory>
@@ -11,6 +11,7 @@
 #include "evalflags.hpp"
 #include "configuration.hpp"
 #include "configuration_store.hpp"
+#include "evalbandits.hpp"
 
 namespace eppoclient {
 
@@ -28,11 +29,19 @@ public:
     virtual void logAssignment(const AssignmentEvent& event) = 0;
 };
 
+// Bandit logger interface
+class BanditLogger {
+public:
+    virtual ~BanditLogger() = default;
+    virtual void logBanditAction(const BanditEvent& event) = 0;
+};
+
 // EppoClient - Main client for feature flag evaluation
 class EppoClient {
 private:
     std::shared_ptr<ConfigurationStore> configurationStore_;
     std::shared_ptr<AssignmentLogger> assignmentLogger_;
+    std::shared_ptr<BanditLogger> banditLogger_;
     std::shared_ptr<ApplicationLogger> applicationLogger_;
 
     // Internal method to get assignment value
@@ -46,6 +55,10 @@ private:
     // Internal method to log assignment
     void logAssignment(const std::optional<AssignmentEvent>& event);
 
+    // Internal method to log bandit action
+    void logBanditAction(const BanditEvent& event);
+
+    
     // Template helper to extract and validate variation value
     template<typename T>
     T extractVariation(const std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>>& variation,
@@ -67,10 +80,18 @@ private:
         return std::get<T>(*variation);
     }
 
+    // Internal method for bandit action
+    BanditResult getBanditActionInternal(const std::string& flagKey,
+                                        const std::string& subjectKey,
+                                        const ContextAttributes& subjectAttributes,
+                                        const std::map<std::string, ContextAttributes>& actions,
+                                        const std::string& defaultVariation);
+
 public:
     // Constructor
     EppoClient(std::shared_ptr<ConfigurationStore> configStore,
               std::shared_ptr<AssignmentLogger> assignmentLogger = nullptr,
+              std::shared_ptr<BanditLogger> banditLogger = nullptr,
               std::shared_ptr<ApplicationLogger> applicationLogger = nullptr);
 
     // Get boolean assignment
@@ -102,6 +123,13 @@ public:
                                     const std::string& subjectKey,
                                     const Attributes& subjectAttributes,
                                     const nlohmann::json& defaultValue);
+
+    // Get bandit action
+    BanditResult getBanditAction(const std::string& flagKey,
+                                const std::string& subjectKey,
+                                const ContextAttributes& subjectAttributes,
+                                const std::map<std::string, ContextAttributes>& actions,
+                                const std::string& defaultVariation);
 
     // Get configuration store
     std::shared_ptr<ConfigurationStore> getConfigurationStore() const {

@@ -1,5 +1,5 @@
-#ifndef CONFIG_RESPONSE_H
-#define CONFIG_RESPONSE_H
+#ifndef CONFIG_RESPONSE_HPP
+#define CONFIG_RESPONSE_HPP
 
 #include <string>
 #include <vector>
@@ -9,6 +9,7 @@
 #include <chrono>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include "bandit_model.hpp"
 
 namespace eppoclient {
 
@@ -90,7 +91,7 @@ struct Condition {
     // Cached values for performance (not serialized)
     double numericValue;
     bool numericValueValid;
-    std::shared_ptr<void> semVerValue;  // Will hold semver::version when implemented
+    std::shared_ptr<void> semVerValue;
     bool semVerValueValid;
 
     Condition();
@@ -166,6 +167,7 @@ void from_json(const nlohmann::json& j, FlagConfiguration& fc);
 // Top-level config response structure
 struct ConfigResponse {
     std::unordered_map<std::string, FlagConfiguration> flags;
+    std::unordered_map<std::string, std::vector<BanditVariation>> bandits;
 
     void precompute();
 };

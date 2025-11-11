@@ -1,5 +1,5 @@
-#ifndef RULES_H
-#define RULES_H
+#ifndef RULES_HPP
+#define RULES_HPP
 
 #include <string>
 #include <vector>
