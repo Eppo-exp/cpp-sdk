@@ -92,8 +92,8 @@ int main() {
         auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();
         auto applicationLogger = std::make_shared<ConsoleApplicationLogger>();
 
-        // Create EppoClient with all three parameters
-        auto client = std::make_shared<eppoclient::EppoClient>(configStore, assignmentLogger, applicationLogger);
+        // Create EppoClient with all parameters (nullptr for banditLogger since this example doesn't use bandits)
+        auto client = std::make_shared<eppoclient::EppoClient>(configStore, assignmentLogger, nullptr, applicationLogger);
 
         // Test 1: No matching attributes (should use default value, no assignment log)
         std::cout << "\n=== Test 1: No matching attributes ===" << std::endl;
