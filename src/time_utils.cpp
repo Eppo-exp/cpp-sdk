@@ -61,8 +61,14 @@ std::chrono::system_clock::time_point parseISOTimestamp(const std::string& times
 std::string formatISOTimestamp(const std::chrono::system_clock::time_point& tp) {
     auto tt = std::chrono::system_clock::to_time_t(tp);
     std::tm tm = *std::gmtime(&tt);
+
+    // Add milliseconds
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        tp.time_since_epoch()) % 1000;
+
     std::ostringstream ss;
-    ss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
+    ss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%S");
+    ss << '.' << std::setfill('0') << std::setw(3) << ms.count() << 'Z';
     return ss.str();
 }
 

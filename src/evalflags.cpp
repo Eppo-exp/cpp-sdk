@@ -1,30 +1,12 @@
 #include "evalflags.hpp"
-#include "src/version.hpp"
+#include "version.hpp"
+#include "time_utils.hpp"
 #include "third_party/md5_wrapper.h"
-#include <iomanip>
-#include <sstream>
 #include <cstring>
 
 namespace eppoclient {
 
 const std::string SDK_VERSION = getVersion();
-
-// Convert time_point to RFC3339 string
-std::string toRFC3339(const std::chrono::system_clock::time_point& tp) {
-    auto time_t_val = std::chrono::system_clock::to_time_t(tp);
-    std::tm tm_utc;
-    gmtime_r(&time_t_val, &tm_utc);
-
-    std::ostringstream oss;
-    oss << std::put_time(&tm_utc, "%Y-%m-%dT%H:%M:%S");
-
-    // Add milliseconds
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-        tp.time_since_epoch()) % 1000;
-    oss << '.' << std::setfill('0') << std::setw(3) << ms.count() << 'Z';
-
-    return oss.str();
-}
 
 // Verify that the flag has the expected variation type
 void verifyType(const FlagConfiguration& flag, VariationType expectedType) {
@@ -98,7 +80,181 @@ EvalResult evalFlag(const FlagConfiguration& flag,
         event.variation = matchedSplit->variationKey;
         event.subject = subjectKey;
         event.subjectAttributes = subjectAttributes;
-        event.timestamp = toRFC3339(now);
+        event.timestamp = formatISOTimestamp(now);
+        event.metaData = {
+            {"sdkLanguage", "cpp"},
+            {"sdkVersion", SDK_VERSION}
+        };
+
+        // Convert extraLogging JSON to map of strings
+        if (matchedSplit->extraLogging.is_object()) {
+            for (auto& [key, value] : matchedSplit->extraLogging.items()) {
+                if (value.is_string()) {
+                    event.extraLogging[key] = value.get<std::string>();
+                } else {
+                    event.extraLogging[key] = value.dump();
+                }
+            }
+        }
+
+        result.event = event;
+    }
+
+    return result;
+}
+
+// Helper function to evaluate allocation with details
+AllocationEvaluationDetails evaluateAllocationWithDetails(
+    const Allocation& allocation,
+    const std::string& subjectKey,
+    const Attributes& augmentedSubjectAttributes,
+    int64_t totalShards,
+    const std::chrono::system_clock::time_point& now,
+    size_t orderPosition,
+    ApplicationLogger* logger) {
+
+    AllocationEvaluationDetails details;
+    details.key = allocation.key;
+    details.orderPosition = orderPosition;
+
+    // Check time constraints
+    if (allocation.startAt.has_value() && now < allocation.startAt.value()) {
+        details.allocationEvaluationCode = AllocationEvaluationCode::BEFORE_START_TIME;
+        return details;
+    }
+    if (allocation.endAt.has_value() && now > allocation.endAt.value()) {
+        details.allocationEvaluationCode = AllocationEvaluationCode::AFTER_END_TIME;
+        return details;
+    }
+
+    // Check if any rule matches
+    bool matchesRule = false;
+    if (!allocation.rules.empty()) {
+        for (const auto& rule : allocation.rules) {
+            if (ruleMatches(rule, augmentedSubjectAttributes, logger)) {
+                matchesRule = true;
+                break;
+            }
+        }
+        if (!matchesRule) {
+            details.allocationEvaluationCode = AllocationEvaluationCode::FAILING_RULE;
+            return details;
+        }
+    }
+
+    // Find matching split
+    bool foundMatchingSplit = false;
+    for (const auto& split : allocation.splits) {
+        if (splitMatches(split, subjectKey, totalShards)) {
+            foundMatchingSplit = true;
+            break;
+        }
+    }
+
+    if (!foundMatchingSplit) {
+        details.allocationEvaluationCode = AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS;
+        return details;
+    }
+
+    details.allocationEvaluationCode = AllocationEvaluationCode::MATCH;
+    return details;
+}
+
+// Evaluate a flag and return detailed evaluation information
+EvalResultWithDetails evalFlagDetails(const FlagConfiguration& flag,
+                                     const std::string& subjectKey,
+                                     const Attributes& subjectAttributes,
+                                     ApplicationLogger* logger) {
+    auto now = std::chrono::system_clock::now();
+    std::string timestamp = formatISOTimestamp(now);
+
+    EvalResultWithDetails result;
+    result.details.flagKey = flag.key;
+    result.details.subjectKey = subjectKey;
+    result.details.subjectAttributes = subjectAttributes;
+    result.details.timestamp = timestamp;
+
+    // Check if flag is enabled
+    if (!flag.enabled) {
+        result.details.flagEvaluationCode = FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED;
+        result.details.flagEvaluationDescription = "Flag is not enabled";
+        return result;
+    }
+
+    Attributes augmentedSubjectAttributes = augmentWithSubjectKey(subjectAttributes, subjectKey);
+
+    // Evaluate all allocations and track details
+    const Allocation* matchedAllocation = nullptr;
+    const Split* matchedSplit = nullptr;
+
+    for (size_t i = 0; i < flag.allocations.size(); ++i) {
+        const auto& allocation = flag.allocations[i];
+
+        // Track allocation evaluation details
+        AllocationEvaluationDetails allocDetails = evaluateAllocationWithDetails(
+            allocation,
+            subjectKey,
+            augmentedSubjectAttributes,
+            flag.totalShards,
+            now,
+            i,
+            logger
+        );
+        result.details.allocations.push_back(allocDetails);
+
+        // If this allocation matched and we don't have a match yet, use it
+        if (allocDetails.allocationEvaluationCode == AllocationEvaluationCode::MATCH &&
+            matchedAllocation == nullptr) {
+            const Split* split = findMatchingSplit(
+                allocation,
+                subjectKey,
+                augmentedSubjectAttributes,
+                flag.totalShards,
+                now,
+                logger
+            );
+            if (split != nullptr) {
+                matchedAllocation = &allocation;
+                matchedSplit = split;
+            }
+        }
+    }
+
+    if (matchedAllocation == nullptr || matchedSplit == nullptr) {
+        result.details.flagEvaluationCode = FlagEvaluationCode::DEFAULT_ALLOCATION_NULL;
+        result.details.flagEvaluationDescription = "Subject is not part of any allocation";
+        return result;
+    }
+
+    // Find the variation value
+    auto it = flag.parsedVariations.find(matchedSplit->variationKey);
+    if (it == flag.parsedVariations.end()) {
+        result.details.flagEvaluationCode = FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR;
+        result.details.flagEvaluationDescription = "Cannot find variation: " + matchedSplit->variationKey;
+        return result;
+    }
+
+    result.value = it->second;
+    result.details.variationKey = matchedSplit->variationKey;
+    result.details.variationValue = it->second;
+    result.details.flagEvaluationCode = FlagEvaluationCode::MATCH;
+    result.details.flagEvaluationDescription = "Flag evaluation successful";
+
+    // Create assignment event if logging is enabled
+    bool shouldLog = true;
+    if (matchedAllocation->doLog.has_value()) {
+        shouldLog = matchedAllocation->doLog.value();
+    }
+
+    if (shouldLog) {
+        AssignmentEvent event;
+        event.featureFlag = flag.key;
+        event.allocation = matchedAllocation->key;
+        event.experiment = flag.key + "-" + matchedAllocation->key;
+        event.variation = matchedSplit->variationKey;
+        event.subject = subjectKey;
+        event.subjectAttributes = subjectAttributes;
+        event.timestamp = timestamp;
         event.metaData = {
             {"sdkLanguage", "cpp"},
             {"sdkVersion", SDK_VERSION}
