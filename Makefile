@@ -22,7 +22,7 @@ THIRD_PARTY_OBJECTS = $(patsubst third_party/%.cpp,$(BUILD_DIR)/%.o,$(THIRD_PART
                       $(patsubst third_party/%.c,$(BUILD_DIR)/%.o,$(THIRD_PARTY_C_SOURCES))
 
 # Auto-discover all test files
-TEST_SOURCES = $(wildcard $(TEST_DIR)/test_*.cpp)
+TEST_SOURCES = $(wildcard $(TEST_DIR)/test_*.cpp) $(wildcard $(TEST_DIR)/shared_test_cases/test_*.cpp)
 TEST_EXECUTABLE = $(BUILD_DIR)/test_runner
 
 # Library output

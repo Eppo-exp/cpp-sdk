@@ -4,8 +4,6 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <memory>
-#include <thread>
-#include <chrono>
 
 using namespace eppoclient;
 using json = nlohmann::json;

@@ -177,6 +177,13 @@ bool splitMatches(const Split& split, const std::string& subjectKey, int64_t tot
 // Check if a shard matches the given subject
 bool shardMatches(const Shard& shard, const std::string& subjectKey, int64_t totalShards);
 
+// Helper function to convert FlagEvaluationCode to string
+std::string flagEvaluationCodeToString(FlagEvaluationCode code);
+
+// Helper function to convert string to FlagEvaluationCode
+// Returns std::nullopt if the code string is not recognized
+std::optional<FlagEvaluationCode> stringToFlagEvaluationCode(const std::string& codeStr);
+
 } // namespace eppoclient
 
 #endif // EVALFLAGS_H

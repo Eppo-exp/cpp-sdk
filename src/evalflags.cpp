@@ -371,4 +371,39 @@ bool isShardInRange(int64_t shard, const ShardRange& range) {
     return shard >= range.start && shard < range.end;
 }
 
+// Helper function to convert FlagEvaluationCode to string
+std::string flagEvaluationCodeToString(FlagEvaluationCode code) {
+    switch (code) {
+        case FlagEvaluationCode::MATCH:
+            return "MATCH";
+        case FlagEvaluationCode::CONFIGURATION_MISSING:
+            return "CONFIGURATION_MISSING";
+        case FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED:
+            return "FLAG_UNRECOGNIZED_OR_DISABLED";
+        case FlagEvaluationCode::DEFAULT_ALLOCATION_NULL:
+            return "DEFAULT_ALLOCATION_NULL";
+        case FlagEvaluationCode::TYPE_MISMATCH:
+            return "TYPE_MISMATCH";
+        case FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR:
+            return "UNEXPECTED_CONFIGURATION_ERROR";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+// Helper function to convert string to FlagEvaluationCode
+// Returns std::nullopt if the code string is not recognized
+std::optional<FlagEvaluationCode> stringToFlagEvaluationCode(const std::string& codeStr) {
+    if (codeStr == "MATCH") return FlagEvaluationCode::MATCH;
+    if (codeStr == "CONFIGURATION_MISSING") return FlagEvaluationCode::CONFIGURATION_MISSING;
+    if (codeStr == "FLAG_UNRECOGNIZED_OR_DISABLED") return FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED;
+    if (codeStr == "DEFAULT_ALLOCATION_NULL") return FlagEvaluationCode::DEFAULT_ALLOCATION_NULL;
+    if (codeStr == "TYPE_MISMATCH") return FlagEvaluationCode::TYPE_MISMATCH;
+    if (codeStr == "UNEXPECTED_CONFIGURATION_ERROR") return FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR;
+    // Test cases use "ASSIGNMENT_ERROR" for js/node SDKs, but it should map to UNEXPECTED_CONFIGURATION_ERROR
+    if (codeStr == "ASSIGNMENT_ERROR") return FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR;
+    // Return nullopt for unknown codes
+    return std::nullopt;
+}
+
 } // namespace eppoclient

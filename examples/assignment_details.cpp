@@ -39,26 +39,6 @@ public:
     }
 };
 
-// Helper function to print evaluation code
-std::string flagEvaluationCodeToString(eppoclient::FlagEvaluationCode code) {
-    switch (code) {
-        case eppoclient::FlagEvaluationCode::MATCH:
-            return "MATCH";
-        case eppoclient::FlagEvaluationCode::CONFIGURATION_MISSING:
-            return "CONFIGURATION_MISSING";
-        case eppoclient::FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED:
-            return "FLAG_UNRECOGNIZED_OR_DISABLED";
-        case eppoclient::FlagEvaluationCode::DEFAULT_ALLOCATION_NULL:
-            return "DEFAULT_ALLOCATION_NULL";
-        case eppoclient::FlagEvaluationCode::TYPE_MISMATCH:
-            return "TYPE_MISMATCH";
-        case eppoclient::FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR:
-            return "UNEXPECTED_CONFIGURATION_ERROR";
-        default:
-            return "UNKNOWN";
-    }
-}
-
 // Helper function to print evaluation details
 void printEvaluationDetails(const eppoclient::EvaluationDetails& details) {
     std::cout << "\n=== Evaluation Details ===" << std::endl;
@@ -67,7 +47,7 @@ void printEvaluationDetails(const eppoclient::EvaluationDetails& details) {
     std::cout << "Timestamp: " << details.timestamp << std::endl;
 
     if (details.flagEvaluationCode.has_value()) {
-        std::cout << "Flag Evaluation Code: " << flagEvaluationCodeToString(*details.flagEvaluationCode) << std::endl;
+        std::cout << "Flag Evaluation Code: " << eppoclient::flagEvaluationCodeToString(*details.flagEvaluationCode) << std::endl;
     }
     std::cout << "Flag Evaluation Description: " << details.flagEvaluationDescription << std::endl;
 

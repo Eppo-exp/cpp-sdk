@@ -67,15 +67,6 @@ Attributes parseAttributes(const json& attrJson) {
     return attributes;
 }
 
-// Helper function to parse variation type from string
-VariationType parseVariationType(const std::string& typeStr) {
-    if (typeStr == "BOOLEAN") return VariationType::BOOLEAN;
-    if (typeStr == "STRING") return VariationType::STRING;
-    if (typeStr == "INTEGER") return VariationType::INTEGER;
-    if (typeStr == "NUMERIC") return VariationType::NUMERIC;
-    if (typeStr == "JSON") return VariationType::JSON;
-    throw std::runtime_error("Unknown variation type: " + typeStr);
-}
 
 // Helper function to load a single test case from JSON file
 TestCase loadTestCase(const std::string& filepath) {
@@ -89,7 +80,7 @@ TestCase loadTestCase(const std::string& filepath) {
 
     TestCase testCase;
     testCase.flag = j["flag"].get<std::string>();
-    testCase.variationType = parseVariationType(j["variationType"].get<std::string>());
+    testCase.variationType = j["variationType"].get<VariationType>();
     testCase.defaultValue = j["defaultValue"];
     testCase.filename = fs::path(filepath).filename().string();
 
