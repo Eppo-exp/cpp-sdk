@@ -44,3 +44,6 @@ jobs:
 
       - name: Run tests
         run: make test branchName=${{env.TEST_DATA_BRANCH_NAME}}
+
+      - name: Run memory tests
+        run: make test-memory

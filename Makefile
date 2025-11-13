@@ -166,6 +166,31 @@ run-example:
 		fi \
 	fi
 
+# ============================================================================
+# Memory and Performance Testing
+# ============================================================================
+
+# Combined AddressSanitizer + UndefinedBehaviorSanitizer (memory errors, leaks, undefined behavior)
+.PHONY: test-memory
+test-memory: clean test-data
+	@echo "Building with AddressSanitizer and UndefinedBehaviorSanitizer..."
+	@$(MAKE) $(TEST_EXECUTABLE) \
+		CXXFLAGS="$$(echo '$(CXXFLAGS)' | sed 's|-Ithird_party|-isystem third_party|g') -fsanitize=address,undefined -fno-omit-frame-pointer -g -O0 -Werror" \
+		CFLAGS="$$(echo '$(CFLAGS)' | sed 's|-Ithird_party|-isystem third_party|g') -fsanitize=address,undefined -fno-omit-frame-pointer -g -O0 -Werror" \
+		LDFLAGS="$(LDFLAGS) -fsanitize=address,undefined"
+	@echo "Running tests with AddressSanitizer and UndefinedBehaviorSanitizer..."
+	@ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:print_stats=1 \
+	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+		./$(TEST_EXECUTABLE) "[ufc]"
+
+# Profile-ready build with timing
+.PHONY: test-eval-performance
+test-eval-performance: clean test-data
+	@echo "Building with profiling symbols..."
+	@$(MAKE) $(TEST_EXECUTABLE) CXXFLAGS="$(CXXFLAGS) -g -O2"
+	@echo "Running performance tests..."
+	@./$(TEST_EXECUTABLE) "[performance]"
+
 # Help target
 .PHONY: help
 help:
@@ -173,6 +198,8 @@ help:
 	@echo "  all                    - Build the library (default)"
 	@echo "  build                  - Build and configure IDE support"
 	@echo "  test                   - Build and run all tests"
+	@echo "  test-memory            - Run tests with AddressSanitizer and UndefinedBehaviorSanitizer"
+	@echo "  test-eval-performance  - Run flag evaluation performance tests (min/max/avg μs)"
 	@echo "  examples               - Build all examples"
 	@echo "  run-example            - Show available examples and usage"
 	@echo "  run-bandits            - Run the bandits example"
@@ -180,3 +207,4 @@ help:
 	@echo "  run-assignment-details - Run the assignment details example"
 	@echo "  clean                  - Remove build artifacts"
 	@echo "  help                   - Show this help message"
+	@echo ""
