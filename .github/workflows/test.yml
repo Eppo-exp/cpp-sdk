@@ -45,5 +45,19 @@ jobs:
       - name: Run tests
         run: make test branchName=${{env.TEST_DATA_BRANCH_NAME}}
 
+  memory-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || 'Eppo-exp/cpp-sdk' }}
+          ref: ${{ env.SDK_BRANCH_NAME }}
+      - name: Set up build environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential g++
+
       - name: Run memory tests
         run: make test-memory
