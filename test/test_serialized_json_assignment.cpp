@@ -281,9 +281,9 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         CHECK(errorMsg.find("Error in getSerializedJSONAssignment") != std::string::npos);
         CHECK(errorMsg.find("unexpected variation type") != std::string::npos);
 
-        // The message also includes expected type (4 = JSON) and actual type (1 = INTEGER)
-        CHECK(errorMsg.find("expected: 4") != std::string::npos);
-        CHECK(errorMsg.find("actual: 1") != std::string::npos);
+        // The message also includes expected type (JSON) and actual type (INTEGER)
+        CHECK(errorMsg.find("expected: JSON") != std::string::npos);
+        CHECK(errorMsg.find("actual: INTEGER") != std::string::npos);
     }
 
     SECTION("Calling getSerializedJSONAssignment on a STRING flag logs type mismatch error") {
@@ -315,9 +315,9 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
 
         CHECK(errorMsg.find("Error in getSerializedJSONAssignment") != std::string::npos);
         CHECK(errorMsg.find("unexpected variation type") != std::string::npos);
-        // expected: 4 (JSON), actual: 0 (STRING)
-        CHECK(errorMsg.find("expected: 4") != std::string::npos);
-        CHECK(errorMsg.find("actual: 0") != std::string::npos);
+        // expected: JSON, actual: STRING
+        CHECK(errorMsg.find("expected: JSON") != std::string::npos);
+        CHECK(errorMsg.find("actual: STRING") != std::string::npos);
     }
 
     SECTION("Calling getSerializedJSONAssignment on a BOOLEAN flag logs type mismatch error") {
@@ -348,9 +348,9 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
 
         CHECK(errorMsg.find("Error in getSerializedJSONAssignment") != std::string::npos);
         CHECK(errorMsg.find("unexpected variation type") != std::string::npos);
-        // expected: 4 (JSON), actual: 3 (BOOLEAN)
-        CHECK(errorMsg.find("expected: 4") != std::string::npos);
-        CHECK(errorMsg.find("actual: 3") != std::string::npos);
+        // expected: JSON, actual: BOOLEAN
+        CHECK(errorMsg.find("expected: JSON") != std::string::npos);
+        CHECK(errorMsg.find("actual: BOOLEAN") != std::string::npos);
     }
 
     SECTION("Calling getSerializedJSONAssignment on a NUMERIC flag logs type mismatch error") {
@@ -381,9 +381,9 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
 
         CHECK(errorMsg.find("Error in getSerializedJSONAssignment") != std::string::npos);
         CHECK(errorMsg.find("unexpected variation type") != std::string::npos);
-        // expected: 4 (JSON), actual: 2 (NUMERIC)
-        CHECK(errorMsg.find("expected: 4") != std::string::npos);
-        CHECK(errorMsg.find("actual: 2") != std::string::npos);
+        // expected: JSON, actual: NUMERIC
+        CHECK(errorMsg.find("expected: JSON") != std::string::npos);
+        CHECK(errorMsg.find("actual: NUMERIC") != std::string::npos);
     }
 
     SECTION("Calling getSerializedJSONAssignment on a JSON flag does NOT log errors") {

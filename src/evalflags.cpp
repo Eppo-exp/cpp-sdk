@@ -13,9 +13,9 @@ void verifyType(const FlagConfiguration& flag, VariationType expectedType) {
     if (flag.variationType != expectedType) {
         throw std::runtime_error(
             "unexpected variation type (expected: " +
-            std::to_string(static_cast<int>(expectedType)) +
+            variationTypeToString(expectedType) +
             ", actual: " +
-            std::to_string(static_cast<int>(flag.variationType)) + ")"
+            variationTypeToString(flag.variationType) + ")"
         );
     }
 }
