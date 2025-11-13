@@ -186,38 +186,49 @@ EvalResultWithDetails evalFlagDetails(const FlagConfiguration& flag,
     // Evaluate all allocations and track details
     const Allocation* matchedAllocation = nullptr;
     const Split* matchedSplit = nullptr;
+    bool foundMatch = false;
 
     for (size_t i = 0; i < flag.allocations.size(); ++i) {
         const auto& allocation = flag.allocations[i];
 
-        // Track allocation evaluation details
-        AllocationEvaluationDetails allocDetails = evaluateAllocationWithDetails(
-            allocation,
-            subjectKey,
-            augmentedSubjectAttributes,
-            flag.totalShards,
-            now,
-            i,
-            logger
-        );
-        result.details.allocations.push_back(allocDetails);
+        AllocationEvaluationDetails allocDetails;
 
-        // If this allocation matched and we don't have a match yet, use it
-        if (allocDetails.allocationEvaluationCode == AllocationEvaluationCode::MATCH &&
-            matchedAllocation == nullptr) {
-            const Split* split = findMatchingSplit(
+        // If we already found a match, mark remaining allocations as UNEVALUATED
+        if (foundMatch) {
+            allocDetails.key = allocation.key;
+            allocDetails.orderPosition = i + 1;  // 1-indexed to match shared test data    
+            allocDetails.allocationEvaluationCode = AllocationEvaluationCode::UNEVALUATED;
+        } else {
+            // Track allocation evaluation details
+            allocDetails = evaluateAllocationWithDetails(
                 allocation,
                 subjectKey,
                 augmentedSubjectAttributes,
                 flag.totalShards,
                 now,
+                i + 1,  // 1-indexed to match shared test data
                 logger
             );
-            if (split != nullptr) {
-                matchedAllocation = &allocation;
-                matchedSplit = split;
+
+            // If this allocation matched and we don't have a match yet, use it
+            if (allocDetails.allocationEvaluationCode == AllocationEvaluationCode::MATCH) {
+                const Split* split = findMatchingSplit(
+                    allocation,
+                    subjectKey,
+                    augmentedSubjectAttributes,
+                    flag.totalShards,
+                    now,
+                    logger
+                );
+                if (split != nullptr) {
+                    matchedAllocation = &allocation;
+                    matchedSplit = split;
+                    foundMatch = true;
+                }
             }
         }
+
+        result.details.allocations.push_back(allocDetails);
     }
 
     if (matchedAllocation == nullptr || matchedSplit == nullptr) {
@@ -402,6 +413,39 @@ std::optional<FlagEvaluationCode> stringToFlagEvaluationCode(const std::string& 
     if (codeStr == "UNEXPECTED_CONFIGURATION_ERROR") return FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR;
     // Test cases use "ASSIGNMENT_ERROR" for js/node SDKs, but it should map to UNEXPECTED_CONFIGURATION_ERROR
     if (codeStr == "ASSIGNMENT_ERROR") return FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR;
+    // Return nullopt for unknown codes
+    return std::nullopt;
+}
+
+// Helper function to convert AllocationEvaluationCode to string
+std::string allocationEvaluationCodeToString(AllocationEvaluationCode code) {
+    switch (code) {
+        case AllocationEvaluationCode::UNEVALUATED:
+            return "UNEVALUATED";
+        case AllocationEvaluationCode::MATCH:
+            return "MATCH";
+        case AllocationEvaluationCode::BEFORE_START_TIME:
+            return "BEFORE_START_TIME";
+        case AllocationEvaluationCode::AFTER_END_TIME:
+            return "AFTER_END_TIME";
+        case AllocationEvaluationCode::FAILING_RULE:
+            return "FAILING_RULE";
+        case AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS:
+            return "TRAFFIC_EXPOSURE_MISS";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+// Helper function to convert string to AllocationEvaluationCode
+// Returns std::nullopt if the code string is not recognized
+std::optional<AllocationEvaluationCode> stringToAllocationEvaluationCode(const std::string& codeStr) {
+    if (codeStr == "UNEVALUATED") return AllocationEvaluationCode::UNEVALUATED;
+    if (codeStr == "MATCH") return AllocationEvaluationCode::MATCH;
+    if (codeStr == "BEFORE_START_TIME") return AllocationEvaluationCode::BEFORE_START_TIME;
+    if (codeStr == "AFTER_END_TIME") return AllocationEvaluationCode::AFTER_END_TIME;
+    if (codeStr == "FAILING_RULE") return AllocationEvaluationCode::FAILING_RULE;
+    if (codeStr == "TRAFFIC_EXPOSURE_MISS") return AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS;
     // Return nullopt for unknown codes
     return std::nullopt;
 }

@@ -243,9 +243,9 @@ TEST_CASE("Allocation Evaluation Details - Multiple allocations tracked", "[allo
 
         REQUIRE(result.evaluationDetails.has_value());
         if (!result.evaluationDetails->allocations.empty()) {
-            // Verify order positions are sequential starting from 0
+            // Verify order positions are sequential starting from 1
             for (size_t i = 0; i < result.evaluationDetails->allocations.size(); ++i) {
-                CHECK(result.evaluationDetails->allocations[i].orderPosition == i);
+                CHECK(result.evaluationDetails->allocations[i].orderPosition == i + 1);
             }
         }
     }

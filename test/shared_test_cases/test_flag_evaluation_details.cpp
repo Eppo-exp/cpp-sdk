@@ -12,12 +12,22 @@ using namespace eppoclient;
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
+// Structure to hold expected allocation evaluation data
+struct ExpectedAllocationEvaluation {
+    std::string key;
+    std::string allocationEvaluationCode;
+    size_t orderPosition;
+};
+
 // Structure to hold evaluation details test data
 struct EvaluationDetailsTestSubject {
     std::string subjectKey;
     Attributes subjectAttributes;
     json expectedAssignment;
     std::string expectedFlagEvaluationCode;
+    std::optional<ExpectedAllocationEvaluation> expectedMatchedAllocation;
+    std::vector<ExpectedAllocationEvaluation> expectedUnmatchedAllocations;
+    std::vector<ExpectedAllocationEvaluation> expectedUnevaluatedAllocations;
 };
 
 // Structure to hold test case data with evaluation details
@@ -102,6 +112,40 @@ static EvaluationDetailsTestCase loadTestCase(const std::string& filepath) {
             continue;
         }
 
+        // Extract allocation evaluation codes from evaluationDetails
+        const auto& evalDetails = subjectJson["evaluationDetails"];
+
+        // Parse matchedAllocation
+        if (evalDetails.contains("matchedAllocation") && !evalDetails["matchedAllocation"].is_null()) {
+            ExpectedAllocationEvaluation matched;
+            matched.key = evalDetails["matchedAllocation"]["key"].get<std::string>();
+            matched.allocationEvaluationCode = evalDetails["matchedAllocation"]["allocationEvaluationCode"].get<std::string>();
+            matched.orderPosition = evalDetails["matchedAllocation"]["orderPosition"].get<size_t>();
+            subject.expectedMatchedAllocation = matched;
+        }
+
+        // Parse unmatchedAllocations
+        if (evalDetails.contains("unmatchedAllocations")) {
+            for (const auto& alloc : evalDetails["unmatchedAllocations"]) {
+                ExpectedAllocationEvaluation unmatched;
+                unmatched.key = alloc["key"].get<std::string>();
+                unmatched.allocationEvaluationCode = alloc["allocationEvaluationCode"].get<std::string>();
+                unmatched.orderPosition = alloc["orderPosition"].get<size_t>();
+                subject.expectedUnmatchedAllocations.push_back(unmatched);
+            }
+        }
+
+        // Parse unevaluatedAllocations
+        if (evalDetails.contains("unevaluatedAllocations")) {
+            for (const auto& alloc : evalDetails["unevaluatedAllocations"]) {
+                ExpectedAllocationEvaluation unevaluated;
+                unevaluated.key = alloc["key"].get<std::string>();
+                unevaluated.allocationEvaluationCode = alloc["allocationEvaluationCode"].get<std::string>();
+                unevaluated.orderPosition = alloc["orderPosition"].get<size_t>();
+                subject.expectedUnevaluatedAllocations.push_back(unevaluated);
+            }
+        }
+
         testCase.subjects.push_back(subject);
     }
 
@@ -132,6 +176,99 @@ static std::vector<EvaluationDetailsTestCase> loadAllTestCases(const std::string
     }
 
     return testCases;
+}
+
+// Helper function to validate allocation evaluation codes
+static void validateAllocationEvaluationCodes(
+    const EvaluationDetails& evaluationDetails,
+    const EvaluationDetailsTestSubject& subject,
+    const std::string& flag
+) {
+    // Find matched, unmatched, and unevaluated allocations from actual results
+    std::optional<AllocationEvaluationDetails> actualMatched;
+    std::vector<AllocationEvaluationDetails> actualUnmatched;
+    std::vector<AllocationEvaluationDetails> actualUnevaluated;
+
+    for (const auto& alloc : evaluationDetails.allocations) {
+        if (alloc.allocationEvaluationCode == AllocationEvaluationCode::MATCH) {
+            actualMatched = alloc;
+        } else if (alloc.allocationEvaluationCode == AllocationEvaluationCode::UNEVALUATED) {
+            actualUnevaluated.push_back(alloc);
+        } else {
+            actualUnmatched.push_back(alloc);
+        }
+    }
+
+    // Validate matched allocation
+    if (subject.expectedMatchedAllocation.has_value()) {
+        REQUIRE(actualMatched.has_value());
+        const auto& expected = *subject.expectedMatchedAllocation;
+        const auto& actual = *actualMatched;
+
+        INFO("Flag: " << flag);
+        INFO("Subject: " << subject.subjectKey);
+        INFO("Matched allocation key: " << expected.key);
+        INFO("Expected code: " << expected.allocationEvaluationCode);
+        INFO("Actual code: " << allocationEvaluationCodeToString(actual.allocationEvaluationCode));
+
+        REQUIRE(actual.key == expected.key);
+        auto expectedCodeOpt = stringToAllocationEvaluationCode(expected.allocationEvaluationCode);
+        REQUIRE(expectedCodeOpt.has_value());
+        REQUIRE(actual.allocationEvaluationCode == *expectedCodeOpt);
+        REQUIRE(actual.orderPosition == expected.orderPosition);
+    } else {
+        REQUIRE(!actualMatched.has_value());
+    }
+
+    // Validate unmatched allocations
+    REQUIRE(actualUnmatched.size() == subject.expectedUnmatchedAllocations.size());
+    for (size_t i = 0; i < subject.expectedUnmatchedAllocations.size(); i++) {
+        const auto& expected = subject.expectedUnmatchedAllocations[i];
+        // Find matching allocation by key
+        auto it = std::find_if(actualUnmatched.begin(), actualUnmatched.end(),
+            [&expected](const AllocationEvaluationDetails& alloc) {
+                return alloc.key == expected.key;
+            });
+
+        REQUIRE(it != actualUnmatched.end());
+        const auto& actual = *it;
+
+        INFO("Flag: " << flag);
+        INFO("Subject: " << subject.subjectKey);
+        INFO("Unmatched allocation key: " << expected.key);
+        INFO("Expected code: " << expected.allocationEvaluationCode);
+        INFO("Actual code: " << allocationEvaluationCodeToString(actual.allocationEvaluationCode));
+
+        auto expectedCodeOpt = stringToAllocationEvaluationCode(expected.allocationEvaluationCode);
+        REQUIRE(expectedCodeOpt.has_value());
+        REQUIRE(actual.allocationEvaluationCode == *expectedCodeOpt);
+        REQUIRE(actual.orderPosition == expected.orderPosition);
+    }
+
+    // Validate unevaluated allocations
+    REQUIRE(actualUnevaluated.size() == subject.expectedUnevaluatedAllocations.size());
+    for (size_t i = 0; i < subject.expectedUnevaluatedAllocations.size(); i++) {
+        const auto& expected = subject.expectedUnevaluatedAllocations[i];
+        // Find matching allocation by key
+        auto it = std::find_if(actualUnevaluated.begin(), actualUnevaluated.end(),
+            [&expected](const AllocationEvaluationDetails& alloc) {
+                return alloc.key == expected.key;
+            });
+
+        REQUIRE(it != actualUnevaluated.end());
+        const auto& actual = *it;
+
+        INFO("Flag: " << flag);
+        INFO("Subject: " << subject.subjectKey);
+        INFO("Unevaluated allocation key: " << expected.key);
+        INFO("Expected code: " << expected.allocationEvaluationCode);
+        INFO("Actual code: " << allocationEvaluationCodeToString(actual.allocationEvaluationCode));
+
+        auto expectedCodeOpt = stringToAllocationEvaluationCode(expected.allocationEvaluationCode);
+        REQUIRE(expectedCodeOpt.has_value());
+        REQUIRE(actual.allocationEvaluationCode == *expectedCodeOpt);
+        REQUIRE(actual.orderPosition == expected.orderPosition);
+    }
 }
 
 TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]") {
@@ -201,6 +338,9 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
                             INFO("Actual code: " << flagEvaluationCodeToString(actualCode));
 
                             REQUIRE(actualCode == expectedCode);
+
+                            // Verify allocation evaluation codes
+                            validateAllocationEvaluationCodes(*result.evaluationDetails, subject, testCase.flag);
                             break;
                         }
 
@@ -224,6 +364,9 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
                             INFO("Actual code: " << flagEvaluationCodeToString(actualCode));
 
                             REQUIRE(actualCode == expectedCode);
+
+                            // Verify allocation evaluation codes
+                            validateAllocationEvaluationCodes(*result.evaluationDetails, subject, testCase.flag);
                             break;
                         }
 
@@ -247,6 +390,9 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
                             INFO("Actual code: " << flagEvaluationCodeToString(actualCode));
 
                             REQUIRE(actualCode == expectedCode);
+
+                            // Verify allocation evaluation codes
+                            validateAllocationEvaluationCodes(*result.evaluationDetails, subject, testCase.flag);
                             break;
                         }
 
@@ -270,6 +416,9 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
                             INFO("Actual code: " << flagEvaluationCodeToString(actualCode));
 
                             REQUIRE(actualCode == expectedCode);
+
+                            // Verify allocation evaluation codes
+                            validateAllocationEvaluationCodes(*result.evaluationDetails, subject, testCase.flag);
                             break;
                         }
 
@@ -293,6 +442,9 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
                             INFO("Actual code: " << flagEvaluationCodeToString(actualCode));
 
                             REQUIRE(actualCode == expectedCode);
+
+                            // Verify allocation evaluation codes
+                            validateAllocationEvaluationCodes(*result.evaluationDetails, subject, testCase.flag);
                             break;
                         }
                     }

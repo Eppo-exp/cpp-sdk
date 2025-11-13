@@ -184,6 +184,13 @@ std::string flagEvaluationCodeToString(FlagEvaluationCode code);
 // Returns std::nullopt if the code string is not recognized
 std::optional<FlagEvaluationCode> stringToFlagEvaluationCode(const std::string& codeStr);
 
+// Helper function to convert AllocationEvaluationCode to string
+std::string allocationEvaluationCodeToString(AllocationEvaluationCode code);
+
+// Helper function to convert string to AllocationEvaluationCode
+// Returns std::nullopt if the code string is not recognized
+std::optional<AllocationEvaluationCode> stringToAllocationEvaluationCode(const std::string& codeStr);
+
 } // namespace eppoclient
 
 #endif // EVALFLAGS_H
