@@ -12,6 +12,79 @@ The Eppo C++ SDK is designed for offline flag evaluation and supports:
 - **Contextual Bandit Logging**: Track bandit actions, with automatic deduplication
 - **Application Logging**: Debug and monitor SDK behavior
 
+## Installation
+
+### Using CMake FetchContent (Recommended)
+
+The easiest way to integrate the Eppo C++ SDK is using CMake's FetchContent:
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+  eppoclient
+  GIT_REPOSITORY https://github.com/Eppo-exp/cpp-sdk.git
+  GIT_TAG v1.0.0  # Use the latest version
+)
+FetchContent_MakeAvailable(eppoclient)
+
+# Link against your target
+target_link_libraries(your_application PRIVATE eppoclient)
+```
+
+### Using CMake with Local Installation
+
+If you prefer to install the library system-wide:
+
+```bash
+# Clone the repository
+git clone https://github.com/Eppo-exp/cpp-sdk.git
+cd cpp-sdk
+
+# Build and install
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+sudo cmake --install build
+
+# In your CMakeLists.txt:
+find_package(eppoclient REQUIRED)
+target_link_libraries(your_application PRIVATE eppoclient::eppoclient)
+```
+
+### Using Make (Manual Integration)
+
+For projects not using CMake, you can build the static library with Make:
+
+```bash
+# Clone and build
+git clone https://github.com/Eppo-exp/cpp-sdk.git
+cd cpp-sdk
+make
+
+# This creates build/libeppoclient.a
+# Link against it in your project:
+g++ -std=c++17 your_app.cpp -I/path/to/cpp-sdk/src -I/path/to/cpp-sdk/third_party \
+    -L/path/to/cpp-sdk/build -leppoclient -o your_app
+```
+
+### Download Pre-built Binaries
+
+Download pre-built libraries for your platform from the [releases page](https://github.com/Eppo-exp/cpp-sdk/releases).
+
+**Available platforms:**
+- Linux: x86_64, aarch64 (ARM64)
+- macOS: x86_64 (Intel), arm64 (Apple Silicon), Universal
+- Windows: x86_64, arm64
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture support and cross-compilation instructions.
+
+### Requirements
+
+- C++17 compatible compiler (g++, clang++, or MSVC)
+- CMake 3.14+ (if using CMake)
+- Make (if using Make)
+
+No external dependencies required - all necessary libraries are vendored.
+
 ## Quick Start
 
 ### 1. Initialize the SDK

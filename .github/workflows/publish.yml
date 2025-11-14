@@ -1,0 +1,213 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build Linux ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            cc: gcc
+            cxx: g++
+            cmake_args: ""
+          - arch: aarch64
+            cc: aarch64-linux-gnu-gcc
+            cxx: aarch64-linux-gnu-g++
+            cmake_args: "-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Install cross-compilation tools (aarch64)
+        if: matrix.arch == 'aarch64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Build with CMake
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release ${{ matrix.cmake_args }}
+          cmake --build build
+
+      - name: Package artifacts
+        run: |
+          mkdir -p dist/lib dist/include
+          cp build/libeppoclient.a dist/lib/
+          cp -r src/*.hpp dist/include/
+          cp -r third_party/nlohmann dist/include/
+          cp third_party/*.h dist/include/
+          tar -czf eppoclient-${{ steps.get_version.outputs.version }}-linux-${{ matrix.arch }}.tar.gz -C dist .
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./eppoclient-${{ steps.get_version.outputs.version }}-linux-${{ matrix.arch }}.tar.gz
+          asset_name: eppoclient-${{ steps.get_version.outputs.version }}-linux-${{ matrix.arch }}.tar.gz
+          asset_content_type: application/gzip
+
+  build-macos:
+    name: Build macOS ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - name: x86_64
+            os: macos-13  # Intel runner
+            arch: x86_64
+          - name: arm64
+            os: macos-14  # Apple Silicon runner
+            arch: arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build with CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
+          cmake --build build
+
+      - name: Verify architecture
+        run: |
+          lipo -info build/libeppoclient.a
+
+      - name: Package artifacts
+        run: |
+          mkdir -p dist/lib dist/include
+          cp build/libeppoclient.a dist/lib/
+          cp -r src/*.hpp dist/include/
+          cp -r third_party/nlohmann dist/include/
+          cp third_party/*.h dist/include/
+          tar -czf eppoclient-${{ steps.get_version.outputs.version }}-macos-${{ matrix.arch }}.tar.gz -C dist .
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./eppoclient-${{ steps.get_version.outputs.version }}-macos-${{ matrix.arch }}.tar.gz
+          asset_name: eppoclient-${{ steps.get_version.outputs.version }}-macos-${{ matrix.arch }}.tar.gz
+          asset_content_type: application/gzip
+
+  build-macos-universal:
+    name: Build macOS Universal Binary
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build Universal Binary
+        run: |
+          # Build for x86_64
+          cmake -B build-x86_64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64
+          cmake --build build-x86_64
+
+          # Build for arm64
+          cmake -B build-arm64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
+          cmake --build build-arm64
+
+          # Create universal binary
+          mkdir -p build-universal
+          lipo -create build-x86_64/libeppoclient.a build-arm64/libeppoclient.a -output build-universal/libeppoclient.a
+
+      - name: Verify universal binary
+        run: |
+          echo "Universal binary architecture:"
+          lipo -info build-universal/libeppoclient.a
+
+      - name: Package artifacts
+        run: |
+          mkdir -p dist/lib dist/include
+          cp build-universal/libeppoclient.a dist/lib/
+          cp -r src/*.hpp dist/include/
+          cp -r third_party/nlohmann dist/include/
+          cp third_party/*.h dist/include/
+          tar -czf eppoclient-${{ steps.get_version.outputs.version }}-macos-universal.tar.gz -C dist .
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./eppoclient-${{ steps.get_version.outputs.version }}-macos-universal.tar.gz
+          asset_name: eppoclient-${{ steps.get_version.outputs.version }}-macos-universal.tar.gz
+          asset_content_type: application/gzip
+
+  build-windows:
+    name: Build Windows ${{ matrix.arch }}
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x64
+            platform: x64
+            name: x86_64
+          - arch: ARM64
+            platform: ARM64
+            name: arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        shell: bash
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Setup MSVC
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build with CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -A ${{ matrix.arch }}
+          cmake --build build --config Release
+
+      - name: Package artifacts
+        shell: bash
+        run: |
+          mkdir -p dist/lib dist/include
+          cp build/Release/eppoclient.lib dist/lib/ || cp build/eppoclient.lib dist/lib/
+          cp -r src/*.hpp dist/include/
+          cp -r third_party/nlohmann dist/include/
+          cp third_party/*.h dist/include/
+
+      - name: Create zip
+        shell: bash
+        run: |
+          cd dist
+          7z a ../eppoclient-${{ steps.get_version.outputs.version }}-windows-${{ matrix.name }}.zip *
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./eppoclient-${{ steps.get_version.outputs.version }}-windows-${{ matrix.name }}.zip
+          asset_name: eppoclient-${{ steps.get_version.outputs.version }}-windows-${{ matrix.name }}.zip
+          asset_content_type: application/zip

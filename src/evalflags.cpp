@@ -1,4 +1,5 @@
 #include "evalflags.hpp"
+#include "src/version.hpp"
 #include "third_party/md5_wrapper.h"
 #include <iomanip>
 #include <sstream>
@@ -6,8 +7,7 @@
 
 namespace eppoclient {
 
-// SDK version constant (should match package version)
-const std::string SDK_VERSION = "0.1.0";
+const std::string SDK_VERSION = getVersion();
 
 // Convert time_point to RFC3339 string
 std::string toRFC3339(const std::chrono::system_clock::time_point& tp) {
