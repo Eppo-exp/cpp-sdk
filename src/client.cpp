@@ -1,5 +1,4 @@
 #include "client.hpp"
-#include "src/version.hpp"
 #include "time_utils.hpp"
 #include <stdexcept>
 #include <chrono>

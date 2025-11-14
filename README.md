@@ -164,6 +164,14 @@ nlohmann::json config = client->getJSONAssignment(
     attributes,
     nlohmann::json::object()
 );
+
+// Serialized JSON flag (returns stringified JSON)
+std::string configString = client->getSerializedJSONAssignment(
+    "feature-config",
+    "user-123",
+    attributes,
+    "{}"  // default value as string
+);
 ```
 
 ### 3. Add Assignment and Application Logging
@@ -592,6 +600,36 @@ int main() {
     }
 }
 ```
+
+## Evaluation Details
+
+When debugging flag assignments or understanding why a particular variant was selected, you can use evaluation details. The SDK provides detailed methods that return both the assigned value and metadata about the evaluation:
+
+```cpp
+// Get assignment with evaluation details
+eppoclient::EvaluationDetail<std::string> detail = client->getStringAssignmentDetail(
+    "button-color",
+    "user-123",
+    attributes,
+    "blue"
+);
+
+// Access the assigned value
+std::string color = detail.value;  // e.g., "green"
+
+// Access evaluation metadata
+std::cout << "Variation: " << detail.variation.value_or("N/A") << std::endl;
+```
+
+All assignment methods have corresponding `*Detail()` variants:
+- `getBoolAssignmentDetail()`
+- `getStringAssignmentDetail()`
+- `getNumericAssignmentDetail()`
+- `getIntegerAssignmentDetail()`
+- `getJSONAssignmentDetail()`
+- `getSerializedJSONAssignmentDetail()`
+
+For more information on debugging flag assignments and using evaluation details, see the [Eppo SDK debugging documentation](https://docs.geteppo.com/sdks/sdk-features/debugging-flag-assignment#allocation-evaluation-scenarios). You can find working examples in `examples/assignment_details.cpp`.
 
 ## Additional Resources
 

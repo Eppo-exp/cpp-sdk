@@ -143,11 +143,28 @@ int main() {
             std::cout << "Hello World!" << std::endl;
         }
 
-        // eppoclient::Configuration configuration = eppoclient::Configuration(ufc);
-        // nlohmann::json ufcJson = ufc;
-        // std::cout << "UFC JSON:" << std::endl;
-        // std::cout << ufcJson.dump(2) << std::endl;
-        // std::cout << "=====================\n" << std::endl;
+        // Test 4: getSerializedJSONAssignment (should match allocation, log assignment, return JSON string)
+        std::cout << "\n=== Test 4: getSerializedJSONAssignment ===" << std::endl;
+        eppoclient::Attributes attributes4;
+        attributes4["Force Empty"] = "false";
+        std::string jsonResult = client->getSerializedJSONAssignment(
+            "json-config-flag",
+            "user-123",
+            attributes4,
+            "{\"integer\": 0, \"string\": \"default\", \"float\": 0.0}"
+        );
+
+        // Parse the returned JSON string
+        try {
+            nlohmann::json jsonObj = nlohmann::json::parse(jsonResult);
+            std::cout << "Received JSON assignment: " << jsonResult << std::endl;
+            std::cout << "Parsed values:" << std::endl;
+            std::cout << "  integer: " << jsonObj["integer"] << std::endl;
+            std::cout << "  string: " << jsonObj["string"] << std::endl;
+            std::cout << "  float: " << jsonObj["float"] << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "Failed to parse JSON: " << e.what() << std::endl;
+        }
 
         return 0;
     } catch (const std::exception& e) {

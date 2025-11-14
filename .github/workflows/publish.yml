@@ -35,11 +35,8 @@ jobs:
           sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Build with CMake
-        env:
-          CC: ${{ matrix.cc }}
-          CXX: ${{ matrix.cxx }}
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release ${{ matrix.cmake_args }}
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_C_COMPILER=${{ matrix.cc }} ${{ matrix.cmake_args }}
           cmake --build build
 
       - name: Package artifacts
