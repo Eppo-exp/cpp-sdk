@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2025-11-13
+## [1.0.0] - 2025-11-14
 
 Initial release of the Eppo C++ SDK.
 
@@ -13,6 +13,7 @@ Initial release of the Eppo C++ SDK.
 
 - Feature flag evaluation: `getBoolAssignment()`, `getStringAssignment()`, `getNumericAssignment()`, `getIntegerAssignment()`, `getJSONAssignment()`, `getSerializedJSONAssignment()`
 - Contextual bandits: `getBanditAction()` with ML-powered variant selection
+- Evaluation details: `getBoolAssignmentDetails`, `getStringAssignmentDetails()`, `getNumericAssignmentDetails()`, `getIntegerAssignmentDetails()`, `getJSONAssignmentDetails()`, `getSerializedJSONAssignmentDetails`, `getBanditActionDetails()`
 - Assignment and bandit logger interfaces with automatic deduplication
 - Application logger for debug/info/warn/error messages
 - Graceful failure mode with `setIsGracefulFailureMode()` for configurable error handling
