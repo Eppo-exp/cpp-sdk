@@ -52,13 +52,12 @@ jobs:
       - name: Set up build environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential ${{ matrix.compiler.package }}
+          sudo apt-get install -y build-essential cmake ${{ matrix.compiler.package }}
 
       - name: Build library
-        env:
-          CXX: ${{ matrix.compiler.cxx }}
-          CC: ${{ matrix.compiler.cc }}
-        run: make build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
+          cmake --build build
 
   test:
     runs-on: ubuntu-latest
