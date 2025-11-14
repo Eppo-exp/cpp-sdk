@@ -164,6 +164,14 @@ nlohmann::json config = client->getJSONAssignment(
     attributes,
     nlohmann::json::object()
 );
+
+// Serialized JSON flag (returns stringified JSON)
+std::string configString = client->getSerializedJSONAssignment(
+    "feature-config",
+    "user-123",
+    attributes,
+    "{}"  // default value as string
+);
 ```
 
 ### 3. Add Assignment and Application Logging
