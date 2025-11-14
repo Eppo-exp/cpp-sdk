@@ -358,35 +358,35 @@ EvaluationResult<bool> EppoClient::getBooleanAssignmentDetails(const std::string
                                                                const std::string& subjectKey,
                                                                const Attributes& subjectAttributes,
                                                                bool defaultValue) {
-    return getAssignmentDetails<bool>(flagKey, subjectKey, subjectAttributes, VariationType::BOOLEAN, defaultValue);
+    return getAssignmentDetails<bool>(VariationType::BOOLEAN, flagKey, subjectKey, subjectAttributes, defaultValue);
 }
 
 EvaluationResult<int64_t> EppoClient::getIntegerAssignmentDetails(const std::string& flagKey,
                                                                   const std::string& subjectKey,
                                                                   const Attributes& subjectAttributes,
                                                                   int64_t defaultValue) {
-    return getAssignmentDetails<int64_t>(flagKey, subjectKey, subjectAttributes, VariationType::INTEGER, defaultValue);
+    return getAssignmentDetails<int64_t>(VariationType::INTEGER, flagKey, subjectKey, subjectAttributes, defaultValue);
 }
 
 EvaluationResult<double> EppoClient::getNumericAssignmentDetails(const std::string& flagKey,
                                                                  const std::string& subjectKey,
                                                                  const Attributes& subjectAttributes,
                                                                  double defaultValue) {
-    return getAssignmentDetails<double>(flagKey, subjectKey, subjectAttributes, VariationType::NUMERIC, defaultValue);
+    return getAssignmentDetails<double>(VariationType::NUMERIC, flagKey, subjectKey, subjectAttributes, defaultValue);
 }
 
 EvaluationResult<std::string> EppoClient::getStringAssignmentDetails(const std::string& flagKey,
                                                                      const std::string& subjectKey,
                                                                      const Attributes& subjectAttributes,
                                                                      const std::string& defaultValue) {
-    return getAssignmentDetails<std::string>(flagKey, subjectKey, subjectAttributes, VariationType::STRING, defaultValue);
+    return getAssignmentDetails<std::string>(VariationType::STRING, flagKey, subjectKey, subjectAttributes, defaultValue);
 }
 
 EvaluationResult<nlohmann::json> EppoClient::getJsonAssignmentDetails(const std::string& flagKey,
                                                                       const std::string& subjectKey,
                                                                       const Attributes& subjectAttributes,
                                                                       const nlohmann::json& defaultValue) {
-    return getAssignmentDetails<nlohmann::json>(flagKey, subjectKey, subjectAttributes, VariationType::JSON, defaultValue);
+    return getAssignmentDetails<nlohmann::json>(VariationType::JSON, flagKey, subjectKey, subjectAttributes, defaultValue);
 }
 
 EvaluationResult<std::string> EppoClient::getSerializedJsonAssignmentDetails(const std::string& flagKey,

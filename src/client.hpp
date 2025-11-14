@@ -213,10 +213,10 @@ public:
 
     // Generic get assignment details (for advanced use cases)
     template<typename T>
-    EvaluationResult<T> getAssignmentDetails(const std::string& flagKey,
+    EvaluationResult<T> getAssignmentDetails(VariationType variationType,
+                                            const std::string& flagKey,
                                             const std::string& subjectKey,
                                             const Attributes& subjectAttributes,
-                                            VariationType variationType,
                                             const T& defaultValue);
 
     // Set graceful failure mode
@@ -230,10 +230,10 @@ public:
 
 // Template method implementation
 template<typename T>
-EvaluationResult<T> EppoClient::getAssignmentDetails(const std::string& flagKey,
+EvaluationResult<T> EppoClient::getAssignmentDetails(VariationType variationType,
+                                                     const std::string& flagKey,
                                                      const std::string& subjectKey,
                                                      const Attributes& subjectAttributes,
-                                                     VariationType variationType,
                                                      const T& defaultValue) {
     try {
         // Validate inputs
