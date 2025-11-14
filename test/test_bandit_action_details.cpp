@@ -314,8 +314,10 @@ TEST_CASE("Bandit Action Details - Multiple calls preserve details", "[bandit-ac
         CHECK(result2.evaluationDetails->subjectKey == "user2");
 
         // Verify subject attributes are different
-        CHECK(result1.evaluationDetails->subjectAttributes.size() > 0);
-        CHECK(result2.evaluationDetails->subjectAttributes.size() > 0);
+        CHECK(std::holds_alternative<double>(result1.evaluationDetails->subjectAttributes["age"]));
+        CHECK(std::get<double>(result1.evaluationDetails->subjectAttributes["age"]) == 25.0);
+        CHECK(std::holds_alternative<double>(result2.evaluationDetails->subjectAttributes["age"]));
+        CHECK(std::get<double>(result2.evaluationDetails->subjectAttributes["age"]) == 45.0);
     }
 }
 
