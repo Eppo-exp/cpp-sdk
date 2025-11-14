@@ -308,10 +308,7 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
                 DYNAMIC_SECTION("Subject " << i << ": " << subject.subjectKey) {
                     auto expectedCodeOpt = stringToFlagEvaluationCode(subject.expectedFlagEvaluationCode);
                     if (!expectedCodeOpt.has_value()) {
-                        // Skip tests for codes not yet implemented in C++
-                        INFO("Skipping test for unimplemented code: " << subject.expectedFlagEvaluationCode);
-                        SKIP("FlagEvaluationCode not yet implemented");
-                        continue;
+                        FAIL("Unknown flag evaluation code: " << subject.expectedFlagEvaluationCode);
                     }
                     FlagEvaluationCode expectedCode = *expectedCodeOpt;
                     FlagEvaluationCode actualCode;
