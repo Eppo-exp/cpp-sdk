@@ -1,8 +1,8 @@
 # Compiler and flags
 CXX = g++
 CC = gcc
-CXXFLAGS = -std=c++17 -Wall -Wextra -I. -Ithird_party -MMD -MP
-CFLAGS = -std=c99 -Wall -Wextra -I. -Ithird_party -MMD -MP
+CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -I. -Ithird_party -MMD -MP
+CFLAGS = -std=c99 -Wall -Wextra -Werror -I. -Ithird_party -MMD -MP
 LDFLAGS =
 
 # Directories
