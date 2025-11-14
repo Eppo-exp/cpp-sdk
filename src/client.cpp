@@ -1,4 +1,5 @@
 #include "client.hpp"
+#include "src/version.hpp"
 #include "time_utils.hpp"
 #include <stdexcept>
 #include <chrono>
@@ -282,7 +283,7 @@ BanditResult EppoClient::getBanditActionInternal(const std::string& flagKey,
     event.actionNumericAttributes = evaluation.actionAttributes.numericAttributes;
     event.actionCategoricalAttributes = evaluation.actionAttributes.categoricalAttributes;
     event.metaData["sdkLanguage"] = "cpp";
-    event.metaData["sdkVersion"] = "0.1.0";  // TODO: Use actual SDK version
+    event.metaData["sdkVersion"] = getVersion();
 
     logBanditAction(event);
 
