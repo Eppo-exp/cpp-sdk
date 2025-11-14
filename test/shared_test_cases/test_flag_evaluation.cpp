@@ -163,7 +163,7 @@ bool compareValues(const json& expected, const std::optional<std::variant<std::s
     return false;
 }
 
-TEST_CASE("UFC Test Cases - Flag Assignments", "[ufc][assignments]") {
+TEST_CASE("UFC Test Cases - Flag Assignments", "[ufc][flags]") {
     // Load flags configuration
     std::string flagsPath = "test/data/ufc/flags-v1.json";
     ConfigResponse configResponse;

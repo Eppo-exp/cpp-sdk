@@ -210,8 +210,8 @@ TEST_CASE("Allocation Evaluation Details - Multiple allocations tracked", "[allo
         // Verify each allocation has required fields
         for (const auto& alloc : result.evaluationDetails->allocations) {
             CHECK_FALSE(alloc.key.empty());
-            // orderPosition should be valid
-            CHECK(alloc.orderPosition >= 0);
+            // orderPosition should be valid (1-indexed)
+            CHECK(alloc.orderPosition >= 1);
             // Should have an evaluation code
             CHECK((alloc.allocationEvaluationCode == AllocationEvaluationCode::MATCH ||
                    alloc.allocationEvaluationCode == AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS ||
