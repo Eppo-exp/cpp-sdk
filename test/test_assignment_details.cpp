@@ -137,7 +137,7 @@ TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-detai
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR);
+        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::ASSIGNMENT_ERROR);
         CHECK(result.evaluationDetails->flagEvaluationDescription.find("subject key") != std::string::npos);
     }
 
@@ -449,7 +449,7 @@ TEST_CASE("Assignment Details - Graceful failure mode behavior", "[assignment-de
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR);
+        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::ASSIGNMENT_ERROR);
 
         // Should have logged error
         CHECK_FALSE(mockLogger->errorMessages.empty());
@@ -615,7 +615,7 @@ TEST_CASE("Assignment Details - Empty flag key handling", "[assignment-details]"
         REQUIRE(result.evaluationDetails.has_value());
         CHECK(result.evaluationDetails->flagKey.empty());
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR);
+        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::ASSIGNMENT_ERROR);
     }
 }
 

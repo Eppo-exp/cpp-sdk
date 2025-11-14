@@ -240,14 +240,14 @@ EvaluationResult<T> EppoClient::getAssignmentDetails(VariationType variationType
         if (subjectKey.empty()) {
             applicationLogger_->error("No subject key provided");
             return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
-                                       FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR,
+                                       FlagEvaluationCode::ASSIGNMENT_ERROR,
                                        "No subject key provided");
         }
 
         if (flagKey.empty()) {
             applicationLogger_->error("No flag key provided");
             return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
-                                       FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR,
+                                       FlagEvaluationCode::ASSIGNMENT_ERROR,
                                        "No flag key provided");
         }
 
@@ -279,7 +279,7 @@ EvaluationResult<T> EppoClient::getAssignmentDetails(VariationType variationType
         } catch (const std::exception& e) {
             applicationLogger_->error(std::string("Failed to evaluate flag: ") + e.what());
             return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
-                                       FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR,
+                                       FlagEvaluationCode::ASSIGNMENT_ERROR,
                                        std::string("Evaluation error: ") + e.what());
         }
 
@@ -312,7 +312,7 @@ EvaluationResult<T> EppoClient::getAssignmentDetails(VariationType variationType
     } catch (const std::exception& e) {
         applicationLogger_->error(std::string("Error in getAssignmentDetails: ") + e.what());
         return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
-                                   FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR,
+                                   FlagEvaluationCode::ASSIGNMENT_ERROR,
                                    std::string("Exception: ") + e.what());
     }
 }

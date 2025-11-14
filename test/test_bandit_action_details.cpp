@@ -342,7 +342,7 @@ TEST_CASE("Bandit Action Details - Empty subject key handling", "[bandit-action-
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR);
+        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::ASSIGNMENT_ERROR);
     }
 }
 

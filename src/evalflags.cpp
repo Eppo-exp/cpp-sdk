@@ -240,7 +240,7 @@ EvalResultWithDetails evalFlagDetails(const FlagConfiguration& flag,
     // Find the variation value
     auto it = flag.parsedVariations.find(matchedSplit->variationKey);
     if (it == flag.parsedVariations.end()) {
-        result.details.flagEvaluationCode = FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR;
+        result.details.flagEvaluationCode = FlagEvaluationCode::ASSIGNMENT_ERROR;
         result.details.flagEvaluationDescription = "Cannot find variation: " + matchedSplit->variationKey;
         return result;
     }
@@ -395,8 +395,8 @@ std::string flagEvaluationCodeToString(FlagEvaluationCode code) {
             return "DEFAULT_ALLOCATION_NULL";
         case FlagEvaluationCode::TYPE_MISMATCH:
             return "TYPE_MISMATCH";
-        case FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR:
-            return "UNEXPECTED_CONFIGURATION_ERROR";
+        case FlagEvaluationCode::ASSIGNMENT_ERROR:
+            return "ASSIGNMENT_ERROR";
         default:
             return "UNKNOWN";
     }
@@ -410,9 +410,7 @@ std::optional<FlagEvaluationCode> stringToFlagEvaluationCode(const std::string& 
     if (codeStr == "FLAG_UNRECOGNIZED_OR_DISABLED") return FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED;
     if (codeStr == "DEFAULT_ALLOCATION_NULL") return FlagEvaluationCode::DEFAULT_ALLOCATION_NULL;
     if (codeStr == "TYPE_MISMATCH") return FlagEvaluationCode::TYPE_MISMATCH;
-    if (codeStr == "UNEXPECTED_CONFIGURATION_ERROR") return FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR;
-    // Test cases use "ASSIGNMENT_ERROR" for js/node SDKs, but it should map to UNEXPECTED_CONFIGURATION_ERROR
-    if (codeStr == "ASSIGNMENT_ERROR") return FlagEvaluationCode::UNEXPECTED_CONFIGURATION_ERROR;
+    if (codeStr == "ASSIGNMENT_ERROR") return FlagEvaluationCode::ASSIGNMENT_ERROR;
     // Return nullopt for unknown codes
     return std::nullopt;
 }
