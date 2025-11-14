@@ -127,23 +127,24 @@ TEST_CASE("formatISOTimestamp - formats time_point to ISO 8601 string", "[time_u
 
     std::string result = formatISOTimestamp(tp);
 
-    // The result should be in ISO 8601 format with Z suffix
+    // The result should be in ISO 8601 format with milliseconds and Z suffix
     // Note: The exact time may vary based on timezone conversion
-    REQUIRE(result.size() == 20); // YYYY-MM-DDTHH:MM:SSZ is 20 characters
+    REQUIRE(result.size() == 24); // YYYY-MM-DDTHH:MM:SS.sssZ is 24 characters
     REQUIRE(result[4] == '-');
     REQUIRE(result[7] == '-');
     REQUIRE(result[10] == 'T');
     REQUIRE(result[13] == ':');
     REQUIRE(result[16] == ':');
-    REQUIRE(result[19] == 'Z');
+    REQUIRE(result[19] == '.');
+    REQUIRE(result[23] == 'Z');
 }
 
 TEST_CASE("formatISOTimestamp - default time_point formats to epoch", "[time_utils]") {
     auto tp = std::chrono::system_clock::time_point();
     std::string result = formatISOTimestamp(tp);
 
-    // Should format the epoch time (1970-01-01T00:00:00Z)
-    REQUIRE(result == "1970-01-01T00:00:00Z");
+    // Should format the epoch time with milliseconds (1970-01-01T00:00:00.000Z)
+    REQUIRE(result == "1970-01-01T00:00:00.000Z");
 }
 
 TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip without milliseconds", "[time_utils]") {
@@ -153,19 +154,18 @@ TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip without millise
     auto parsed = parseISOTimestamp(original);
     std::string formatted = formatISOTimestamp(parsed);
 
-    // The formatted result should match the original (without milliseconds)
-    REQUIRE(formatted == "2024-06-09T14:23:11Z");
+    // The formatted result will include .000 for milliseconds even if original didn't have them
+    REQUIRE(formatted == "2024-06-09T14:23:11.000Z");
 }
 
-TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip loses milliseconds", "[time_utils]") {
+TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip preserves milliseconds", "[time_utils]") {
     std::string original = "2024-06-09T14:23:11.123";
 
     // Parse and format
     auto parsed = parseISOTimestamp(original);
     std::string formatted = formatISOTimestamp(parsed);
 
-    // formatISOTimestamp doesn't include milliseconds, so they are lost
-    REQUIRE(formatted == "2024-06-09T14:23:11Z");
+    REQUIRE(formatted == "2024-06-09T14:23:11.123Z");
 
     // But the milliseconds should be preserved in the time_point
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(parsed.time_since_epoch());

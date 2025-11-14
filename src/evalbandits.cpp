@@ -1,7 +1,6 @@
 #include "evalbandits.hpp"
 #include "evalflags.hpp"
 #include <algorithm>
-#include <cmath>
 #include <limits>
 #include <vector>
 
@@ -198,6 +197,30 @@ BanditEvaluationDetails evaluateBandit(const BanditModelData& modelData,
     details.optimalityGap = optimalityGap;
 
     return details;
+}
+
+BanditEvent createBanditEvent(const std::string& flagKey,
+                             const std::string& subjectKey,
+                             const std::string& banditKey,
+                             const std::string& modelVersion,
+                             const BanditEvaluationDetails& evaluation,
+                             const std::string& timestamp) {
+    BanditEvent event;
+    event.flagKey = flagKey;
+    event.banditKey = banditKey;
+    event.subject = subjectKey;
+    event.action = evaluation.actionKey;
+    event.actionProbability = evaluation.actionWeight;
+    event.optimalityGap = evaluation.optimalityGap;
+    event.modelVersion = modelVersion;
+    event.timestamp = timestamp;
+    event.subjectNumericAttributes = evaluation.subjectAttributes.numericAttributes;
+    event.subjectCategoricalAttributes = evaluation.subjectAttributes.categoricalAttributes;
+    event.actionNumericAttributes = evaluation.actionAttributes.numericAttributes;
+    event.actionCategoricalAttributes = evaluation.actionAttributes.categoricalAttributes;
+    event.metaData["sdkLanguage"] = "cpp";
+    event.metaData["sdkVersion"] = SDK_VERSION;
+    return event;
 }
 
 } // namespace eppoclient

@@ -219,14 +219,7 @@ BanditResult EppoClient::getBanditAction(const std::string& flagKey,
                                         const ContextAttributes& subjectAttributes,
                                         const std::map<std::string, ContextAttributes>& actions,
                                         const std::string& defaultVariation) {
-    return getBanditActionInternal(flagKey, subjectKey, subjectAttributes, actions, defaultVariation);
-}
-
-BanditResult EppoClient::getBanditActionInternal(const std::string& flagKey,
-                                                 const std::string& subjectKey,
-                                                 const ContextAttributes& subjectAttributes,
-                                                 const std::map<std::string, ContextAttributes>& actions,
-                                                 const std::string& defaultVariation) {
+                                            
     Configuration config = configurationStore_->getConfiguration();
 
     // Ignoring the error here as we can always proceed with default variation
@@ -269,29 +262,147 @@ BanditResult EppoClient::getBanditActionInternal(const std::string& flagKey,
     BanditEvaluationDetails evaluation = evaluateBandit(bandit->modelData, evalContext);
 
     // Log bandit action
-    BanditEvent event;
-    event.flagKey = flagKey;
-    event.banditKey = bandit->banditKey;
-    event.subject = subjectKey;
-    event.action = evaluation.actionKey;
-    event.actionProbability = evaluation.actionWeight;
-    event.optimalityGap = evaluation.optimalityGap;
-    event.modelVersion = bandit->modelVersion;
-    event.timestamp = formatISOTimestamp(std::chrono::system_clock::now());
-    event.subjectNumericAttributes = evaluation.subjectAttributes.numericAttributes;
-    event.subjectCategoricalAttributes = evaluation.subjectAttributes.categoricalAttributes;
-    event.actionNumericAttributes = evaluation.actionAttributes.numericAttributes;
-    event.actionCategoricalAttributes = evaluation.actionAttributes.categoricalAttributes;
-    event.metaData["sdkLanguage"] = "cpp";
-    event.metaData["sdkVersion"] = getVersion();
+    BanditEvent event = createBanditEvent(
+        flagKey,
+        subjectKey,
+        bandit->banditKey,
+        bandit->modelVersion,
+        evaluation,
+        formatISOTimestamp(std::chrono::system_clock::now())
+    );
 
     logBanditAction(event);
 
     return BanditResult(variation, evaluation.actionKey);
 }
 
+EvaluationResult<std::string> EppoClient::getBanditActionDetails(
+    const std::string& flagKey,
+    const std::string& subjectKey,
+    const ContextAttributes& subjectAttributes,
+    const std::map<std::string, ContextAttributes>& actions,
+    const std::string& defaultVariation
+) {
+    auto assignmentResult = getStringAssignmentDetails(
+        flagKey,
+        subjectKey,
+        toGenericAttributes(subjectAttributes),
+        defaultVariation
+    );
+
+    std::string variation = assignmentResult.variation;
+    EvaluationDetails details = assignmentResult.evaluationDetails.value_or(EvaluationDetails());
+
+    // If no actions have been passed, return the variation with details
+    if (actions.empty()) {
+        details.banditEvaluationCode = BanditEvaluationCode::NO_ACTIONS_SUPPLIED_FOR_BANDIT;
+        return EvaluationResult<std::string>(variation, std::nullopt, details);
+    }
+
+    // Get configuration for bandit operations
+    Configuration config = configurationStore_->getConfiguration();
+
+    // Get bandit variation
+    BanditVariation banditVariation;
+    if (!config.getBanditVariant(flagKey, variation, banditVariation)) {
+        details.banditEvaluationCode = BanditEvaluationCode::NON_BANDIT_VARIATION;
+        return EvaluationResult<std::string>(variation, std::nullopt, details);
+    }
+
+    // Get bandit configuration
+    const BanditConfiguration* bandit = config.getBanditConfiguration(banditVariation.key);
+    if (bandit == nullptr) {
+        details.banditEvaluationCode = BanditEvaluationCode::CONFIGURATION_MISSING;
+        return EvaluationResult<std::string>(variation, std::nullopt, details);
+    }
+
+    // Evaluate bandit
+    BanditEvaluationContext evalContext;
+    evalContext.flagKey = flagKey;
+    evalContext.subjectKey = subjectKey;
+    evalContext.subjectAttributes = subjectAttributes;
+    evalContext.actions = actions;
+
+    BanditEvaluationDetails evaluation = evaluateBandit(bandit->modelData, evalContext);
+
+    // Log bandit action
+    BanditEvent event = createBanditEvent(
+        flagKey,
+        subjectKey,
+        bandit->banditKey,
+        bandit->modelVersion,
+        evaluation,
+        details.timestamp
+    );
+
+    logBanditAction(event);
+
+    // Set bandit details
+    details.banditEvaluationCode = BanditEvaluationCode::MATCH;
+    details.banditKey = bandit->banditKey;
+    details.banditAction = evaluation.actionKey;
+
+    return EvaluationResult<std::string>(variation, evaluation.actionKey, details);
+}
+
+
 void EppoClient::setIsGracefulFailureMode(bool isGracefulFailureMode) {
     isGracefulFailureMode_ = isGracefulFailureMode;
 }
+
+// ============================================================================
+// Assignment Details Methods
+// ============================================================================
+
+EvaluationResult<bool> EppoClient::getBooleanAssignmentDetails(const std::string& flagKey,
+                                                               const std::string& subjectKey,
+                                                               const Attributes& subjectAttributes,
+                                                               bool defaultValue) {
+    return getAssignmentDetails<bool>(VariationType::BOOLEAN, flagKey, subjectKey, subjectAttributes, defaultValue);
+}
+
+EvaluationResult<int64_t> EppoClient::getIntegerAssignmentDetails(const std::string& flagKey,
+                                                                  const std::string& subjectKey,
+                                                                  const Attributes& subjectAttributes,
+                                                                  int64_t defaultValue) {
+    return getAssignmentDetails<int64_t>(VariationType::INTEGER, flagKey, subjectKey, subjectAttributes, defaultValue);
+}
+
+EvaluationResult<double> EppoClient::getNumericAssignmentDetails(const std::string& flagKey,
+                                                                 const std::string& subjectKey,
+                                                                 const Attributes& subjectAttributes,
+                                                                 double defaultValue) {
+    return getAssignmentDetails<double>(VariationType::NUMERIC, flagKey, subjectKey, subjectAttributes, defaultValue);
+}
+
+EvaluationResult<std::string> EppoClient::getStringAssignmentDetails(const std::string& flagKey,
+                                                                     const std::string& subjectKey,
+                                                                     const Attributes& subjectAttributes,
+                                                                     const std::string& defaultValue) {
+    return getAssignmentDetails<std::string>(VariationType::STRING, flagKey, subjectKey, subjectAttributes, defaultValue);
+}
+
+EvaluationResult<nlohmann::json> EppoClient::getJsonAssignmentDetails(const std::string& flagKey,
+                                                                      const std::string& subjectKey,
+                                                                      const Attributes& subjectAttributes,
+                                                                      const nlohmann::json& defaultValue) {
+    return getAssignmentDetails<nlohmann::json>(VariationType::JSON, flagKey, subjectKey, subjectAttributes, defaultValue);
+}
+
+EvaluationResult<std::string> EppoClient::getSerializedJsonAssignmentDetails(const std::string& flagKey,
+                                                                              const std::string& subjectKey,
+                                                                              const Attributes& subjectAttributes,
+                                                                              const std::string& defaultValue) {
+    // Get JSON assignment details first
+    nlohmann::json defaultJson = nlohmann::json::parse(defaultValue.empty() ? "{}" : defaultValue);
+    auto jsonResult = getJsonAssignmentDetails(flagKey, subjectKey, subjectAttributes, defaultJson);
+
+    // Convert JSON variation to string
+    std::string stringifiedVariation = jsonResult.variation.dump();
+
+    // Return with stringified value but same details
+    return EvaluationResult<std::string>(stringifiedVariation, jsonResult.action, jsonResult.evaluationDetails);
+}
+
 
 } // namespace eppoclient

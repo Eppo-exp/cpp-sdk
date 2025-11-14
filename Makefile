@@ -22,7 +22,7 @@ THIRD_PARTY_OBJECTS = $(patsubst third_party/%.cpp,$(BUILD_DIR)/%.o,$(THIRD_PART
                       $(patsubst third_party/%.c,$(BUILD_DIR)/%.o,$(THIRD_PARTY_C_SOURCES))
 
 # Auto-discover all test files
-TEST_SOURCES = $(wildcard $(TEST_DIR)/test_*.cpp)
+TEST_SOURCES = $(wildcard $(TEST_DIR)/test_*.cpp) $(wildcard $(TEST_DIR)/shared_test_cases/test_*.cpp)
 TEST_EXECUTABLE = $(BUILD_DIR)/test_runner
 
 # Library output
@@ -100,6 +100,7 @@ clean:
 # Example executables
 EXAMPLE_BANDITS = $(BUILD_DIR)/bandits
 EXAMPLE_FLAGS = $(BUILD_DIR)/flag_assignments
+EXAMPLE_ASSIGNMENT_DETAILS = $(BUILD_DIR)/assignment_details
 
 # Build example executables
 $(EXAMPLE_BANDITS): $(LIBRARY) $(EXAMPLES_DIR)/bandits.cpp | $(BUILD_DIR)
@@ -109,6 +110,10 @@ $(EXAMPLE_BANDITS): $(LIBRARY) $(EXAMPLES_DIR)/bandits.cpp | $(BUILD_DIR)
 $(EXAMPLE_FLAGS): $(LIBRARY) $(EXAMPLES_DIR)/flag_assignments.cpp | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(EXAMPLES_DIR)/flag_assignments.cpp $(LIBRARY) $(LDFLAGS) -o $@
 	@echo "Example built: $(EXAMPLE_FLAGS)"
+
+$(EXAMPLE_ASSIGNMENT_DETAILS): $(LIBRARY) $(EXAMPLES_DIR)/assignment_details.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(EXAMPLES_DIR)/assignment_details.cpp $(LIBRARY) $(LDFLAGS) -o $@
+	@echo "Example built: $(EXAMPLE_ASSIGNMENT_DETAILS)"
 
 # Build all examples
 .PHONY: examples
@@ -126,6 +131,11 @@ run-flags: $(EXAMPLE_FLAGS)
 	@echo "Running flag_assignments example..."
 	@cd $(EXAMPLES_DIR) && ../$(EXAMPLE_FLAGS)
 
+.PHONY: run-assignment-details
+run-assignment-details: $(EXAMPLE_ASSIGNMENT_DETAILS)
+	@echo "Running assignment_details example..."
+	@cd $(EXAMPLES_DIR) && ../$(EXAMPLE_ASSIGNMENT_DETAILS)
+
 # Interactive example runner
 .PHONY: run-example
 run-example:
@@ -134,20 +144,24 @@ run-example:
 	@echo "  2) flag_assignments  - Demonstrates flag assignment functionality"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make run-bandits        - Run the bandits example"
-	@echo "  make run-flags          - Run the flag assignments example"
+	@echo "  make run-bandits            - Run the bandits example"
+	@echo "  make run-flags              - Run the flag assignments example"
+	@echo "  make run-assignment-details - Run the assignment details example"
 	@echo ""
 	@echo "Or specify EXAMPLE variable:"
 	@echo "  make run-example EXAMPLE=bandits"
 	@echo "  make run-example EXAMPLE=flags"
+	@echo "  make run-example EXAMPLE=assignment-details"
 	@if [ -n "$(EXAMPLE)" ]; then \
 		if [ "$(EXAMPLE)" = "bandits" ]; then \
 			$(MAKE) run-bandits; \
 		elif [ "$(EXAMPLE)" = "flags" ]; then \
 			$(MAKE) run-flags; \
+		elif [ "$(EXAMPLE)" = "assignment-details" ]; then \
+			$(MAKE) run-assignment-details; \
 		else \
 			echo "Error: Unknown example '$(EXAMPLE)'"; \
-			echo "Valid options: bandits, flags"; \
+			echo "Valid options: bandits, flags, assignment-details"; \
 			exit 1; \
 		fi \
 	fi
@@ -156,12 +170,13 @@ run-example:
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  all              - Build the library (default)"
-	@echo "  build            - Build and configure IDE support"
-	@echo "  test             - Build and run all tests"
-	@echo "  examples         - Build all examples"
-	@echo "  run-example      - Show available examples and usage"
-	@echo "  run-bandits      - Run the bandits example"
-	@echo "  run-flags        - Run the flag assignments example"
-	@echo "  clean            - Remove build artifacts"
-	@echo "  help             - Show this help message"
+	@echo "  all                    - Build the library (default)"
+	@echo "  build                  - Build and configure IDE support"
+	@echo "  test                   - Build and run all tests"
+	@echo "  examples               - Build all examples"
+	@echo "  run-example            - Show available examples and usage"
+	@echo "  run-bandits            - Run the bandits example"
+	@echo "  run-flags              - Run the flag assignments example"
+	@echo "  run-assignment-details - Run the assignment details example"
+	@echo "  clean                  - Remove build artifacts"
+	@echo "  help                   - Show this help message"

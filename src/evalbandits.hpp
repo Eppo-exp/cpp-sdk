@@ -127,6 +127,17 @@ double scoreCategoricalAttributes(
  */
 int64_t getShard(const std::string& input, int64_t totalShards);
 
+/**
+ * Creates a BanditEvent from evaluation results.
+ * Centralizes the logic for constructing bandit logging events.
+ */
+BanditEvent createBanditEvent(const std::string& flagKey,
+                             const std::string& subjectKey,
+                             const std::string& banditKey,
+                             const std::string& modelVersion,
+                             const BanditEvaluationDetails& evaluation,
+                             const std::string& timestamp);
+
 } // namespace eppoclient
 
 #endif // EVALBANDITS_H

@@ -21,10 +21,10 @@ std::chrono::system_clock::time_point parseISOTimestamp(const std::string& times
 /**
  * Format a system_clock::time_point into an ISO 8601 timestamp string.
  *
- * Outputs format: "YYYY-MM-DDTHH:MM:SSZ" (UTC)
+ * Outputs format: "YYYY-MM-DDTHH:MM:SS.sssZ" (UTC with milliseconds)
  *
  * @param tp The time_point to format
- * @return An ISO 8601 formatted timestamp string with 'Z' suffix indicating UTC
+ * @return An ISO 8601 formatted timestamp string with milliseconds and 'Z' suffix indicating UTC
  */
 std::string formatISOTimestamp(const std::chrono::system_clock::time_point& tp);
 
