@@ -4,6 +4,33 @@
 #include <nlohmann/json.hpp>
 #include "../src/client.hpp"
 
+// Helper function to print evaluation details
+void printEvaluationDetails(const eppoclient::EvaluationDetails& details) {
+    std::cout << "\n=== Evaluation Details ===" << std::endl;
+    std::cout << "Flag Key: " << details.flagKey << std::endl;
+    std::cout << "Subject Key: " << details.subjectKey << std::endl;
+    std::cout << "Timestamp: " << details.timestamp << std::endl;
+
+    if (details.flagEvaluationCode.has_value()) {
+        std::cout << "Flag Evaluation Code: " << eppoclient::flagEvaluationCodeToString(*details.flagEvaluationCode) << std::endl;
+    }
+    std::cout << "Flag Evaluation Description: " << details.flagEvaluationDescription << std::endl;
+
+    if (details.variationKey.has_value()) {
+        std::cout << "Variation Key: " << *details.variationKey << std::endl;
+    }
+
+    if (details.configFetchedAt.has_value()) {
+        std::cout << "Config Fetched At: " << *details.configFetchedAt << std::endl;
+    }
+
+    if (details.environmentName.has_value()) {
+        std::cout << "Environment Name: " << *details.environmentName << std::endl;
+    }
+
+    std::cout << "========================\n" << std::endl;
+}   
+
 // Simple console-based assignment logger
 class ConsoleAssignmentLogger : public eppoclient::AssignmentLogger {
 public:
@@ -38,33 +65,6 @@ public:
         std::cerr << "[ERROR] " << message << std::endl;
     }
 };
-
-// Helper function to print evaluation details
-void printEvaluationDetails(const eppoclient::EvaluationDetails& details) {
-    std::cout << "\n=== Evaluation Details ===" << std::endl;
-    std::cout << "Flag Key: " << details.flagKey << std::endl;
-    std::cout << "Subject Key: " << details.subjectKey << std::endl;
-    std::cout << "Timestamp: " << details.timestamp << std::endl;
-
-    if (details.flagEvaluationCode.has_value()) {
-        std::cout << "Flag Evaluation Code: " << eppoclient::flagEvaluationCodeToString(*details.flagEvaluationCode) << std::endl;
-    }
-    std::cout << "Flag Evaluation Description: " << details.flagEvaluationDescription << std::endl;
-
-    if (details.variationKey.has_value()) {
-        std::cout << "Variation Key: " << *details.variationKey << std::endl;
-    }
-
-    if (details.configFetchedAt.has_value()) {
-        std::cout << "Config Fetched At: " << *details.configFetchedAt << std::endl;
-    }
-
-    if (details.environmentName.has_value()) {
-        std::cout << "Environment Name: " << *details.environmentName << std::endl;
-    }
-
-    std::cout << "========================\n" << std::endl;
-}
 
 // Helper function to load flags configuration from JSON file
 eppoclient::ConfigResponse loadFlagsConfiguration(const std::string& filepath) {

@@ -41,7 +41,8 @@ git clone https://github.com/Eppo-exp/cpp-sdk.git
 cd cpp-sdk
 
 # Build and install
-cmake -B build -DCMAKE_BUILD_TYPE=Release
+## (see ARCHITECTURE.md for building with specific architectures)
+cmake -B build -DCMAKE_BUILD_TYPE=Release 
 cmake --build build
 sudo cmake --install build
 
@@ -127,7 +128,7 @@ Once initialized, you can evaluate feature flags for different types:
 ```cpp
 // Boolean flag
 bool showNewFeature = client->getBoolAssignment(
-    "new-feature-flag",           // flag key
+    "new-feature-flag",            // flag key
     "user-123",                    // subject key
     attributes,                    // subject attributes
     false                          // default value
@@ -569,7 +570,7 @@ int main() {
         client->setIsGracefulFailureMode(false);
 
         eppoclient::Attributes attributes;
-        attributes["environment"] = std::string("production");
+        attributes["company_id"] = std::string("42");
 
         try {
             // Evaluate flag - will throw if there are issues
@@ -607,7 +608,7 @@ When debugging flag assignments or understanding why a particular variant was se
 
 ```cpp
 // Get assignment with evaluation details
-eppoclient::EvaluationDetail<std::string> detail = client->getStringAssignmentDetail(
+auto result = client->getStringAssignmentDetails(
     "button-color",
     "user-123",
     attributes,
@@ -615,25 +616,31 @@ eppoclient::EvaluationDetail<std::string> detail = client->getStringAssignmentDe
 );
 
 // Access the assigned value
-std::string color = detail.value;  // e.g., "green"
-
+std::string color = result.variation;  // e.g., "green"
 // Access evaluation metadata
-std::cout << "Variation: " << detail.variation.value_or("N/A") << std::endl;
+if (result.evaluationDetails.has_value()) {
+    eppoclient::EvaluationDetails details = (*result.evaluationDetails);
+    if (details.flagEvaluationCode.has_value()) {
+        std::cout << "Flag Evaluation Code: " << eppoclient::flagEvaluationCodeToString(*details.flagEvaluationCode) << std::endl;
+    }
+}
 ```
 
-All assignment methods have corresponding `*Detail()` variants:
-- `getBoolAssignmentDetail()`
-- `getStringAssignmentDetail()`
-- `getNumericAssignmentDetail()`
-- `getIntegerAssignmentDetail()`
-- `getJSONAssignmentDetail()`
-- `getSerializedJSONAssignmentDetail()`
+All assignment methods have corresponding `*Details()` variants:
+- `getBoolAssignmentDetails()`
+- `getStringAssignmentDetails()`
+- `getNumericAssignmentDetails()`
+- `getIntegerAssignmentDetails()`
+- `getJSONAssignmentDetails()`
+- `getSerializedJSONAssignmentDetails()`
+- `getBanditActionDetails()`
 
-For more information on debugging flag assignments and using evaluation details, see the [Eppo SDK debugging documentation](https://docs.geteppo.com/sdks/sdk-features/debugging-flag-assignment#allocation-evaluation-scenarios). You can find working examples in `examples/assignment_details.cpp`.
+For more information on debugging flag assignments and using evaluation details, see the [Eppo SDK debugging documentation](https://docs.geteppo.com/sdks/sdk-features/debugging-flag-assignment#allocation-evaluation-scenarios). You can find working examples in [examples/assignment_details.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/assignment_details.cpp).
 
 ## Additional Resources
 
 - Full working examples in the `examples/` directory
-- See `examples/flag_assignments.cpp` for feature flag examples
-- See `examples/bandits.cpp` for contextual bandit examples
+- See [examples/flag_assignments.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/flag_assignments.cpp) for feature flag examples
+- See [examples/bandits.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/bandits.cpp) for contextual bandit examples
+- See [examples/assignment_details.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/assignment_details.cpp) for evaluation details examples
 
