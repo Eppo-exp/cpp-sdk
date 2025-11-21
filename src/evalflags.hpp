@@ -14,7 +14,7 @@
 namespace eppoclient {
 
 // SDK version constant
-extern const std::string SDK_VERSION;
+extern const char* const SDK_VERSION;
 
 // AssignmentEvent structure for logging
 struct AssignmentEvent {

@@ -1,7 +1,17 @@
 # Compiler and flags
 CXX = g++
 CC = gcc
-CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -I. -Ithird_party -MMD -MP -fno-exceptions -DJSON_NOEXCEPTION
+
+# Detect if using clang++ and add clang-specific flags
+ifeq ($(CXX),clang++)
+  CLANG_WARNINGS = -Wexit-time-destructors
+else ifeq ($(shell $(CXX) --version 2>/dev/null | grep -q clang && echo clang),clang)
+  CLANG_WARNINGS = -Wexit-time-destructors
+else
+  CLANG_WARNINGS =
+endif
+
+CXXFLAGS = -std=c++17 -Wall -Wextra -Werror $(CLANG_WARNINGS) -I. -Ithird_party -MMD -MP -fno-exceptions -DJSON_NOEXCEPTION
 CFLAGS = -std=c99 -Wall -Wextra -Werror -I. -Ithird_party -MMD -MP
 LDFLAGS =
 
