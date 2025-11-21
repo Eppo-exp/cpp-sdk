@@ -85,21 +85,21 @@ int main() {
         eppoclient::ConfigResponse ufc = loadFlagsConfiguration("config/flags-v1.json");
 
         // Create configuration store and set the configuration
-        auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
-        configStore->setConfiguration(eppoclient::Configuration(ufc));
+        eppoclient::ConfigurationStore configStore;
+        configStore.setConfiguration(eppoclient::Configuration(ufc));
 
         // Create assignment logger and application logger
         auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();
         auto applicationLogger = std::make_shared<ConsoleApplicationLogger>();
 
         // Create EppoClient with all parameters (nullptr for banditLogger since this example doesn't use bandits)
-        auto client = std::make_shared<eppoclient::EppoClient>(configStore, assignmentLogger, nullptr, applicationLogger);
+        eppoclient::EppoClient client(configStore, assignmentLogger, nullptr, applicationLogger);
 
         // Test 1: No matching attributes (should use default value, no assignment log)
         std::cout << "\n=== Test 1: No matching attributes ===" << std::endl;
         eppoclient::Attributes attributes1;
         attributes1["company_id"] = "42";
-        bool result1 = client->getBoolAssignment(
+        bool result1 = client.getBoolAssignment(
             "boolean-false-assignment",
             "my-subject",
             attributes1,
@@ -115,7 +115,7 @@ int main() {
         std::cout << "\n=== Test 2: should_disable_feature = false ===" << std::endl;
         eppoclient::Attributes attributes2;
         attributes2["should_disable_feature"] = false;
-        bool result2 = client->getBoolAssignment(
+        bool result2 = client.getBoolAssignment(
             "boolean-false-assignment",
             "my-subject",
             attributes2,
@@ -131,7 +131,7 @@ int main() {
         std::cout << "\n=== Test 3: should_disable_feature = true ===" << std::endl;
         eppoclient::Attributes attributes3;
         attributes3["should_disable_feature"] = true;
-        bool result3 = client->getBoolAssignment(
+        bool result3 = client.getBoolAssignment(
             "boolean-false-assignment",
             "my-subject",
             attributes3,
@@ -147,7 +147,7 @@ int main() {
         std::cout << "\n=== Test 4: getSerializedJSONAssignment ===" << std::endl;
         eppoclient::Attributes attributes4;
         attributes4["Force Empty"] = "false";
-        std::string jsonResult = client->getSerializedJSONAssignment(
+        std::string jsonResult = client.getSerializedJSONAssignment(
             "json-config-flag",
             "user-123",
             attributes4,

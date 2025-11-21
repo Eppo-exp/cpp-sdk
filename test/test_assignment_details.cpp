@@ -69,20 +69,20 @@ namespace {
 }
 
 TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
     auto mockAssignmentLogger = std::make_shared<MockAssignmentLogger>();
 
-    auto client = std::make_shared<EppoClient>(configStore, mockAssignmentLogger, nullptr, mockAppLogger);
+    EppoClient client(configStore, mockAssignmentLogger, nullptr, mockAppLogger);
 
     SECTION("Successful boolean assignment with details") {
         Attributes attrs;
         attrs["should_disable_feature"] = false;
 
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "boolean-false-assignment",
             "test-subject",
             attrs,
@@ -108,7 +108,7 @@ TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-detai
     SECTION("Non-existent flag returns default with details") {
         mockAppLogger->clear();
 
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "non-existent-flag",
             "test-subject",
             Attributes(),
@@ -126,7 +126,7 @@ TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-detai
     }
 
     SECTION("Empty subject key returns default with error details in graceful mode") {
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "boolean-false-assignment",
             "",
             Attributes(),
@@ -142,28 +142,28 @@ TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-detai
     }
 
     SECTION("Empty subject key throws in non-graceful mode") {
-        client->setIsGracefulFailureMode(false);
+        client.setIsGracefulFailureMode(false);
 
         REQUIRE_THROWS_AS(
-            client->getBooleanAssignmentDetails("boolean-false-assignment", "", Attributes(), true),
+            client.getBooleanAssignmentDetails("boolean-false-assignment", "", Attributes(), true),
             std::runtime_error
         );
     }
 }
 
 TEST_CASE("Assignment Details - getIntegerAssignmentDetails", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockAppLogger);
+    EppoClient client(configStore, nullptr, nullptr, mockAppLogger);
 
     SECTION("Successful integer assignment with details") {
         Attributes attrs;
         attrs["age"] = 25.0;
 
-        auto result = client->getIntegerAssignmentDetails(
+        auto result = client.getIntegerAssignmentDetails(
             "integer-flag",
             "alice",
             attrs,
@@ -184,7 +184,7 @@ TEST_CASE("Assignment Details - getIntegerAssignmentDetails", "[assignment-detai
         Attributes attrs;
         attrs["should_disable_feature"] = false;
 
-        auto result = client->getIntegerAssignmentDetails(
+        auto result = client.getIntegerAssignmentDetails(
             "boolean-false-assignment",
             "test-subject",
             attrs,
@@ -200,15 +200,15 @@ TEST_CASE("Assignment Details - getIntegerAssignmentDetails", "[assignment-detai
 }
 
 TEST_CASE("Assignment Details - getNumericAssignmentDetails", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockAppLogger);
+    EppoClient client(configStore, nullptr, nullptr, mockAppLogger);
 
     SECTION("Successful numeric assignment with details") {
-        auto result = client->getNumericAssignmentDetails(
+        auto result = client.getNumericAssignmentDetails(
             "numeric_flag",
             "test-subject",
             Attributes(),
@@ -229,16 +229,16 @@ TEST_CASE("Assignment Details - getNumericAssignmentDetails", "[assignment-detai
 }
 
 TEST_CASE("Assignment Details - getStringAssignmentDetails", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockAppLogger);
+    EppoClient client(configStore, nullptr, nullptr, mockAppLogger);
 
     SECTION("Successful string assignment with details") {
         // Use empty_string_flag which is actually a string type
-        auto result = client->getStringAssignmentDetails(
+        auto result = client.getStringAssignmentDetails(
             "empty_string_flag",
             "test-subject",
             Attributes(),
@@ -255,7 +255,7 @@ TEST_CASE("Assignment Details - getStringAssignmentDetails", "[assignment-detail
     }
 
     SECTION("Non-existent flag returns default with details") {
-        auto result = client->getStringAssignmentDetails(
+        auto result = client.getStringAssignmentDetails(
             "non-existent-string-flag",
             "test-subject",
             Attributes(),
@@ -271,17 +271,17 @@ TEST_CASE("Assignment Details - getStringAssignmentDetails", "[assignment-detail
 }
 
 TEST_CASE("Assignment Details - getJsonAssignmentDetails", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockAppLogger);
+    EppoClient client(configStore, nullptr, nullptr, mockAppLogger);
 
     SECTION("Successful JSON assignment with details") {
         json defaultJson = {{"default", "value"}};
 
-        auto result = client->getJsonAssignmentDetails(
+        auto result = client.getJsonAssignmentDetails(
             "json-config-flag",
             "test-subject-1",
             Attributes(),
@@ -302,7 +302,7 @@ TEST_CASE("Assignment Details - getJsonAssignmentDetails", "[assignment-details]
     SECTION("Non-existent flag returns default JSON") {
         json defaultJson = {{"fallback", true}};
 
-        auto result = client->getJsonAssignmentDetails(
+        auto result = client.getJsonAssignmentDetails(
             "non-existent-json-flag",
             "test-subject",
             Attributes(),
@@ -318,17 +318,17 @@ TEST_CASE("Assignment Details - getJsonAssignmentDetails", "[assignment-details]
 }
 
 TEST_CASE("Assignment Details - getSerializedJsonAssignmentDetails", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockAppLogger);
+    EppoClient client(configStore, nullptr, nullptr, mockAppLogger);
 
     SECTION("Successful stringified JSON assignment with details") {
         std::string defaultValue = R"({"default":"value"})";
 
-        auto result = client->getSerializedJsonAssignmentDetails(
+        auto result = client.getSerializedJsonAssignmentDetails(
             "json-config-flag",
             "test-subject-1",
             Attributes(),
@@ -355,7 +355,7 @@ TEST_CASE("Assignment Details - getSerializedJsonAssignmentDetails", "[assignmen
         Attributes attrs;
         attrs["should_disable_feature"] = false;
 
-        auto result = client->getSerializedJsonAssignmentDetails(
+        auto result = client.getSerializedJsonAssignmentDetails(
             "boolean-false-assignment",
             "test-subject",
             attrs,
@@ -371,14 +371,14 @@ TEST_CASE("Assignment Details - getSerializedJsonAssignmentDetails", "[assignmen
 }
 
 TEST_CASE("Assignment Details - Evaluation details timestamp", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Evaluation details contain valid timestamp") {
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "boolean-false-assignment",
             "test-subject",
             Attributes(),
@@ -395,11 +395,11 @@ TEST_CASE("Assignment Details - Evaluation details timestamp", "[assignment-deta
 }
 
 TEST_CASE("Assignment Details - Subject attributes preserved", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Subject attributes are included in evaluation details") {
         Attributes attrs;
@@ -407,7 +407,7 @@ TEST_CASE("Assignment Details - Subject attributes preserved", "[assignment-deta
         attrs["country"] = std::string("USA");
         attrs["premium"] = true;
 
-        auto result = client->getStringAssignmentDetails(
+        auto result = client.getStringAssignmentDetails(
             "kill-switch",
             "test-subject",
             attrs,
@@ -430,15 +430,15 @@ TEST_CASE("Assignment Details - Subject attributes preserved", "[assignment-deta
 }
 
 TEST_CASE("Assignment Details - Graceful failure mode behavior", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     Configuration emptyConfig(ConfigResponse{});
-    configStore->setConfiguration(emptyConfig);
+    configStore.setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockLogger);
+    EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
     SECTION("Graceful mode returns default with error details") {
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "",  // Empty flag key to trigger error
             "test-subject",
             Attributes(),
@@ -456,17 +456,17 @@ TEST_CASE("Assignment Details - Graceful failure mode behavior", "[assignment-de
     }
 
     SECTION("Non-graceful mode throws exception") {
-        client->setIsGracefulFailureMode(false);
+        client.setIsGracefulFailureMode(false);
 
         REQUIRE_THROWS_AS(
-            client->getBooleanAssignmentDetails("", "test-subject", Attributes(), true),
+            client.getBooleanAssignmentDetails("", "test-subject", Attributes(), true),
             std::runtime_error
         );
     }
 
     SECTION("Can toggle graceful mode") {
         // Start in graceful mode
-        auto result1 = client->getStringAssignmentDetails(
+        auto result1 = client.getStringAssignmentDetails(
             "",
             "test-subject",
             Attributes(),
@@ -475,15 +475,15 @@ TEST_CASE("Assignment Details - Graceful failure mode behavior", "[assignment-de
         CHECK(result1.variation == "default");
 
         // Switch to non-graceful
-        client->setIsGracefulFailureMode(false);
+        client.setIsGracefulFailureMode(false);
         REQUIRE_THROWS_AS(
-            client->getStringAssignmentDetails("", "test-subject", Attributes(), "default"),
+            client.getStringAssignmentDetails("", "test-subject", Attributes(), "default"),
             std::runtime_error
         );
 
         // Switch back to graceful
-        client->setIsGracefulFailureMode(true);
-        auto result2 = client->getIntegerAssignmentDetails(
+        client.setIsGracefulFailureMode(true);
+        auto result2 = client.getIntegerAssignmentDetails(
             "",
             "test-subject",
             Attributes(),
@@ -494,17 +494,17 @@ TEST_CASE("Assignment Details - Graceful failure mode behavior", "[assignment-de
 }
 
 TEST_CASE("Assignment Details - Variation value in details", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Boolean variation value is present in details") {
         Attributes attrs;
         attrs["should_disable_feature"] = false;
 
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "boolean-false-assignment",
             "test-subject",
             attrs,
@@ -520,7 +520,7 @@ TEST_CASE("Assignment Details - Variation value in details", "[assignment-detail
     }
 
     SECTION("Numeric variation value is present in details") {
-        auto result = client->getNumericAssignmentDetails(
+        auto result = client.getNumericAssignmentDetails(
             "numeric_flag",
             "test-subject",
             Attributes(),
@@ -535,7 +535,7 @@ TEST_CASE("Assignment Details - Variation value in details", "[assignment-detail
     }
 
     SECTION("String variation value is present in details") {
-        auto result = client->getStringAssignmentDetails(
+        auto result = client.getStringAssignmentDetails(
             "empty_string_flag",
             "test-subject",
             Attributes(),
@@ -551,15 +551,15 @@ TEST_CASE("Assignment Details - Variation value in details", "[assignment-detail
 }
 
 TEST_CASE("Assignment Details - Multiple flags in sequence", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Can get details for multiple flags in sequence") {
         // Get boolean flag details
-        auto result1 = client->getBooleanAssignmentDetails(
+        auto result1 = client.getBooleanAssignmentDetails(
             "boolean-false-assignment",
             "user1",
             Attributes(),
@@ -569,7 +569,7 @@ TEST_CASE("Assignment Details - Multiple flags in sequence", "[assignment-detail
         CHECK(result1.evaluationDetails->flagKey == "boolean-false-assignment");
 
         // Get string flag details
-        auto result2 = client->getStringAssignmentDetails(
+        auto result2 = client.getStringAssignmentDetails(
             "kill-switch",
             "user2",
             Attributes(),
@@ -579,7 +579,7 @@ TEST_CASE("Assignment Details - Multiple flags in sequence", "[assignment-detail
         CHECK(result2.evaluationDetails->flagKey == "kill-switch");
 
         // Get numeric flag details
-        auto result3 = client->getNumericAssignmentDetails(
+        auto result3 = client.getNumericAssignmentDetails(
             "numeric_flag",
             "user3",
             Attributes(),
@@ -595,15 +595,15 @@ TEST_CASE("Assignment Details - Multiple flags in sequence", "[assignment-detail
 }
 
 TEST_CASE("Assignment Details - Empty flag key handling", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockLogger);
+    EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
     SECTION("Empty flag key in graceful mode returns default with details") {
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "",
             "test-subject",
             Attributes(),
@@ -620,12 +620,12 @@ TEST_CASE("Assignment Details - Empty flag key handling", "[assignment-details]"
 }
 
 TEST_CASE("Assignment Details - Assignment logging still works", "[assignment-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
     auto mockAssignmentLogger = std::make_shared<MockAssignmentLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, mockAssignmentLogger, nullptr, nullptr);
+    EppoClient client(configStore, mockAssignmentLogger, nullptr, nullptr);
 
     SECTION("Assignment events are still logged with details methods") {
         Attributes attrs;
@@ -633,7 +633,7 @@ TEST_CASE("Assignment Details - Assignment logging still works", "[assignment-de
 
         mockAssignmentLogger->clear();
 
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "boolean-false-assignment",
             "test-subject",
             attrs,

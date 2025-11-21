@@ -43,20 +43,20 @@ namespace {
 
 TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[graceful-failure]") {
     // Create a configuration store with empty config (no flags)
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     Configuration emptyConfig(ConfigResponse{});
-    configStore->setConfiguration(emptyConfig);
+    configStore.setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
 
     // Create client (graceful mode is enabled by default)
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockLogger);
+    EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
     Attributes attrs;
     attrs["test"] = std::string("value");
 
     SECTION("getBoolAssignment returns default value on empty subject key error") {
-        bool result = client->getBoolAssignment("test-flag", "", attrs, true);
+        bool result = client.getBoolAssignment("test-flag", "", attrs, true);
 
         // Should return default value
         CHECK(result == true);
@@ -75,7 +75,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
 
     SECTION("getNumericAssignment returns default value on empty subject key error") {
         mockLogger->clear();
-        double result = client->getNumericAssignment("test-flag", "", attrs, 42.5);
+        double result = client.getNumericAssignment("test-flag", "", attrs, 42.5);
 
         // Should return default value
         CHECK(result == 42.5);
@@ -94,7 +94,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
 
     SECTION("getIntegerAssignment returns default value on empty flag key error") {
         mockLogger->clear();
-        int64_t result = client->getIntegerAssignment("", "test-subject", attrs, 123);
+        int64_t result = client.getIntegerAssignment("", "test-subject", attrs, 123);
 
         // Should return default value
         CHECK(result == 123);
@@ -113,7 +113,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
 
     SECTION("getStringAssignment returns default value on empty flag key error") {
         mockLogger->clear();
-        std::string result = client->getStringAssignment("", "test-subject", attrs, "default");
+        std::string result = client.getStringAssignment("", "test-subject", attrs, "default");
 
         // Should return default value
         CHECK(result == "default");
@@ -133,7 +133,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
     SECTION("getJSONAssignment returns default value on empty subject key error") {
         mockLogger->clear();
         json defaultJson = {{"key", "value"}};
-        json result = client->getJSONAssignment("test-flag", "", attrs, defaultJson);
+        json result = client.getJSONAssignment("test-flag", "", attrs, defaultJson);
 
         // Should return default value
         CHECK(result == defaultJson);
@@ -153,7 +153,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
     SECTION("getSerializedJSONAssignment returns default value on empty subject key error") {
         mockLogger->clear();
         std::string defaultValue = R"({"default":"value"})";
-        std::string result = client->getSerializedJSONAssignment("test-flag", "", attrs, defaultValue);
+        std::string result = client.getSerializedJSONAssignment("test-flag", "", attrs, defaultValue);
 
         // Should return default value
         CHECK(result == defaultValue);
@@ -173,22 +173,22 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
 
 TEST_CASE("Graceful failure mode - Non-graceful mode (exceptions rethrown)", "[graceful-failure]") {
     // Create a configuration store with empty config
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     Configuration emptyConfig(ConfigResponse{});
-    configStore->setConfiguration(emptyConfig);
+    configStore.setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
 
     // Create client and disable graceful failure mode
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockLogger);
-    client->setIsGracefulFailureMode(false);
+    EppoClient client(configStore, nullptr, nullptr, mockLogger);
+    client.setIsGracefulFailureMode(false);
 
     Attributes attrs;
     attrs["test"] = std::string("value");
 
     SECTION("getBoolAssignment rethrows exception after logging") {
         REQUIRE_THROWS_AS(
-            client->getBoolAssignment("test-flag", "", attrs, true),
+            client.getBoolAssignment("test-flag", "", attrs, true),
             std::invalid_argument
         );
 
@@ -207,7 +207,7 @@ TEST_CASE("Graceful failure mode - Non-graceful mode (exceptions rethrown)", "[g
     SECTION("getNumericAssignment rethrows exception after logging") {
         mockLogger->clear();
         REQUIRE_THROWS_AS(
-            client->getNumericAssignment("test-flag", "", attrs, 42.5),
+            client.getNumericAssignment("test-flag", "", attrs, 42.5),
             std::invalid_argument
         );
 
@@ -226,7 +226,7 @@ TEST_CASE("Graceful failure mode - Non-graceful mode (exceptions rethrown)", "[g
     SECTION("getIntegerAssignment rethrows exception after logging") {
         mockLogger->clear();
         REQUIRE_THROWS_AS(
-            client->getIntegerAssignment("", "test-subject", attrs, 123),
+            client.getIntegerAssignment("", "test-subject", attrs, 123),
             std::invalid_argument
         );
 
@@ -245,7 +245,7 @@ TEST_CASE("Graceful failure mode - Non-graceful mode (exceptions rethrown)", "[g
     SECTION("getStringAssignment rethrows exception after logging") {
         mockLogger->clear();
         REQUIRE_THROWS_AS(
-            client->getStringAssignment("", "test-subject", attrs, "default"),
+            client.getStringAssignment("", "test-subject", attrs, "default"),
             std::invalid_argument
         );
 
@@ -265,7 +265,7 @@ TEST_CASE("Graceful failure mode - Non-graceful mode (exceptions rethrown)", "[g
         mockLogger->clear();
         json defaultJson = {{"key", "value"}};
         REQUIRE_THROWS_AS(
-            client->getJSONAssignment("test-flag", "", attrs, defaultJson),
+            client.getJSONAssignment("test-flag", "", attrs, defaultJson),
             std::invalid_argument
         );
 
@@ -285,7 +285,7 @@ TEST_CASE("Graceful failure mode - Non-graceful mode (exceptions rethrown)", "[g
         mockLogger->clear();
         std::string defaultValue = R"({"default":"value"})";
         REQUIRE_THROWS_AS(
-            client->getSerializedJSONAssignment("test-flag", "", attrs, defaultValue),
+            client.getSerializedJSONAssignment("test-flag", "", attrs, defaultValue),
             std::invalid_argument
         );
 
@@ -304,84 +304,84 @@ TEST_CASE("Graceful failure mode - Non-graceful mode (exceptions rethrown)", "[g
 
 TEST_CASE("Graceful failure mode - Toggling behavior", "[graceful-failure]") {
     // Create a configuration store with empty config
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     Configuration emptyConfig(ConfigResponse{});
-    configStore->setConfiguration(emptyConfig);
+    configStore.setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockLogger);
+    EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
     Attributes attrs;
     attrs["test"] = std::string("value");
 
     SECTION("Can toggle from graceful to non-graceful mode") {
         // Start in graceful mode (default) - trigger error with empty subject key
-        bool result1 = client->getBoolAssignment("test-flag", "", attrs, false);
+        bool result1 = client.getBoolAssignment("test-flag", "", attrs, false);
         CHECK(result1 == false);  // Returns default
 
         mockLogger->clear();
 
         // Switch to non-graceful mode
-        client->setIsGracefulFailureMode(false);
+        client.setIsGracefulFailureMode(false);
 
         // Now it should throw
         REQUIRE_THROWS_AS(
-            client->getBoolAssignment("test-flag", "", attrs, false),
+            client.getBoolAssignment("test-flag", "", attrs, false),
             std::invalid_argument
         );
     }
 
     SECTION("Can toggle from non-graceful to graceful mode") {
         // Switch to non-graceful mode
-        client->setIsGracefulFailureMode(false);
+        client.setIsGracefulFailureMode(false);
 
         // Should throw with empty subject key
         REQUIRE_THROWS_AS(
-            client->getBoolAssignment("test-flag", "", attrs, false),
+            client.getBoolAssignment("test-flag", "", attrs, false),
             std::invalid_argument
         );
 
         mockLogger->clear();
 
         // Switch back to graceful mode
-        client->setIsGracefulFailureMode(true);
+        client.setIsGracefulFailureMode(true);
 
         // Should return default now
-        bool result = client->getBoolAssignment("test-flag", "", attrs, true);
+        bool result = client.getBoolAssignment("test-flag", "", attrs, true);
         CHECK(result == true);
     }
 
     SECTION("Can toggle multiple times") {
         // Start graceful (default) - use empty subject key to trigger error
-        bool result1 = client->getBoolAssignment("test-flag", "", attrs, true);
+        bool result1 = client.getBoolAssignment("test-flag", "", attrs, true);
         CHECK(result1 == true);
 
         // Toggle to non-graceful
-        client->setIsGracefulFailureMode(false);
-        REQUIRE_THROWS(client->getBoolAssignment("test-flag", "", attrs, true));
+        client.setIsGracefulFailureMode(false);
+        REQUIRE_THROWS(client.getBoolAssignment("test-flag", "", attrs, true));
 
         // Toggle back to graceful
-        client->setIsGracefulFailureMode(true);
-        bool result2 = client->getBoolAssignment("test-flag", "", attrs, false);
+        client.setIsGracefulFailureMode(true);
+        bool result2 = client.getBoolAssignment("test-flag", "", attrs, false);
         CHECK(result2 == false);
 
         // Toggle to non-graceful again
-        client->setIsGracefulFailureMode(false);
-        REQUIRE_THROWS(client->getBoolAssignment("test-flag", "", attrs, true));
+        client.setIsGracefulFailureMode(false);
+        REQUIRE_THROWS(client.getBoolAssignment("test-flag", "", attrs, true));
     }
 }
 
 TEST_CASE("Graceful failure mode - Exception type preservation", "[graceful-failure]") {
     // Test that bare throw preserves the original exception type (std::invalid_argument)
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     Configuration emptyConfig(ConfigResponse{});
-    configStore->setConfiguration(emptyConfig);
+    configStore.setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockLogger);
-    client->setIsGracefulFailureMode(false);
+    EppoClient client(configStore, nullptr, nullptr, mockLogger);
+    client.setIsGracefulFailureMode(false);
 
     Attributes attrs;
     attrs["test"] = std::string("value");
@@ -389,7 +389,7 @@ TEST_CASE("Graceful failure mode - Exception type preservation", "[graceful-fail
     SECTION("Rethrown exception preserves original type (invalid_argument)") {
         try {
             // Empty subject key triggers std::invalid_argument
-            client->getBoolAssignment("test-flag", "", attrs, false);
+            client.getBoolAssignment("test-flag", "", attrs, false);
             FAIL("Should have thrown an exception");
         } catch (const std::invalid_argument& e) {
             // Successfully caught the specific exception type
@@ -402,18 +402,18 @@ TEST_CASE("Graceful failure mode - Exception type preservation", "[graceful-fail
 
 TEST_CASE("Graceful failure mode - Empty subject key errors", "[graceful-failure]") {
     // Create a working configuration store with empty config
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     Configuration emptyConfig(ConfigResponse{});
-    configStore->setConfiguration(emptyConfig);
+    configStore.setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockLogger);
+    EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
     Attributes attrs;
     attrs["test"] = std::string("value");
 
     SECTION("Empty subject key in graceful mode returns default") {
-        bool result = client->getBoolAssignment("test-flag", "", attrs, true);
+        bool result = client.getBoolAssignment("test-flag", "", attrs, true);
         CHECK(result == true);
 
         // Should have logged error
@@ -431,10 +431,10 @@ TEST_CASE("Graceful failure mode - Empty subject key errors", "[graceful-failure
 
     SECTION("Empty subject key in non-graceful mode throws") {
         mockLogger->clear();
-        client->setIsGracefulFailureMode(false);
+        client.setIsGracefulFailureMode(false);
 
         REQUIRE_THROWS_AS(
-            client->getBoolAssignment("test-flag", "", attrs, true),
+            client.getBoolAssignment("test-flag", "", attrs, true),
             std::invalid_argument
         );
 
@@ -445,18 +445,18 @@ TEST_CASE("Graceful failure mode - Empty subject key errors", "[graceful-failure
 
 TEST_CASE("Graceful failure mode - Empty flag key errors", "[graceful-failure]") {
     // Create a working configuration store with empty config
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     Configuration emptyConfig(ConfigResponse{});
-    configStore->setConfiguration(emptyConfig);
+    configStore.setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockLogger);
+    EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
     Attributes attrs;
     attrs["test"] = std::string("value");
 
     SECTION("Empty flag key in graceful mode returns default") {
-        bool result = client->getBoolAssignment("", "test-subject", attrs, false);
+        bool result = client.getBoolAssignment("", "test-subject", attrs, false);
         CHECK(result == false);
 
         // Should have logged error
@@ -474,10 +474,10 @@ TEST_CASE("Graceful failure mode - Empty flag key errors", "[graceful-failure]")
 
     SECTION("Empty flag key in non-graceful mode throws") {
         mockLogger->clear();
-        client->setIsGracefulFailureMode(false);
+        client.setIsGracefulFailureMode(false);
 
         REQUIRE_THROWS_AS(
-            client->getBoolAssignment("", "test-subject", attrs, false),
+            client.getBoolAssignment("", "test-subject", attrs, false),
             std::invalid_argument
         );
 

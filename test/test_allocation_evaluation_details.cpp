@@ -23,15 +23,15 @@ namespace {
 }
 
 TEST_CASE("Allocation Evaluation Details - BEFORE_START_TIME", "[allocation-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Flag with start date tracks time-based codes") {
         // The start-and-end-date-test flag has allocations with start times
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "start-and-end-date-test",
             "test-subject-before",
             Attributes(),
@@ -59,15 +59,15 @@ TEST_CASE("Allocation Evaluation Details - BEFORE_START_TIME", "[allocation-deta
 }
 
 TEST_CASE("Allocation Evaluation Details - AFTER_END_TIME", "[allocation-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Flag with time-based allocations tracks evaluation codes") {
         // The start-and-end-date-test flag has allocations with end times
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "start-and-end-date-test",
             "test-subject-after",
             Attributes(),
@@ -94,18 +94,18 @@ TEST_CASE("Allocation Evaluation Details - AFTER_END_TIME", "[allocation-details
 }
 
 TEST_CASE("Allocation Evaluation Details - FAILING_RULE", "[allocation-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Subject not matching allocation rules has FAILING_RULE code") {
         // Use a flag with rules - kill-switch has allocations with rules
         Attributes attrs;
         attrs["company_id"] = std::string("non-matching-company");
 
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "kill-switch",
             "test-subject",
             attrs,
@@ -132,7 +132,7 @@ TEST_CASE("Allocation Evaluation Details - FAILING_RULE", "[allocation-details]"
 
     SECTION("Subject matching rules shows MATCH code") {
         // Empty attributes should match the default allocation
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "kill-switch",
             "alice",
             Attributes(),
@@ -157,17 +157,17 @@ TEST_CASE("Allocation Evaluation Details - FAILING_RULE", "[allocation-details]"
 }
 
 TEST_CASE("Allocation Evaluation Details - TRAFFIC_EXPOSURE_MISS", "[allocation-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Subject not in traffic allocation has TRAFFIC_EXPOSURE_MISS code") {
         // Create a subject that passes rules but may not be in traffic split
         Attributes attrs;
 
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "kill-switch",
             "test-subject-not-in-traffic",
             attrs,
@@ -190,14 +190,14 @@ TEST_CASE("Allocation Evaluation Details - TRAFFIC_EXPOSURE_MISS", "[allocation-
 }
 
 TEST_CASE("Allocation Evaluation Details - Multiple allocations tracked", "[allocation-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("All allocations are evaluated and tracked") {
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "kill-switch",
             "alice",
             Attributes(),
@@ -234,7 +234,7 @@ TEST_CASE("Allocation Evaluation Details - Multiple allocations tracked", "[allo
     }
 
     SECTION("Allocation order positions are sequential") {
-        auto result = client->getStringAssignmentDetails(
+        auto result = client.getStringAssignmentDetails(
             "empty_string_flag",
             "test-subject",
             Attributes(),
@@ -252,14 +252,14 @@ TEST_CASE("Allocation Evaluation Details - Multiple allocations tracked", "[allo
 }
 
 TEST_CASE("Allocation Evaluation Details - First matching allocation wins", "[allocation-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("When multiple allocations match, first one is used") {
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "kill-switch",
             "alice",
             Attributes(),
@@ -287,14 +287,14 @@ TEST_CASE("Allocation Evaluation Details - First matching allocation wins", "[al
 }
 
 TEST_CASE("Allocation Evaluation Details - No allocations case", "[allocation-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Flag with no allocations has empty allocations list") {
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "no_allocations_flag",
             "test-subject",
             Attributes(),
@@ -313,17 +313,17 @@ TEST_CASE("Allocation Evaluation Details - No allocations case", "[allocation-de
 }
 
 TEST_CASE("Allocation Evaluation Details - Integer flag allocations", "[allocation-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Integer flags also track allocation details") {
         Attributes attrs;
         attrs["age"] = 25.0;
 
-        auto result = client->getIntegerAssignmentDetails(
+        auto result = client.getIntegerAssignmentDetails(
             "integer-flag",
             "alice",
             attrs,
@@ -348,16 +348,16 @@ TEST_CASE("Allocation Evaluation Details - Integer flag allocations", "[allocati
 }
 
 TEST_CASE("Allocation Evaluation Details - JSON flag allocations", "[allocation-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("JSON flags track allocation details") {
         json defaultJson = {{"default", "value"}};
 
-        auto result = client->getJsonAssignmentDetails(
+        auto result = client.getJsonAssignmentDetails(
             "json-config-flag",
             "test-subject-1",
             Attributes(),
@@ -375,14 +375,14 @@ TEST_CASE("Allocation Evaluation Details - JSON flag allocations", "[allocation-
 }
 
 TEST_CASE("Allocation Evaluation Details - Allocation key preserved", "[allocation-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Allocation keys are preserved in details") {
-        auto result = client->getBooleanAssignmentDetails(
+        auto result = client.getBooleanAssignmentDetails(
             "boolean-false-assignment",
             "test-subject",
             Attributes(),
