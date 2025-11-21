@@ -1,10 +1,10 @@
 #include "config_response.hpp"
 #include "rules.hpp"
 #include "time_utils.hpp"
-#include <stdexcept>
 #include <semver/semver.hpp>
 #include <sstream>
 #include <iomanip>
+#include <cstdlib>
 
 namespace eppoclient {
 
@@ -30,6 +30,10 @@ void to_json(nlohmann::json& j, const VariationType& vt) {
 }
 
 void from_json(const nlohmann::json& j, VariationType& vt) {
+    if (!j.is_string()) {
+        vt = VariationType::STRING; // Default
+        return;
+    }
     std::string typeStr = j.get<std::string>();
     if (typeStr == "STRING") {
         vt = VariationType::STRING;
@@ -42,7 +46,8 @@ void from_json(const nlohmann::json& j, VariationType& vt) {
     } else if (typeStr == "JSON") {
         vt = VariationType::JSON;
     } else {
-        throw std::runtime_error("Unknown variation type: " + typeStr);
+        // Unknown type, default to STRING
+        vt = VariationType::STRING;
     }
 }
 
@@ -102,6 +107,10 @@ void to_json(nlohmann::json& j, const Operator& op) {
 }
 
 void from_json(const nlohmann::json& j, Operator& op) {
+    if (!j.is_string()) {
+        op = Operator::ONE_OF; // Default
+        return;
+    }
     std::string opStr = j.get<std::string>();
     if (opStr == "IS_NULL") {
         op = Operator::IS_NULL;
@@ -122,16 +131,21 @@ void from_json(const nlohmann::json& j, Operator& op) {
     } else if (opStr == "LT") {
         op = Operator::LT;
     } else {
-        throw std::runtime_error("Unknown operator: " + opStr);
+        // Unknown operator, default to ONE_OF
+        op = Operator::ONE_OF;
     }
 }
 
 // Parse variation value based on type
-std::variant<std::string, int64_t, double, bool, nlohmann::json>
+// Returns std::nullopt if parsing fails
+std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>>
 parseVariationValue(const nlohmann::json& value, VariationType type) {
     switch (type) {
         case VariationType::STRING:
-            return value.get<std::string>();
+            if (value.is_string()) {
+                return value.get<std::string>();
+            }
+            return std::nullopt;
 
         case VariationType::INTEGER:
             if (value.is_number_integer()) {
@@ -142,29 +156,33 @@ parseVariationValue(const nlohmann::json& value, VariationType type) {
                 int64_t i = static_cast<int64_t>(d);
                 // If the float has a fractional part, it's not a valid integer
                 if (d != static_cast<double>(i)) {
-                    throw std::runtime_error("Cannot parse float with fractional part as integer");
+                    return std::nullopt;
                 }
                 return i;
             } else if (value.is_string()) {
-                try {
-                    return std::stoll(value.get<std::string>());
-                } catch (...) {
-                    throw std::runtime_error("Cannot parse string as integer");
+                const std::string& str = value.get<std::string>();
+                char* end = nullptr;
+                long long result = std::strtoll(str.c_str(), &end, 10);
+                if (end == str.c_str() || *end != '\0') {
+                    return std::nullopt;
                 }
+                return static_cast<int64_t>(result);
             }
-            throw std::runtime_error("Cannot parse value as integer");
+            return std::nullopt;
 
         case VariationType::NUMERIC:
             if (value.is_number()) {
                 return value.get<double>();
             } else if (value.is_string()) {
-                try {
-                    return std::stod(value.get<std::string>());
-                } catch (...) {
-                    throw std::runtime_error("Cannot parse string as numeric");
+                const std::string& str = value.get<std::string>();
+                char* end = nullptr;
+                double result = std::strtod(str.c_str(), &end);
+                if (end == str.c_str() || *end != '\0') {
+                    return std::nullopt;
                 }
+                return result;
             }
-            throw std::runtime_error("Cannot parse value as numeric");
+            return std::nullopt;
 
         case VariationType::BOOLEAN:
             if (value.is_boolean()) {
@@ -176,23 +194,24 @@ parseVariationValue(const nlohmann::json& value, VariationType type) {
                 } else if (str == "false" || str == "FALSE" || str == "False") {
                     return false;
                 }
-                throw std::runtime_error("Cannot parse string as boolean");
+                return std::nullopt;
             }
-            throw std::runtime_error("Cannot parse value as boolean");
+            return std::nullopt;
 
         case VariationType::JSON:
             // If the value is a string, parse it as JSON
             if (value.is_string()) {
-                try {
-                    return nlohmann::json::parse(value.get<std::string>());
-                } catch (const std::exception& e) {
-                    throw std::runtime_error("Cannot parse string as JSON: " + std::string(e.what()));
+                // With JSON_NOEXCEPTION, parse returns a discarded value on error
+                auto parsed = nlohmann::json::parse(value.get<std::string>(), nullptr, false);
+                if (parsed.is_discarded()) {
+                    return std::nullopt;
                 }
+                return parsed;
             }
             // Otherwise, return the value as-is (it's already a JSON object)
             return value;
     }
-    throw std::runtime_error("Unknown variation type");
+    return std::nullopt;
 }
 
 // ShardRange JSON conversion
@@ -242,11 +261,10 @@ Condition::Condition()
 void Condition::precompute() {
     // Try to parse as numeric value for performance
     numericValueValid = false;
-    try {
-        numericValue = toDouble(value);
+    auto numericResult = tryToDouble(value);
+    if (numericResult.has_value()) {
+        numericValue = *numericResult;
         numericValueValid = true;
-    } catch (...) {
-        // Not a numeric value, that's okay
     }
 
     // Try to parse as semantic version if operator indicates version comparison
@@ -256,15 +274,11 @@ void Condition::precompute() {
 
         // Try to parse the condition value as a semantic version
         if (value.is_string()) {
-            try {
-                auto version = std::make_shared<semver::version<>>();
-                auto result = semver::parse(value.get<std::string>(), *version);
-                if (result) {
-                    semVerValue = version;
-                    semVerValueValid = true;
-                }
-            } catch (...) {
-                // Not a valid semantic version, that's okay
+            auto version = std::make_shared<semver::version<>>();
+            auto result = semver::parse(value.get<std::string>(), *version);
+            if (result) {
+                semVerValue = version;
+                semVerValueValid = true;
             }
         }
     }
@@ -375,12 +389,11 @@ void FlagConfiguration::precompute() {
     parsedVariations.clear();
 
     for (const auto& [varKey, variation] : variations) {
-        try {
-            parsedVariations[varKey] = parseVariationValue(variation.value, variationType);
-        } catch (const std::exception& e) {
-            // Log error or handle gracefully
-            // For now, skip invalid variations
+        auto parsed = parseVariationValue(variation.value, variationType);
+        if (parsed.has_value()) {
+            parsedVariations[varKey] = *parsed;
         }
+        // Skip invalid variations
     }
 
     // Precompute conditions in all allocations

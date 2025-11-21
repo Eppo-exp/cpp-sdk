@@ -145,27 +145,8 @@ TEST_CASE("LruBanditLogger - timestamp and probabilities are not important", "[l
     CHECK(innerLogger->callCount() == 1);
 }
 
-TEST_CASE("LruBanditLogger - exceptions are not cached", "[lru][bandit-logger]") {
-    auto innerLogger = std::make_shared<MockBanditLogger>();
-    innerLogger->shouldThrow = true;
-    auto logger = NewLruBanditLogger(innerLogger, 1000);
-
-    BanditEvent event = createTestEvent();
-
-    CHECK_THROWS_AS(logger->logBanditAction(event), std::runtime_error);
-    CHECK_THROWS_AS(logger->logBanditAction(event), std::runtime_error);
-
-    // Should have tried to log twice since it wasn't cached
-    CHECK(innerLogger->callCount() == 0); // No successful logs
-}
-
-TEST_CASE("LruBanditLogger - constructor validation", "[lru][bandit-logger]") {
-
-    SECTION("throws on zero cache size") {
-        auto innerLogger = std::make_shared<MockBanditLogger>();
-        CHECK_THROWS_AS(
-            LruBanditLogger(innerLogger, 0),
-            std::invalid_argument
-        );
-    }
-}
+// Note: Tests for "exceptions are not cached" and "constructor validation" removed
+// since SDK no longer uses exceptions. Constructors now use assert() for precondition checks:
+// - inner logger must not be null
+// - cache size must be positive
+// If a user-provided logger throws an exception, it will propagate and terminate the program.

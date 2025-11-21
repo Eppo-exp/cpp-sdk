@@ -1,7 +1,7 @@
 # Compiler and flags
 CXX = g++
 CC = gcc
-CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -I. -Ithird_party -MMD -MP
+CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -I. -Ithird_party -MMD -MP -fno-exceptions -DJSON_NOEXCEPTION
 CFLAGS = -std=c99 -Wall -Wextra -Werror -I. -Ithird_party -MMD -MP
 LDFLAGS =
 
@@ -56,9 +56,9 @@ $(LIBRARY): $(LIB_OBJECTS) $(THIRD_PARTY_OBJECTS)
 	ar rcs $@ $^
 	@echo "Library built: $(LIBRARY)"
 
-# Build test runner executable
+# Build test runner executable (re-enable exceptions for Catch2)
 $(TEST_EXECUTABLE): $(LIBRARY) $(TEST_SOURCES) $(THIRD_PARTY_OBJECTS) | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $(TEST_SOURCES) $(THIRD_PARTY_OBJECTS) $(LIBRARY) $(LDFLAGS) -o $@
+	$(CXX) $(filter-out -fno-exceptions,$(CXXFLAGS)) -fexceptions $(TEST_SOURCES) $(THIRD_PARTY_OBJECTS) $(LIBRARY) $(LDFLAGS) -o $@
 	@echo "Test runner built: $(TEST_EXECUTABLE)"
 
 # Default target
@@ -140,8 +140,9 @@ run-assignment-details: $(EXAMPLE_ASSIGNMENT_DETAILS)
 .PHONY: run-example
 run-example:
 	@echo "Available examples:"
-	@echo "  1) bandits           - Demonstrates bandit functionality"
-	@echo "  2) flag_assignments  - Demonstrates flag assignment functionality"
+	@echo "  1) bandits            - Demonstrates bandit functionality"
+	@echo "  2) flag_assignments   - Demonstrates flag assignment functionality"
+	@echo "  3) assignment_details - Demonstrates evaluations with details"
 	@echo ""
 	@echo "Usage:"
 	@echo "  make run-bandits            - Run the bandits example"

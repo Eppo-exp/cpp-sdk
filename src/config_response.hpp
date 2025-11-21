@@ -31,7 +31,8 @@ std::string variationTypeToString(VariationType type);
 std::string detectVariationType(const std::variant<std::string, int64_t, double, bool, nlohmann::json>& variation);
 
 // Parse variation value based on type
-std::variant<std::string, int64_t, double, bool, nlohmann::json>
+// Returns std::nullopt if parsing fails
+std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>>
 parseVariationValue(const nlohmann::json& value, VariationType type);
 
 // Shard range structure

@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <variant>
+#include <optional>
 #include <nlohmann/json.hpp>
 #include "application_logger.hpp"
 
@@ -46,21 +47,21 @@ bool isOneOf(const AttributeValue& attributeValue, const std::vector<std::string
 bool isOne(const AttributeValue& attributeValue, const std::string& s);
 
 // Semantic version comparison
-// Returns true/false for comparison, or throws exception on error
+// Returns true/false for comparison
 bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValue,
                              Operator op);
 
 // Numeric comparison
-// Returns true/false for comparison, or throws exception on error
+// Returns true/false for comparison
 bool evaluateNumericCondition(double subjectValue, double conditionValue,
                               Operator op);
 
 // Type conversion utilities
-// Convert AttributeValue to double, throws exception on failure
-double toDouble(const AttributeValue& val);
+// Convert AttributeValue to double, returns std::nullopt on failure
+std::optional<double> tryToDouble(const AttributeValue& val);
 
-// Convert nlohmann::json to double (for use in config_response.cpp)
-double toDouble(const nlohmann::json& val);
+// Convert nlohmann::json to double (for use in config_response.cpp), returns std::nullopt on failure
+std::optional<double> tryToDouble(const nlohmann::json& val);
 
 // Helper to convert AttributeValue to string representation
 std::string attributeValueToString(const AttributeValue& value);
