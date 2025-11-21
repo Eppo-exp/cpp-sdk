@@ -6,95 +6,98 @@
 
 // Simple console-based assignment logger
 class ConsoleAssignmentLogger : public eppoclient::AssignmentLogger {
-public:
-    void logAssignment(const eppoclient::AssignmentEvent& event) override {
-        std::cout << "\n=== Assignment Log ===" << std::endl;
-        std::cout << "Experiment: " << event.experiment << std::endl;
-        std::cout << "Feature Flag: " << event.featureFlag << std::endl;
-        std::cout << "Allocation: " << event.allocation << std::endl;
-        std::cout << "Variation: " << event.variation << std::endl;
-        std::cout << "Subject: " << event.subject << std::endl;
-        std::cout << "Timestamp: " << event.timestamp << std::endl;
-
-        if (!event.subjectAttributes.empty()) {
-            std::cout << "Subject Attributes:" << std::endl;
-            for (const auto& [key, value] : event.subjectAttributes) {
-                std::cout << "  " << key << ": ";
-                std::visit([](const auto& v) {
-                    using T = std::decay_t<decltype(v)>;
-                    if constexpr (std::is_same_v<T, std::monostate>) {
-                        std::cout << "(none)";
-                    } else if constexpr (std::is_same_v<T, bool>) {
-                        std::cout << (v ? "true" : "false");
-                    } else {
-                        std::cout << v;
-                    }
-                }, value);
-                std::cout << std::endl;
+    public:
+        void logAssignment(const eppoclient::AssignmentEvent& event) override {
+            std::cout << "\n=== Assignment Log ===" << std::endl;
+            std::cout << "Experiment: " << event.experiment << std::endl;
+            std::cout << "Feature Flag: " << event.featureFlag << std::endl;
+            std::cout << "Allocation: " << event.allocation << std::endl;
+            std::cout << "Variation: " << event.variation << std::endl;
+            std::cout << "Subject: " << event.subject << std::endl;
+            std::cout << "Timestamp: " << event.timestamp << std::endl;
+    
+            if (!event.subjectAttributes.empty()) {
+                std::cout << "Subject Attributes:" << std::endl;
+                for (const auto& [key, value] : event.subjectAttributes) {
+                    std::cout << "  " << key << ": ";
+                    std::visit([](const auto& v) {
+                        using T = std::decay_t<decltype(v)>;
+                        if constexpr (std::is_same_v<T, std::monostate>) {
+                            std::cout << "(none)";
+                        } else if constexpr (std::is_same_v<T, bool>) {
+                            std::cout << (v ? "true" : "false");
+                        } else {
+                            std::cout << v;
+                        }
+                    }, value);
+                    std::cout << std::endl;
+                }
             }
-        }
-
-        if (!event.metaData.empty()) {
-            std::cout << "Metadata:" << std::endl;
-            for (const auto& [key, value] : event.metaData) {
-                std::cout << "  " << key << ": " << value << std::endl;
+    
+            if (!event.metaData.empty()) {
+                std::cout << "Metadata:" << std::endl;
+                for (const auto& [key, value] : event.metaData) {
+                    std::cout << "  " << key << ": " << value << std::endl;
+                }
             }
+            std::cout << "=====================\n" << std::endl;
         }
-        std::cout << "=====================\n" << std::endl;
+    };
+    
+    // Simple console-based application logger
+    class ConsoleApplicationLogger : public eppoclient::ApplicationLogger {
+    public:
+        void debug(const std::string& message) override {
+            std::cout << "[DEBUG] " << message << std::endl;
+        }
+    
+        void info(const std::string& message) override {
+            std::cout << "[INFO] " << message << std::endl;
+        }
+    
+        void warn(const std::string& message) override {
+            std::cout << "[WARN] " << message << std::endl;
+        }
+    
+        void error(const std::string& message) override {
+            std::cerr << "[ERROR] " << message << std::endl;
+        }
+    };
+    
+    // Helper function to load flags configuration from JSON file
+    bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigResponse& response) {
+        std::ifstream file(filepath);
+        if (!file.is_open()) {
+            std::cerr << "Failed to open flags configuration file: " << filepath << std::endl;
+            return false;
+        }
+    
+        nlohmann::json j;
+        file >> j;
+    
+        response = j;
+        return true;
     }
-};
-
-// Simple console-based application logger
-class ConsoleApplicationLogger : public eppoclient::ApplicationLogger {
-public:
-    void debug(const std::string& message) override {
-        std::cout << "[DEBUG] " << message << std::endl;
-    }
-
-    void info(const std::string& message) override {
-        std::cout << "[INFO] " << message << std::endl;
-    }
-
-    void warn(const std::string& message) override {
-        std::cout << "[WARN] " << message << std::endl;
-    }
-
-    void error(const std::string& message) override {
-        std::cerr << "[ERROR] " << message << std::endl;
-    }
-};
-
-// Helper function to load flags configuration from JSON file
-eppoclient::ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
-    std::ifstream file(filepath);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open flags configuration file: " + filepath);
-    }
-
-    nlohmann::json j;
-    file >> j;
-
-    eppoclient::ConfigResponse response = j;
-    return response;
-}
-
-int main() {
-    try {
+    
+    int main() {
         // Load the flags configuration
         std::cout << "Loading flags configuration..." << std::endl;
-        eppoclient::ConfigResponse ufc = loadFlagsConfiguration("config/flags-v1.json");
-
+        eppoclient::ConfigResponse ufc;
+        if (!loadFlagsConfiguration("config/flags-v1.json", ufc)) {
+            return 1;
+        }
+    
         // Create configuration store and set the configuration
         eppoclient::ConfigurationStore configStore;
         configStore.setConfiguration(eppoclient::Configuration(ufc));
-
+    
         // Create assignment logger and application logger
         auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();
         auto applicationLogger = std::make_shared<ConsoleApplicationLogger>();
-
+    
         // Create EppoClient with all parameters (nullptr for banditLogger since this example doesn't use bandits)
         eppoclient::EppoClient client(configStore, assignmentLogger, nullptr, applicationLogger);
-
+    
         // Test 1: No matching attributes (should use default value, no assignment log)
         std::cout << "\n=== Test 1: No matching attributes ===" << std::endl;
         eppoclient::Attributes attributes1;
@@ -110,7 +113,7 @@ int main() {
         } else {
             std::cout << "Hello World!" << std::endl;
         }
-
+    
         // Test 2: should_disable_feature = false (should match allocation, log assignment)
         std::cout << "\n=== Test 2: should_disable_feature = false ===" << std::endl;
         eppoclient::Attributes attributes2;
@@ -126,7 +129,7 @@ int main() {
         } else {
             std::cout << "Hello World!" << std::endl;
         }
-
+    
         // Test 3: should_disable_feature = true (should match allocation, log assignment)
         std::cout << "\n=== Test 3: should_disable_feature = true ===" << std::endl;
         eppoclient::Attributes attributes3;
@@ -142,7 +145,7 @@ int main() {
         } else {
             std::cout << "Hello World!" << std::endl;
         }
-
+    
         // Test 4: getSerializedJSONAssignment (should match allocation, log assignment, return JSON string)
         std::cout << "\n=== Test 4: getSerializedJSONAssignment ===" << std::endl;
         eppoclient::Attributes attributes4;
@@ -153,22 +156,15 @@ int main() {
             attributes4,
             "{\"integer\": 0, \"string\": \"default\", \"float\": 0.0}"
         );
-
+    
         // Parse the returned JSON string
-        try {
-            nlohmann::json jsonObj = nlohmann::json::parse(jsonResult);
-            std::cout << "Received JSON assignment: " << jsonResult << std::endl;
-            std::cout << "Parsed values:" << std::endl;
-            std::cout << "  integer: " << jsonObj["integer"] << std::endl;
-            std::cout << "  string: " << jsonObj["string"] << std::endl;
-            std::cout << "  float: " << jsonObj["float"] << std::endl;
-        } catch (const std::exception& e) {
-            std::cerr << "Failed to parse JSON: " << e.what() << std::endl;
-        }
-
+        nlohmann::json jsonObj = nlohmann::json::parse(jsonResult);
+        std::cout << "Received JSON assignment: " << jsonResult << std::endl;
+        std::cout << "Parsed values:" << std::endl;
+        std::cout << "  integer: " << jsonObj["integer"] << std::endl;
+        std::cout << "  string: " << jsonObj["string"] << std::endl;
+        std::cout << "  float: " << jsonObj["float"] << std::endl;
+    
         return 0;
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
     }
-}
+    
