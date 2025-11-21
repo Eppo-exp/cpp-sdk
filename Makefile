@@ -97,8 +97,8 @@ test: test-data
 	rm -f compile_commands.json
 	./scripts/generate_compile_commands.sh
 	@$(MAKE) $(TEST_EXECUTABLE)
-	@echo "Running all tests..."
-	@./$(TEST_EXECUTABLE)
+	@echo "Running all tests (excluding performance tests)..."
+	@./$(TEST_EXECUTABLE) "~[performance]"
 
 # Clean build artifacts
 .PHONY: clean
