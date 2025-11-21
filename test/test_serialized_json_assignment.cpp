@@ -265,28 +265,18 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         // Should return the default value because of type mismatch
         CHECK(result == defaultValue);
 
-        // Should have logged a warning from getAssignment and an error from the catch block
+        // Should have logged a warning for type verification failure
         REQUIRE(mockLogger->warnMessages.size() == 1);
-        REQUIRE(mockLogger->errorMessages.size() == 1);
 
-        // Verify the warning message (from getAssignment's type verification)
+        // Verify the warning message contains type mismatch info
         std::string warnMsg = mockLogger->warnMessages[0];
         INFO("Warning message: " << warnMsg);
         CHECK(warnMsg.find("Failed to verify flag type") != std::string::npos);
-        CHECK(warnMsg.find("unexpected variation type") != std::string::npos);
-
-        // Verify the error message format (from getSerializedJSONAssignment's catch block)
-        std::string errorMsg = mockLogger->errorMessages[0];
-        INFO("Error message: " << errorMsg);
-        CHECK(errorMsg.find("Error in getSerializedJSONAssignment") != std::string::npos);
-        CHECK(errorMsg.find("unexpected variation type") != std::string::npos);
-
-        // The message also includes expected type (JSON) and actual type (INTEGER)
-        CHECK(errorMsg.find("expected: JSON") != std::string::npos);
-        CHECK(errorMsg.find("actual: INTEGER") != std::string::npos);
+        CHECK(warnMsg.find("expected: JSON") != std::string::npos);
+        CHECK(warnMsg.find("actual: INTEGER") != std::string::npos);
     }
 
-    SECTION("Calling getSerializedJSONAssignment on a STRING flag logs type mismatch error") {
+    SECTION("Calling getSerializedJSONAssignment on a STRING flag logs type mismatch warning") {
         mockLogger->clear();
 
         Attributes attrs;
@@ -305,19 +295,15 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         // Should return the default value because of type mismatch
         CHECK(result == defaultValue);
 
-        // Should have logged a warning and an error
+        // Should have logged a warning for type verification failure
         REQUIRE(mockLogger->warnMessages.size() == 1);
-        REQUIRE(mockLogger->errorMessages.size() == 1);
 
-        // Verify the error message format
-        std::string errorMsg = mockLogger->errorMessages[0];
-        INFO("Error message: " << errorMsg);
-
-        CHECK(errorMsg.find("Error in getSerializedJSONAssignment") != std::string::npos);
-        CHECK(errorMsg.find("unexpected variation type") != std::string::npos);
-        // expected: JSON, actual: STRING
-        CHECK(errorMsg.find("expected: JSON") != std::string::npos);
-        CHECK(errorMsg.find("actual: STRING") != std::string::npos);
+        // Verify the warning message contains type mismatch info
+        std::string warnMsg = mockLogger->warnMessages[0];
+        INFO("Warning message: " << warnMsg);
+        CHECK(warnMsg.find("Failed to verify flag type") != std::string::npos);
+        CHECK(warnMsg.find("expected: JSON") != std::string::npos);
+        CHECK(warnMsg.find("actual: STRING") != std::string::npos);
     }
 
     SECTION("Calling getSerializedJSONAssignment on a BOOLEAN flag logs type mismatch error") {
@@ -338,22 +324,19 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         // Should return the default value because of type mismatch
         CHECK(result == defaultValue);
 
-        // Should have logged a warning and an error
+        // Should have logged a warning for type verification failure
         REQUIRE(mockLogger->warnMessages.size() == 1);
-        REQUIRE(mockLogger->errorMessages.size() == 1);
 
-        // Verify the error message format
-        std::string errorMsg = mockLogger->errorMessages[0];
-        INFO("Error message: " << errorMsg);
+        // Verify the warning message contains type mismatch info
+        std::string warnMsg = mockLogger->warnMessages[0];
+        INFO("Warning message: " << warnMsg);
 
-        CHECK(errorMsg.find("Error in getSerializedJSONAssignment") != std::string::npos);
-        CHECK(errorMsg.find("unexpected variation type") != std::string::npos);
-        // expected: JSON, actual: BOOLEAN
-        CHECK(errorMsg.find("expected: JSON") != std::string::npos);
-        CHECK(errorMsg.find("actual: BOOLEAN") != std::string::npos);
+        CHECK(warnMsg.find("Failed to verify flag type") != std::string::npos);
+        CHECK(warnMsg.find("expected: JSON") != std::string::npos);
+        CHECK(warnMsg.find("actual: BOOLEAN") != std::string::npos);
     }
 
-    SECTION("Calling getSerializedJSONAssignment on a NUMERIC flag logs type mismatch error") {
+    SECTION("Calling getSerializedJSONAssignment on a NUMERIC flag logs type mismatch warning") {
         mockLogger->clear();
 
         Attributes attrs;
@@ -371,19 +354,16 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         // Should return the default value because of type mismatch
         CHECK(result == defaultValue);
 
-        // Should have logged a warning and an error
+        // Should have logged a warning for type verification failure
         REQUIRE(mockLogger->warnMessages.size() == 1);
-        REQUIRE(mockLogger->errorMessages.size() == 1);
 
-        // Verify the error message format
-        std::string errorMsg = mockLogger->errorMessages[0];
-        INFO("Error message: " << errorMsg);
+        // Verify the warning message contains type mismatch info
+        std::string warnMsg = mockLogger->warnMessages[0];
+        INFO("Warning message: " << warnMsg);
 
-        CHECK(errorMsg.find("Error in getSerializedJSONAssignment") != std::string::npos);
-        CHECK(errorMsg.find("unexpected variation type") != std::string::npos);
-        // expected: JSON, actual: NUMERIC
-        CHECK(errorMsg.find("expected: JSON") != std::string::npos);
-        CHECK(errorMsg.find("actual: NUMERIC") != std::string::npos);
+        CHECK(warnMsg.find("Failed to verify flag type") != std::string::npos);
+        CHECK(warnMsg.find("expected: JSON") != std::string::npos);
+        CHECK(warnMsg.find("actual: NUMERIC") != std::string::npos);
     }
 
     SECTION("Calling getSerializedJSONAssignment on a JSON flag does NOT log errors") {
