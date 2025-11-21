@@ -87,21 +87,21 @@ int main() {
         eppoclient::ConfigResponse ufc = loadFlagsConfiguration("config/flags-v1.json");
 
         // Create configuration store and set the configuration
-        auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
-        configStore->setConfiguration(eppoclient::Configuration(ufc));
+        eppoclient::ConfigurationStore configStore;
+        configStore.setConfiguration(eppoclient::Configuration(ufc));
 
         // Create assignment logger and application logger
         auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();
         auto applicationLogger = std::make_shared<ConsoleApplicationLogger>();
 
         // Create EppoClient
-        auto client = std::make_shared<eppoclient::EppoClient>(configStore, assignmentLogger, nullptr, applicationLogger);
+        eppoclient::EppoClient client(configStore, assignmentLogger, nullptr, applicationLogger);
 
         // Example 1: Boolean assignment with details
         std::cout << "\n=== Example 1: Boolean Assignment with Details ===" << std::endl;
         eppoclient::Attributes attributes1;
         attributes1["should_disable_feature"] = false;
-        auto result1 = client->getBooleanAssignmentDetails(
+        auto result1 = client.getBooleanAssignmentDetails(
             "boolean-false-assignment",
             "user-123",
             attributes1,
@@ -115,7 +115,7 @@ int main() {
         // Example 2: String assignment with details
         std::cout << "\n=== Example 2: String Assignment with Details ===" << std::endl;
         eppoclient::Attributes attributes2;
-        auto result2 = client->getStringAssignmentDetails(
+        auto result2 = client.getStringAssignmentDetails(
             "kill-switch",
             "user-456",
             attributes2,
@@ -130,7 +130,7 @@ int main() {
         std::cout << "\n=== Example 3: Integer Assignment with Details ===" << std::endl;
         eppoclient::Attributes attributes3;
         attributes3["age"] = 25.0;
-        auto result3 = client->getIntegerAssignmentDetails(
+        auto result3 = client.getIntegerAssignmentDetails(
             "integer-flag",
             "user-789",
             attributes3,
@@ -144,7 +144,7 @@ int main() {
         // Example 4: Numeric assignment with details
         std::cout << "\n=== Example 4: Numeric Assignment with Details ===" << std::endl;
         eppoclient::Attributes attributes4;
-        auto result4 = client->getNumericAssignmentDetails(
+        auto result4 = client.getNumericAssignmentDetails(
             "numeric_flag",
             "user-999",
             attributes4,
@@ -157,7 +157,7 @@ int main() {
 
         // Example 5: Non-existent flag (demonstrates error handling)
         std::cout << "\n=== Example 5: Non-existent Flag ===" << std::endl;
-        auto result5 = client->getStringAssignmentDetails(
+        auto result5 = client.getStringAssignmentDetails(
             "non-existent-flag",
             "user-404",
             eppoclient::Attributes(),

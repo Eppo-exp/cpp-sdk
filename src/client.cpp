@@ -9,7 +9,7 @@ namespace eppoclient {
 // EppoClient Implementation
 // ============================================================================
 
-EppoClient::EppoClient(std::shared_ptr<ConfigurationStore> configStore,
+EppoClient::EppoClient(ConfigurationStore& configStore,
                        std::shared_ptr<AssignmentLogger> assignmentLogger,
                        std::shared_ptr<BanditLogger> banditLogger,
                        std::shared_ptr<ApplicationLogger> applicationLogger)
@@ -24,7 +24,7 @@ bool EppoClient::getBoolAssignment(const std::string& flagKey,
                                    const Attributes& subjectAttributes,
                                    bool defaultValue) {
     try {
-        Configuration config = configurationStore_->getConfiguration();
+        Configuration config = configurationStore_.getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::BOOLEAN);
         return extractVariation(variation, flagKey, VariationType::BOOLEAN, defaultValue);
     } catch (const std::exception& e) {
@@ -41,7 +41,7 @@ double EppoClient::getNumericAssignment(const std::string& flagKey,
                                         const Attributes& subjectAttributes,
                                         double defaultValue) {
     try {
-        Configuration config = configurationStore_->getConfiguration();
+        Configuration config = configurationStore_.getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::NUMERIC);
         return extractVariation(variation, flagKey, VariationType::NUMERIC, defaultValue);
     } catch (const std::exception& e) {
@@ -58,7 +58,7 @@ int64_t EppoClient::getIntegerAssignment(const std::string& flagKey,
                                          const Attributes& subjectAttributes,
                                          int64_t defaultValue) {
     try {
-        Configuration config = configurationStore_->getConfiguration();
+        Configuration config = configurationStore_.getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::INTEGER);
         return extractVariation(variation, flagKey, VariationType::INTEGER, defaultValue);
     } catch (const std::exception& e) {
@@ -75,7 +75,7 @@ std::string EppoClient::getStringAssignment(const std::string& flagKey,
                                            const Attributes& subjectAttributes,
                                            const std::string& defaultValue) {
     try {
-        Configuration config = configurationStore_->getConfiguration();
+        Configuration config = configurationStore_.getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::STRING);
         return extractVariation(variation, flagKey, VariationType::STRING, defaultValue);
     } catch (const std::exception& e) {
@@ -92,7 +92,7 @@ nlohmann::json EppoClient::getJSONAssignment(const std::string& flagKey,
                                             const Attributes& subjectAttributes,
                                             const nlohmann::json& defaultValue) {
     try {
-        Configuration config = configurationStore_->getConfiguration();
+        Configuration config = configurationStore_.getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
         return extractVariation(variation, flagKey, VariationType::JSON, defaultValue);
     } catch (const std::exception& e) {
@@ -109,7 +109,7 @@ std::string EppoClient::getSerializedJSONAssignment(const std::string& flagKey,
                                                    const Attributes& subjectAttributes,
                                                    const std::string& defaultValue) {
     try {
-        Configuration config = configurationStore_->getConfiguration();
+        Configuration config = configurationStore_.getConfiguration();
         auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
 
         if (!variation.has_value()) {
@@ -219,7 +219,7 @@ BanditResult EppoClient::getBanditAction(const std::string& flagKey,
                                         const std::map<std::string, ContextAttributes>& actions,
                                         const std::string& defaultVariation) {
                                             
-    Configuration config = configurationStore_->getConfiguration();
+    Configuration config = configurationStore_.getConfiguration();
 
     // Ignoring the error here as we can always proceed with default variation
     std::string variation = defaultVariation;
@@ -299,7 +299,7 @@ EvaluationResult<std::string> EppoClient::getBanditActionDetails(
     }
 
     // Get configuration for bandit operations
-    Configuration config = configurationStore_->getConfiguration();
+    Configuration config = configurationStore_.getConfiguration();
 
     // Get bandit variation
     BanditVariation banditVariation;

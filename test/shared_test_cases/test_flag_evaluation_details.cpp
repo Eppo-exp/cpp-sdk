@@ -283,13 +283,13 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
     config.precompute();
 
     // Create client with configuration
-    auto configStore = std::make_shared<ConfigurationStore>();
-    configStore->setConfiguration(config);
+    ConfigurationStore configStore;
+    configStore.setConfiguration(config);
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr);
 
     // Enable graceful failure mode to get evaluation details even on errors
-    client->setIsGracefulFailureMode(true);
+    client.setIsGracefulFailureMode(true);
 
     // Load all test cases
     std::string testCasesDir = "test/data/ufc/tests";
@@ -317,7 +317,7 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
                     switch (testCase.variationType) {
                         case VariationType::BOOLEAN: {
                             bool defaultVal = testCase.defaultValue.get<bool>();
-                            auto result = client->getBooleanAssignmentDetails(
+                            auto result = client.getBooleanAssignmentDetails(
                                 testCase.flag,
                                 subject.subjectKey,
                                 subject.subjectAttributes,
@@ -343,7 +343,7 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
 
                         case VariationType::STRING: {
                             std::string defaultVal = testCase.defaultValue.get<std::string>();
-                            auto result = client->getStringAssignmentDetails(
+                            auto result = client.getStringAssignmentDetails(
                                 testCase.flag,
                                 subject.subjectKey,
                                 subject.subjectAttributes,
@@ -369,7 +369,7 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
 
                         case VariationType::INTEGER: {
                             int64_t defaultVal = testCase.defaultValue.get<int64_t>();
-                            auto result = client->getIntegerAssignmentDetails(
+                            auto result = client.getIntegerAssignmentDetails(
                                 testCase.flag,
                                 subject.subjectKey,
                                 subject.subjectAttributes,
@@ -395,7 +395,7 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
 
                         case VariationType::NUMERIC: {
                             double defaultVal = testCase.defaultValue.get<double>();
-                            auto result = client->getNumericAssignmentDetails(
+                            auto result = client.getNumericAssignmentDetails(
                                 testCase.flag,
                                 subject.subjectKey,
                                 subject.subjectAttributes,
@@ -421,7 +421,7 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
 
                         case VariationType::JSON: {
                             json defaultVal = testCase.defaultValue;
-                            auto result = client->getJsonAssignmentDetails(
+                            auto result = client.getJsonAssignmentDetails(
                                 testCase.flag,
                                 subject.subjectKey,
                                 subject.subjectAttributes,

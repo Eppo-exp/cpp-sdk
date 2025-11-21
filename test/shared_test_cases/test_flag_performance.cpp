@@ -195,9 +195,9 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
 
     // Create client with configuration
     std::cout << "Creating client...\n";
-    auto configStore = std::make_shared<ConfigurationStore>();
-    configStore->setConfiguration(config);
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr);
+    ConfigurationStore configStore;
+    configStore.setConfiguration(config);
+    EppoClient client(configStore, nullptr, nullptr);
     std::cout << "Client created\n";
 
     // Load all test cases
@@ -253,27 +253,27 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
                 switch (testCase.variationType) {
                     case VariationType::BOOLEAN: {
                         bool defaultVal = testCase.defaultValue.get<bool>();
-                        client->getBoolAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                        client.getBoolAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
                         break;
                     }
                     case VariationType::STRING: {
                         std::string defaultVal = testCase.defaultValue.get<std::string>();
-                        client->getStringAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                        client.getStringAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
                         break;
                     }
                     case VariationType::INTEGER: {
                         int64_t defaultVal = testCase.defaultValue.get<int64_t>();
-                        client->getIntegerAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                        client.getIntegerAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
                         break;
                     }
                     case VariationType::NUMERIC: {
                         double defaultVal = testCase.defaultValue.get<double>();
-                        client->getNumericAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                        client.getNumericAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
                         break;
                     }
                     case VariationType::JSON: {
                         json defaultVal = testCase.defaultValue;
-                        client->getJSONAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                        client.getJSONAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
                         break;
                     }
                 }
@@ -302,27 +302,27 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
             switch (testCase.variationType) {
                 case VariationType::BOOLEAN: {
                     bool defaultVal = testCase.defaultValue.get<bool>();
-                    client->getBoolAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                    client.getBoolAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
                     break;
                 }
                 case VariationType::STRING: {
                     std::string defaultVal = testCase.defaultValue.get<std::string>();
-                    client->getStringAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                    client.getStringAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
                     break;
                 }
                 case VariationType::INTEGER: {
                     int64_t defaultVal = testCase.defaultValue.get<int64_t>();
-                    client->getIntegerAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                    client.getIntegerAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
                     break;
                 }
                 case VariationType::NUMERIC: {
                     double defaultVal = testCase.defaultValue.get<double>();
-                    client->getNumericAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                    client.getNumericAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
                     break;
                 }
                 case VariationType::JSON: {
                     json defaultVal = testCase.defaultValue;
-                    client->getJSONAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                    client.getJSONAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
                     break;
                 }
             }

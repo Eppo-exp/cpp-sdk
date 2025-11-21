@@ -69,14 +69,14 @@ namespace {
 }
 
 TEST_CASE("Bandit Action Details - getBanditActionDetails with actions", "[bandit-action-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
     auto mockBanditLogger = std::make_shared<MockBanditLogger>();
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, mockBanditLogger, mockAppLogger);
+    EppoClient client(configStore, nullptr, mockBanditLogger, mockAppLogger);
 
     SECTION("Successful bandit action with details") {
         ContextAttributes subjectAttrs;
@@ -91,7 +91,7 @@ TEST_CASE("Bandit Action Details - getBanditActionDetails with actions", "[bandi
 
         mockBanditLogger->clear();
 
-        auto result = client->getBanditActionDetails(
+        auto result = client.getBanditActionDetails(
             "banner_bandit_flag",
             "test-subject",
             subjectAttrs,
@@ -127,7 +127,7 @@ TEST_CASE("Bandit Action Details - getBanditActionDetails with actions", "[bandi
         actions["action1"] = ContextAttributes();
         actions["action2"] = ContextAttributes();
 
-        auto result = client->getBanditActionDetails(
+        auto result = client.getBanditActionDetails(
             "banner_bandit_flag",
             "test-subject",
             subjectAttrs,
@@ -145,12 +145,12 @@ TEST_CASE("Bandit Action Details - getBanditActionDetails with actions", "[bandi
 }
 
 TEST_CASE("Bandit Action Details - No actions supplied", "[bandit-action-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
     auto mockBanditLogger = std::make_shared<MockBanditLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, mockBanditLogger, nullptr);
+    EppoClient client(configStore, nullptr, mockBanditLogger, nullptr);
 
     SECTION("No actions returns variation with NO_ACTIONS_SUPPLIED code") {
         ContextAttributes subjectAttrs;
@@ -158,7 +158,7 @@ TEST_CASE("Bandit Action Details - No actions supplied", "[bandit-action-details
 
         mockBanditLogger->clear();
 
-        auto result = client->getBanditActionDetails(
+        auto result = client.getBanditActionDetails(
             "banner_bandit_flag",
             "test-subject",
             subjectAttrs,
@@ -182,11 +182,11 @@ TEST_CASE("Bandit Action Details - No actions supplied", "[bandit-action-details
 }
 
 TEST_CASE("Bandit Action Details - Non-bandit variation", "[bandit-action-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Non-bandit flag returns NON_BANDIT_VARIATION code") {
         ContextAttributes subjectAttrs;
@@ -194,7 +194,7 @@ TEST_CASE("Bandit Action Details - Non-bandit variation", "[bandit-action-detail
         actions["action1"] = ContextAttributes();
 
         // Use a non-bandit flag
-        auto result = client->getBanditActionDetails(
+        auto result = client.getBanditActionDetails(
             "non_bandit_flag",
             "test-subject",
             subjectAttrs,
@@ -214,18 +214,18 @@ TEST_CASE("Bandit Action Details - Non-bandit variation", "[bandit-action-detail
 }
 
 TEST_CASE("Bandit Action Details - Non-existent flag", "[bandit-action-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Non-existent flag returns default with FLAG_UNRECOGNIZED_OR_DISABLED") {
         ContextAttributes subjectAttrs;
         std::map<std::string, ContextAttributes> actions;
         actions["action1"] = ContextAttributes();
 
-        auto result = client->getBanditActionDetails(
+        auto result = client.getBanditActionDetails(
             "non-existent-bandit-flag",
             "test-subject",
             subjectAttrs,
@@ -242,11 +242,11 @@ TEST_CASE("Bandit Action Details - Non-existent flag", "[bandit-action-details]"
 }
 
 TEST_CASE("Bandit Action Details - Bandit key in details", "[bandit-action-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Bandit key is included in evaluation details") {
         ContextAttributes subjectAttrs;
@@ -254,7 +254,7 @@ TEST_CASE("Bandit Action Details - Bandit key in details", "[bandit-action-detai
         actions["action1"] = ContextAttributes();
         actions["action2"] = ContextAttributes();
 
-        auto result = client->getBanditActionDetails(
+        auto result = client.getBanditActionDetails(
             "banner_bandit_flag",
             "test-subject",
             subjectAttrs,
@@ -274,11 +274,11 @@ TEST_CASE("Bandit Action Details - Bandit key in details", "[bandit-action-detai
 }
 
 TEST_CASE("Bandit Action Details - Multiple calls preserve details", "[bandit-action-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Multiple bandit calls produce independent details") {
         ContextAttributes subjectAttrs1, subjectAttrs2;
@@ -289,7 +289,7 @@ TEST_CASE("Bandit Action Details - Multiple calls preserve details", "[bandit-ac
         actions["action1"] = ContextAttributes();
         actions["action2"] = ContextAttributes();
 
-        auto result1 = client->getBanditActionDetails(
+        auto result1 = client.getBanditActionDetails(
             "banner_bandit_flag",
             "user1",
             subjectAttrs1,
@@ -297,7 +297,7 @@ TEST_CASE("Bandit Action Details - Multiple calls preserve details", "[bandit-ac
             "default"
         );
 
-        auto result2 = client->getBanditActionDetails(
+        auto result2 = client.getBanditActionDetails(
             "banner_bandit_flag",
             "user2",
             subjectAttrs2,
@@ -322,17 +322,17 @@ TEST_CASE("Bandit Action Details - Multiple calls preserve details", "[bandit-ac
 }
 
 TEST_CASE("Bandit Action Details - Empty subject key handling", "[bandit-action-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Empty subject key returns default with error details") {
         std::map<std::string, ContextAttributes> actions;
         actions["action1"] = ContextAttributes();
 
-        auto result = client->getBanditActionDetails(
+        auto result = client.getBanditActionDetails(
             "banner_bandit_flag",
             "",  // Empty subject key
             ContextAttributes(),
@@ -349,11 +349,11 @@ TEST_CASE("Bandit Action Details - Empty subject key handling", "[bandit-action-
 }
 
 TEST_CASE("Bandit Action Details - Variation and action consistency", "[bandit-action-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Returned action matches action in evaluation details") {
         ContextAttributes subjectAttrs;
@@ -361,7 +361,7 @@ TEST_CASE("Bandit Action Details - Variation and action consistency", "[bandit-a
         actions["action1"] = ContextAttributes();
         actions["action2"] = ContextAttributes();
 
-        auto result = client->getBanditActionDetails(
+        auto result = client.getBanditActionDetails(
             "banner_bandit_flag",
             "test-subject",
             subjectAttrs,
@@ -389,12 +389,12 @@ TEST_CASE("Bandit Action Details - Variation and action consistency", "[bandit-a
 }
 
 TEST_CASE("Bandit Action Details - Bandit logging still works", "[bandit-action-details]") {
-    auto configStore = std::make_shared<ConfigurationStore>();
+    ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore->setConfiguration(Configuration(ufc));
+    configStore.setConfiguration(Configuration(ufc));
 
     auto mockBanditLogger = std::make_shared<MockBanditLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, mockBanditLogger, nullptr);
+    EppoClient client(configStore, nullptr, mockBanditLogger, nullptr);
 
     SECTION("Bandit events are logged with details methods") {
         ContextAttributes subjectAttrs;
@@ -404,7 +404,7 @@ TEST_CASE("Bandit Action Details - Bandit logging still works", "[bandit-action-
 
         mockBanditLogger->clear();
 
-        auto result = client->getBanditActionDetails(
+        auto result = client.getBanditActionDetails(
             "banner_bandit_flag",
             "test-subject",
             subjectAttrs,

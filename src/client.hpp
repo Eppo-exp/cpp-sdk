@@ -52,7 +52,7 @@ public:
 // EppoClient - Main client for feature flag evaluation
 class EppoClient {
 private:
-    std::shared_ptr<ConfigurationStore> configurationStore_;
+    ConfigurationStore& configurationStore_;
     std::shared_ptr<AssignmentLogger> assignmentLogger_;
     std::shared_ptr<BanditLogger> banditLogger_;
     std::shared_ptr<ApplicationLogger> applicationLogger_;
@@ -118,7 +118,7 @@ private:
 
 public:
     // Constructor
-    EppoClient(std::shared_ptr<ConfigurationStore> configStore,
+    EppoClient(ConfigurationStore& configStore,
               std::shared_ptr<AssignmentLogger> assignmentLogger = nullptr,
               std::shared_ptr<BanditLogger> banditLogger = nullptr,
               std::shared_ptr<ApplicationLogger> applicationLogger = nullptr);
@@ -223,7 +223,7 @@ public:
     void setIsGracefulFailureMode(bool isGracefulFailureMode);
 
     // Get configuration store
-    std::shared_ptr<ConfigurationStore> getConfigurationStore() const {
+    ConfigurationStore& getConfigurationStore() const {
         return configurationStore_;
     }
 };
@@ -251,7 +251,7 @@ EvaluationResult<T> EppoClient::getAssignmentDetails(VariationType variationType
                                        "No flag key provided");
         }
 
-        Configuration config = configurationStore_->getConfiguration();
+        Configuration config = configurationStore_.getConfiguration();
 
         // Get flag configuration
         const FlagConfiguration* flag = config.getFlagConfiguration(flagKey);
