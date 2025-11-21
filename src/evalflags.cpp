@@ -6,7 +6,7 @@
 
 namespace eppoclient {
 
-const std::string SDK_VERSION = getVersion();
+const char* const SDK_VERSION = getVersion();
 
 // Verify that the flag has the expected variation type
 // Returns true if types match, false otherwise
