@@ -3,8 +3,8 @@
 
 #include <list>
 #include <unordered_map>
-#include <stdexcept>
 #include <utility>
+#include <cassert>
 
 namespace eppoclient {
 namespace cache {
@@ -84,13 +84,11 @@ public:
     /**
      * Creates a new TwoQueueCache with the given size.
      *
-     * @param size Maximum number of items to cache
-     * @throws std::invalid_argument if size is 0
+     * @param size Maximum number of items to cache (must be positive)
+     * @pre size > 0
      */
     explicit TwoQueueCache(size_t size) {
-        if (size == 0) {
-            throw std::invalid_argument("cache size must be positive");
-        }
+        assert(size > 0 && "cache size must be positive");
 
         size_ = size;
         // Recent queue gets 25% of cache, frequent gets 75%

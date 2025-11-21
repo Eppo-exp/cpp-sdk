@@ -288,9 +288,6 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
 
     EppoClient client(configStore, nullptr, nullptr);
 
-    // Enable graceful failure mode to get evaluation details even on errors
-    client.setIsGracefulFailureMode(true);
-
     // Load all test cases
     std::string testCasesDir = "test/data/ufc/tests";
     std::vector<EvaluationDetailsTestCase> testCases;

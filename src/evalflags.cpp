@@ -9,25 +9,23 @@ namespace eppoclient {
 const std::string SDK_VERSION = getVersion();
 
 // Verify that the flag has the expected variation type
-void verifyType(const FlagConfiguration& flag, VariationType expectedType) {
-    if (flag.variationType != expectedType) {
-        throw std::runtime_error(
-            "unexpected variation type (expected: " +
-            variationTypeToString(expectedType) +
-            ", actual: " +
-            variationTypeToString(flag.variationType) + ")"
-        );
-    }
+// Returns true if types match, false otherwise
+bool verifyType(const FlagConfiguration& flag, VariationType expectedType) {
+    return flag.variationType == expectedType;
 }
 
 // Evaluate a flag for a given subject
-EvalResult evalFlag(const FlagConfiguration& flag,
+// Returns std::nullopt if evaluation fails
+std::optional<EvalResult> evalFlag(const FlagConfiguration& flag,
                    const std::string& subjectKey,
                    const Attributes& subjectAttributes,
                    ApplicationLogger* logger) {
     // Check if flag is enabled
     if (!flag.enabled) {
-        throw FlagNotEnabledException();
+        if (logger) {
+            logger->info("Flag is not enabled: " + flag.key);
+        }
+        return std::nullopt;
     }
 
     auto now = std::chrono::system_clock::now();
@@ -54,13 +52,19 @@ EvalResult evalFlag(const FlagConfiguration& flag,
     }
 
     if (matchedAllocation == nullptr || matchedSplit == nullptr) {
-        throw SubjectAllocationException();
+        if (logger) {
+            logger->info("Subject is not part of any allocation");
+        }
+        return std::nullopt;
     }
 
     // Find the variation value
     auto it = flag.parsedVariations.find(matchedSplit->variationKey);
     if (it == flag.parsedVariations.end()) {
-        throw std::runtime_error("cannot find variation: " + matchedSplit->variationKey);
+        if (logger) {
+            logger->error("Cannot find variation: " + matchedSplit->variationKey);
+        }
+        return std::nullopt;
     }
 
     EvalResult result;

@@ -125,7 +125,7 @@ TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-detai
         CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED);
     }
 
-    SECTION("Empty subject key returns default with error details in graceful mode") {
+    SECTION("Empty subject key returns default with error details") {
         auto result = client.getBooleanAssignmentDetails(
             "boolean-false-assignment",
             "",
@@ -139,15 +139,6 @@ TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-detai
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
         CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::ASSIGNMENT_ERROR);
         CHECK(result.evaluationDetails->flagEvaluationDescription.find("subject key") != std::string::npos);
-    }
-
-    SECTION("Empty subject key throws in non-graceful mode") {
-        client.setIsGracefulFailureMode(false);
-
-        REQUIRE_THROWS_AS(
-            client.getBooleanAssignmentDetails("boolean-false-assignment", "", Attributes(), true),
-            std::runtime_error
-        );
     }
 }
 
@@ -429,7 +420,7 @@ TEST_CASE("Assignment Details - Subject attributes preserved", "[assignment-deta
     }
 }
 
-TEST_CASE("Assignment Details - Graceful failure mode behavior", "[assignment-details]") {
+TEST_CASE("Assignment Details - Error handling behavior", "[assignment-details]") {
     ConfigurationStore configStore;
     Configuration emptyConfig(ConfigResponse{});
     configStore.setConfiguration(emptyConfig);
@@ -437,7 +428,7 @@ TEST_CASE("Assignment Details - Graceful failure mode behavior", "[assignment-de
     auto mockLogger = std::make_shared<MockApplicationLogger>();
     EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
-    SECTION("Graceful mode returns default with error details") {
+    SECTION("Returns default with error details when flag key is empty") {
         auto result = client.getBooleanAssignmentDetails(
             "",  // Empty flag key to trigger error
             "test-subject",
@@ -453,43 +444,6 @@ TEST_CASE("Assignment Details - Graceful failure mode behavior", "[assignment-de
 
         // Should have logged error
         CHECK_FALSE(mockLogger->errorMessages.empty());
-    }
-
-    SECTION("Non-graceful mode throws exception") {
-        client.setIsGracefulFailureMode(false);
-
-        REQUIRE_THROWS_AS(
-            client.getBooleanAssignmentDetails("", "test-subject", Attributes(), true),
-            std::runtime_error
-        );
-    }
-
-    SECTION("Can toggle graceful mode") {
-        // Start in graceful mode
-        auto result1 = client.getStringAssignmentDetails(
-            "",
-            "test-subject",
-            Attributes(),
-            "default"
-        );
-        CHECK(result1.variation == "default");
-
-        // Switch to non-graceful
-        client.setIsGracefulFailureMode(false);
-        REQUIRE_THROWS_AS(
-            client.getStringAssignmentDetails("", "test-subject", Attributes(), "default"),
-            std::runtime_error
-        );
-
-        // Switch back to graceful
-        client.setIsGracefulFailureMode(true);
-        auto result2 = client.getIntegerAssignmentDetails(
-            "",
-            "test-subject",
-            Attributes(),
-            42
-        );
-        CHECK(result2.variation == 42);
     }
 }
 

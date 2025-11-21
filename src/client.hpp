@@ -4,7 +4,6 @@
 #include <string>
 #include <memory>
 #include <optional>
-#include <stdexcept>
 #include "application_logger.hpp"
 #include "config_response.hpp"
 #include "rules.hpp"
@@ -14,13 +13,6 @@
 #include "evalbandits.hpp"
 
 namespace eppoclient {
-
-// Error exception for missing flag configuration
-class FlagConfigurationNotFoundException : public std::runtime_error {
-public:
-    FlagConfigurationNotFoundException()
-        : std::runtime_error("flag configuration not found") {}
-};
 
 // EvaluationResult structure to hold variation and evaluation details
 template<typename T>
@@ -49,14 +41,37 @@ public:
     virtual void logBanditAction(const BanditEvent& event) = 0;
 };
 
-// EppoClient - Main client for feature flag evaluation
+/**
+ * EppoClient - Main client for feature flag evaluation
+ *
+ * This SDK is built with -fno-exceptions and does not throw exceptions.
+ * When errors occur (missing flags, invalid parameters, type mismatches),
+ * the SDK:
+ *   1. Logs the error through the ApplicationLogger interface
+ *   2. Returns the default value provided by the caller
+ *
+ * This design ensures your application continues running even if flag
+ * evaluation fails, making it suitable for production environments and
+ * projects that don't use exceptions.
+ *
+ * Example usage:
+ * @code
+ * eppoclient::ConfigurationStore configStore;
+ * configStore.setConfiguration(config);
+ *
+ * auto logger = std::make_shared<MyApplicationLogger>();
+ * eppoclient::EppoClient client(configStore, nullptr, nullptr, logger);
+ *
+ * // If flag doesn't exist, logs an info message and returns false
+ * bool result = client.getBoolAssignment("my-flag", "user-123", attrs, false);
+ * @endcode
+ */
 class EppoClient {
 private:
     ConfigurationStore& configurationStore_;
     std::shared_ptr<AssignmentLogger> assignmentLogger_;
     std::shared_ptr<BanditLogger> banditLogger_;
     std::shared_ptr<ApplicationLogger> applicationLogger_;
-    bool isGracefulFailureMode_;
 
     // Internal method to get assignment value
     std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>>
@@ -108,10 +123,6 @@ private:
         details.subjectAttributes = subjectAttributes;
         details.flagEvaluationCode = errorCode;
         details.flagEvaluationDescription = errorDescription;
-
-        if (!isGracefulFailureMode_) {
-            throw std::runtime_error(errorDescription);
-        }
 
         return EvaluationResult<T>(defaultValue, std::nullopt, details);
     }
@@ -219,9 +230,6 @@ public:
                                             const Attributes& subjectAttributes,
                                             const T& defaultValue);
 
-    // Set graceful failure mode
-    void setIsGracefulFailureMode(bool isGracefulFailureMode);
-
     // Get configuration store
     ConfigurationStore& getConfigurationStore() const {
         return configurationStore_;
@@ -235,86 +243,68 @@ EvaluationResult<T> EppoClient::getAssignmentDetails(VariationType variationType
                                                      const std::string& subjectKey,
                                                      const Attributes& subjectAttributes,
                                                      const T& defaultValue) {
-    try {
-        // Validate inputs
-        if (subjectKey.empty()) {
-            applicationLogger_->error("No subject key provided");
-            return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
-                                       FlagEvaluationCode::ASSIGNMENT_ERROR,
-                                       "No subject key provided");
-        }
-
-        if (flagKey.empty()) {
-            applicationLogger_->error("No flag key provided");
-            return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
-                                       FlagEvaluationCode::ASSIGNMENT_ERROR,
-                                       "No flag key provided");
-        }
-
-        Configuration config = configurationStore_.getConfiguration();
-
-        // Get flag configuration
-        const FlagConfiguration* flag = config.getFlagConfiguration(flagKey);
-        if (flag == nullptr) {
-            applicationLogger_->info("Failed to get flag configuration for: " + flagKey);
-            return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
-                                       FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED,
-                                       "Flag configuration not found");
-        }
-
-        // Verify flag type
-        try {
-            verifyType(*flag, variationType);
-        } catch (const std::exception& e) {
-            applicationLogger_->warn(std::string("Failed to verify flag type: ") + e.what());
-            return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
-                                       FlagEvaluationCode::TYPE_MISMATCH,
-                                       std::string("Type mismatch: ") + e.what());
-        }
-
-        // Evaluate flag with details
-        EvalResultWithDetails result;
-        try {
-            result = evalFlagDetails(*flag, subjectKey, subjectAttributes, applicationLogger_.get());
-        } catch (const std::exception& e) {
-            applicationLogger_->error(std::string("Failed to evaluate flag: ") + e.what());
-            return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
-                                       FlagEvaluationCode::ASSIGNMENT_ERROR,
-                                       std::string("Evaluation error: ") + e.what());
-        }
-
-        // Log assignment event
-        logAssignment(result.event);
-
-        // Check if there was an error and we're not in graceful mode
-        if (result.details.flagEvaluationCode.has_value() &&
-            *result.details.flagEvaluationCode != FlagEvaluationCode::MATCH) {
-            if (!isGracefulFailureMode_) {
-                throw std::runtime_error(result.details.flagEvaluationDescription);
-            }
-            // In graceful mode, return default with details
-            return EvaluationResult<T>(defaultValue, std::nullopt, result.details);
-        }
-
-        if (!result.value.has_value()) {
-            return EvaluationResult<T>(defaultValue, std::nullopt, result.details);
-        }
-
-        if (!std::holds_alternative<T>(*result.value)) {
-            std::string actualType = detectVariationType(*result.value);
-            std::string expectedType = variationTypeToString(variationType);
-            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
-                                    ", but expected " + expectedType + " for flag " + flagKey);
-            return EvaluationResult<T>(defaultValue, std::nullopt, result.details);
-        }
-
-        return EvaluationResult<T>(std::get<T>(*result.value), std::nullopt, result.details);
-    } catch (const std::exception& e) {
-        applicationLogger_->error(std::string("Error in getAssignmentDetails: ") + e.what());
+    // Validate inputs
+    if (subjectKey.empty()) {
+        applicationLogger_->error("No subject key provided");
         return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
                                    FlagEvaluationCode::ASSIGNMENT_ERROR,
-                                   std::string("Exception: ") + e.what());
+                                   "No subject key provided");
     }
+
+    if (flagKey.empty()) {
+        applicationLogger_->error("No flag key provided");
+        return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
+                                   FlagEvaluationCode::ASSIGNMENT_ERROR,
+                                   "No flag key provided");
+    }
+
+    Configuration config = configurationStore_.getConfiguration();
+
+    // Get flag configuration
+    const FlagConfiguration* flag = config.getFlagConfiguration(flagKey);
+    if (flag == nullptr) {
+        applicationLogger_->info("Failed to get flag configuration for: " + flagKey);
+        return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
+                                   FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED,
+                                   "Flag configuration not found");
+    }
+
+    // Verify flag type
+    if (!verifyType(*flag, variationType)) {
+        applicationLogger_->warn("Failed to verify flag type for: " + flagKey +
+                                " (expected: " + variationTypeToString(variationType) +
+                                ", actual: " + variationTypeToString(flag->variationType) + ")");
+        return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
+                                   FlagEvaluationCode::TYPE_MISMATCH,
+                                   "Type mismatch");
+    }
+
+    // Evaluate flag with details
+    EvalResultWithDetails result = evalFlagDetails(*flag, subjectKey, subjectAttributes, applicationLogger_.get());
+
+    // Log assignment event
+    logAssignment(result.event);
+
+    // Check if there was an error
+    if (result.details.flagEvaluationCode.has_value() &&
+        *result.details.flagEvaluationCode != FlagEvaluationCode::MATCH) {
+        // Return default with details
+        return EvaluationResult<T>(defaultValue, std::nullopt, result.details);
+    }
+
+    if (!result.value.has_value()) {
+        return EvaluationResult<T>(defaultValue, std::nullopt, result.details);
+    }
+
+    if (!std::holds_alternative<T>(*result.value)) {
+        std::string actualType = detectVariationType(*result.value);
+        std::string expectedType = variationTypeToString(variationType);
+        applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
+                                ", but expected " + expectedType + " for flag " + flagKey);
+        return EvaluationResult<T>(defaultValue, std::nullopt, result.details);
+    }
+
+    return EvaluationResult<T>(std::get<T>(*result.value), std::nullopt, result.details);
 }
 
 } // namespace eppoclient

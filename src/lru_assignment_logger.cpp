@@ -1,5 +1,5 @@
 #include "lru_assignment_logger.hpp"
-#include <stdexcept>
+#include <cassert>
 
 namespace eppoclient {
 
@@ -7,9 +7,7 @@ LruAssignmentLogger::LruAssignmentLogger(
     std::shared_ptr<AssignmentLogger> logger,
     size_t cacheSize)
     : cache_(cacheSize), inner_(logger) {
-    if (!logger) {
-        throw std::invalid_argument("Error initializing assignment logger: inner logger cannot be null");
-    }
+    assert(logger && "Error initializing assignment logger: inner logger cannot be null");
 }
 
 bool LruAssignmentLogger::shouldLog(const AssignmentCacheKey& key, const AssignmentCacheValue& value) {

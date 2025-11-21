@@ -1,9 +1,9 @@
 #include "rules.hpp"
 #include "config_response.hpp"
-#include <stdexcept>
 #include <semver/semver.hpp>
 #include <memory>
 #include <regex>
+#include <cstdlib>
 
 namespace eppoclient {
 
@@ -27,16 +27,10 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
         bool isNull = (it == subjectAttributes.end() || std::holds_alternative<std::monostate>(it->second));
 
         // condition.value should be a boolean
-        bool expectedNull = false;
-        try {
-            if (condition.value.is_boolean()) {
-                expectedNull = condition.value.get<bool>();
-            } else {
-                return false;
-            }
-        } catch (...) {
+        if (!condition.value.is_boolean()) {
             return false;
         }
+        bool expectedNull = condition.value.get<bool>();
 
         return isNull == expectedNull;
     }
@@ -51,21 +45,17 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
 
     // Handle different operators
     if (condition.op == Operator::MATCHES) {
-        std::string conditionValueStr;
-        try {
-            conditionValueStr = condition.value.get<std::string>();
-        } catch (...) {
+        if (!condition.value.is_string()) {
             return false;
         }
+        std::string conditionValueStr = condition.value.get<std::string>();
         return matches(subjectValue, conditionValueStr);
 
     } else if (condition.op == Operator::NOT_MATCHES) {
-        std::string conditionValueStr;
-        try {
-            conditionValueStr = condition.value.get<std::string>();
-        } catch (...) {
+        if (!condition.value.is_string()) {
             return false;
         }
+        std::string conditionValueStr = condition.value.get<std::string>();
         return !matches(subjectValue, conditionValueStr);
 
     } else if (condition.op == Operator::ONE_OF) {
@@ -83,27 +73,20 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
         if (std::holds_alternative<std::string>(subjectValue) && condition.semVerValueValid) {
             const std::string& subjectValueStr = std::get<std::string>(subjectValue);
 
-            try {
-                semver::version<> subjectSemVer;
-                auto result = semver::parse(subjectValueStr, subjectSemVer);
-                if (result) {
-                    return evaluateSemVerCondition(&subjectSemVer, condition.semVerValue.get(),
-                                                  condition.op);
-                }
-            } catch (...) {
-                // Failed to parse as semver, fall through to numeric comparison
+            semver::version<> subjectSemVer;
+            auto result = semver::parse(subjectValueStr, subjectSemVer);
+            if (result) {
+                return evaluateSemVerCondition(&subjectSemVer, condition.semVerValue.get(),
+                                              condition.op);
             }
+            // Failed to parse as semver, fall through to numeric comparison
         }
 
         // Try numeric comparison
-        try {
-            double subjectValueNumeric = toDouble(subjectValue);
-            if (condition.numericValueValid) {
-                return evaluateNumericCondition(subjectValueNumeric, condition.numericValue,
-                                               condition.op);
-            }
-        } catch (...) {
-            // Not a numeric value either
+        std::optional<double> subjectValueNumeric = tryToDouble(subjectValue);
+        if (subjectValueNumeric.has_value() && condition.numericValueValid) {
+            return evaluateNumericCondition(*subjectValueNumeric, condition.numericValue,
+                                           condition.op);
         }
 
         // Neither numeric nor semver comparison worked
@@ -150,12 +133,10 @@ bool matches(const AttributeValue& subjectValue, const std::string& conditionVal
         return false;
     }
 
-    try {
-        std::regex pattern(conditionValue);
-        return std::regex_search(v, pattern);
-    } catch (const std::regex_error&) {
-        return false;
-    }
+    // Note: With -fno-exceptions, regex construction will not throw
+    // If the pattern is invalid, the behavior is implementation-defined
+    std::regex pattern(conditionValue);
+    return std::regex_search(v, pattern);
 }
 
 // Check if value is in array
@@ -174,20 +155,22 @@ bool isOne(const AttributeValue& attributeValue, const std::string& s) {
         return std::get<std::string>(attributeValue) == s;
 
     } else if (std::holds_alternative<double>(attributeValue)) {
-        try {
-            double value = std::stod(s);
-            return std::get<double>(attributeValue) == value;
-        } catch (...) {
-            return false;
+        // Try to parse string as double
+        char* end = nullptr;
+        double value = std::strtod(s.c_str(), &end);
+        if (end == s.c_str() || *end != '\0') {
+            return false; // Parse failed
         }
+        return std::get<double>(attributeValue) == value;
 
     } else if (std::holds_alternative<int64_t>(attributeValue)) {
-        try {
-            int64_t value = std::stoll(s);
-            return std::get<int64_t>(attributeValue) == value;
-        } catch (...) {
-            return false;
+        // Try to parse string as int64_t
+        char* end = nullptr;
+        long long value = std::strtoll(s.c_str(), &end, 10);
+        if (end == s.c_str() || *end != '\0') {
+            return false; // Parse failed
         }
+        return std::get<int64_t>(attributeValue) == value;
 
     } else if (std::holds_alternative<bool>(attributeValue)) {
         // Parse boolean from string
@@ -213,20 +196,18 @@ bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValu
     const semver::version<>* subject = static_cast<const semver::version<>*>(subjectValue);
     const semver::version<>* condition = static_cast<const semver::version<>*>(conditionValue);
 
-    bool result = false;
     if (op == Operator::GT) {
-        result = *subject > *condition;
+        return *subject > *condition;
     } else if (op == Operator::GTE) {
-        result = *subject >= *condition;
+        return *subject >= *condition;
     } else if (op == Operator::LT) {
-        result = *subject < *condition;
+        return *subject < *condition;
     } else if (op == Operator::LTE) {
-        result = *subject <= *condition;
-    } else {
-        throw std::runtime_error("Unknown operator for semver comparison");
+        return *subject <= *condition;
     }
 
-    return result;
+    // Unknown operator - should not reach here
+    return false;
 }
 
 // Numeric comparison
@@ -240,13 +221,14 @@ bool evaluateNumericCondition(double subjectValue, double conditionValue,
         return subjectValue < conditionValue;
     } else if (op == Operator::LTE) {
         return subjectValue <= conditionValue;
-    } else {
-        throw std::runtime_error("Incorrect condition operator");
     }
+
+    // Unknown operator - should not reach here
+    return false;
 }
 
-// Convert AttributeValue to double
-double toDouble(const AttributeValue& val) {
+// Convert AttributeValue to double (returns std::nullopt if conversion fails)
+std::optional<double> tryToDouble(const AttributeValue& val) {
     if (std::holds_alternative<double>(val)) {
         return std::get<double>(val);
 
@@ -254,34 +236,37 @@ double toDouble(const AttributeValue& val) {
         return static_cast<double>(std::get<int64_t>(val));
 
     } else if (std::holds_alternative<std::string>(val)) {
-        try {
-            return std::stod(std::get<std::string>(val));
-        } catch (...) {
-            throw std::runtime_error("Cannot convert string to double");
+        const std::string& str = std::get<std::string>(val);
+        char* end = nullptr;
+        double result = std::strtod(str.c_str(), &end);
+        if (end == str.c_str() || *end != '\0') {
+            return std::nullopt; // Parse failed
         }
+        return result;
 
     } else if (std::holds_alternative<bool>(val)) {
         return std::get<bool>(val) ? 1.0 : 0.0;
-
-    } else {
-        throw std::runtime_error("Value is neither a number nor a convertible string");
     }
+
+    return std::nullopt;
 }
 
-// Convert nlohmann::json to double (overload for config_response.cpp)
-double toDouble(const nlohmann::json& val) {
+// Convert nlohmann::json to double (returns std::nullopt if conversion fails)
+std::optional<double> tryToDouble(const nlohmann::json& val) {
     if (val.is_number()) {
         return val.get<double>();
     } else if (val.is_string()) {
-        try {
-            return std::stod(val.get<std::string>());
-        } catch (...) {
-            throw std::runtime_error("Cannot convert string to double");
+        std::string str = val.get<std::string>();
+        char* end = nullptr;
+        double result = std::strtod(str.c_str(), &end);
+        if (end == str.c_str() || *end != '\0') {
+            return std::nullopt; // Parse failed
         }
+        return result;
     } else if (val.is_boolean()) {
         return val.get<bool>() ? 1.0 : 0.0;
     }
-    throw std::runtime_error("Cannot convert value to double");
+    return std::nullopt;
 }
 
 // Convert AttributeValue to string representation

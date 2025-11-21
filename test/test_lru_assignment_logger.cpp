@@ -81,19 +81,9 @@ TEST_CASE("LruAssignmentLogger - timestamp and attributes are not important", "[
     CHECK(innerLogger->callCount() == 1);
 }
 
-TEST_CASE("LruAssignmentLogger - exceptions are not cached", "[lru][assignment-logger]") {
-    auto innerLogger = std::make_shared<MockAssignmentLogger>();
-    innerLogger->shouldThrow = true;
-    auto logger = NewLruAssignmentLogger(innerLogger, 1000);
-
-    AssignmentEvent event = createTestEvent();
-
-    CHECK_THROWS_AS(logger->logAssignment(event), std::runtime_error);
-    CHECK_THROWS_AS(logger->logAssignment(event), std::runtime_error);
-
-    // Should have tried to log twice since it wasn't cached
-    CHECK(innerLogger->callCount() == 0); // No successful logs
-}
+// Note: Test for "exceptions are not cached" removed since SDK no longer uses exceptions.
+// If a user-provided logger throws an exception, it will propagate and terminate the program
+// (which is expected behavior in a no-exceptions build).
 
 TEST_CASE("LruAssignmentLogger - change in allocation causes logging", "[lru][assignment-logger]") {
     auto innerLogger = std::make_shared<MockAssignmentLogger>();
@@ -225,19 +215,8 @@ TEST_CASE("LruAssignmentLogger - different flags are logged separately", "[lru][
     CHECK(innerLogger->callCount() == 2);
 }
 
-TEST_CASE("LruAssignmentLogger - constructor validation", "[lru][assignment-logger]") {
-    SECTION("throws on null inner logger") {
-        CHECK_THROWS_AS(
-            LruAssignmentLogger(nullptr, 1000),
-            std::invalid_argument
-        );
-    }
-
-    SECTION("throws on zero cache size") {
-        auto innerLogger = std::make_shared<MockAssignmentLogger>();
-        CHECK_THROWS_AS(
-            LruAssignmentLogger(innerLogger, 0),
-            std::invalid_argument
-        );
-    }
-}
+// Note: Constructor validation tests removed since SDK no longer uses exceptions.
+// Constructors now use assert() for precondition checks:
+// - inner logger must not be null
+// - cache size must be positive
+// Violating these preconditions will trigger an assertion failure in debug builds.

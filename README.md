@@ -11,6 +11,7 @@ The Eppo C++ SDK is designed for offline flag evaluation and supports:
 - **Assignment Logging**: Track which variants are assigned to users, with automatic deduplication
 - **Contextual Bandit Logging**: Track bandit actions, with automatic deduplication
 - **Application Logging**: Debug and monitor SDK behavior
+- **No Exceptions**: Built with `-fno-exceptions` for compatibility with exception-free projects
 
 ## Installation
 
@@ -453,11 +454,16 @@ int main() {
 }
 ```
 
-## Error Handling and Graceful Failure Mode
+## Error Handling
 
-By default, the Eppo SDK operates in **graceful failure mode**, which means errors are logged but don't throw exceptions. Instead, the SDK returns the default value you provided. This is useful for production environments where you want your application to continue running even if flag evaluation fails.
+The Eppo SDK is built with **`-fno-exceptions`** and does not use exceptions internally. When errors occur during flag evaluation (such as missing flags, invalid parameters, or type mismatches), the SDK:
 
-### Default Behavior (Graceful Mode)
+1. **Logs the error** through the `ApplicationLogger` interface
+2. **Returns the default value** you provided
+
+This design ensures your application continues running even if flag evaluation fails, making it suitable for production environments and projects that don't use exceptions.
+
+### Error Handling Behavior
 
 ```cpp
 eppoclient::EppoClient client(
@@ -467,140 +473,143 @@ eppoclient::EppoClient client(
     applicationLogger
 );
 
-// By default, errors are logged but don't throw exceptions
 eppoclient::Attributes attributes;
+
+// If the flag doesn't exist, returns the default value (false)
+// and logs an info message through applicationLogger
 bool result = client.getBoolAssignment(
     "non-existent-flag",
     "user-123",
     attributes,
-    false  // Returns this default value if flag doesn't exist
+    false  // This default value is returned
 );
-// result will be false, and an error will be logged to applicationLogger
+// result will be false
+
+// If parameters are invalid (e.g., empty subject key),
+// returns the default value and logs an error
+bool result2 = client.getBoolAssignment(
+    "my-flag",
+    "",  // Empty subject key
+    attributes,
+    true  // This default value is returned
+);
+// result2 will be true
 ```
 
-### Strict Mode (Throw Exceptions)
+### Monitoring Errors
 
-For development, testing, or cases where you want to be notified immediately of errors, you can disable graceful failure mode using `setIsGracefulFailureMode(false)`. When disabled, the SDK will throw exceptions on errors instead of returning default values.
+To monitor errors, implement the `ApplicationLogger` interface:
 
 ```cpp
-eppoclient::EppoClient client(
-    configStore,
-    assignmentLogger,
-    nullptr,
-    applicationLogger
-);
+class MyApplicationLogger : public eppoclient::ApplicationLogger {
+public:
+    void error(const std::string& message) override {
+        // Log to your monitoring system
+        std::cerr << "[ERROR] " << message << std::endl;
+        // Send to Sentry, CloudWatch, etc.
+    }
 
-// Disable graceful failure mode - exceptions will be thrown
-client.setIsGracefulFailureMode(false);
+    void warn(const std::string& message) override {
+        std::cerr << "[WARN] " << message << std::endl;
+    }
 
-try {
-    eppoclient::Attributes attributes;
+    void info(const std::string& message) override {
+        std::cout << "[INFO] " << message << std::endl;
+    }
 
-    // This will throw std::invalid_argument if subject key is empty
-    bool result = client.getBoolAssignment(
-        "my-flag",
-        "",  // Empty subject key - error!
-        attributes,
-        false
-    );
-} catch (const std::invalid_argument& e) {
-    std::cerr << "Flag evaluation error: " << e.what() << std::endl;
-    // Handle the error appropriately
-}
+    void debug(const std::string& message) override {
+        std::cout << "[DEBUG] " << message << std::endl;
+    }
+};
 
-try {
-    // This will throw an exception if the flag doesn't exist
-    bool result = client.getBoolAssignment(
-        "non-existent-flag",
-        "user-123",
-        attributes,
-        false
-    );
-} catch (const std::exception& e) {
-    std::cerr << "Flag not found: " << e.what() << std::endl;
-}
+auto logger = std::make_shared<MyApplicationLogger>();
+eppoclient::EppoClient client(configStore, nullptr, nullptr, logger);
 ```
 
-### Common Exception Types
+### Common Error Scenarios
 
-When graceful failure mode is disabled, the SDK may throw:
+The SDK logs different message types for different scenarios:
 
-- `std::invalid_argument` - Invalid parameters (e.g., empty flag key or subject key)
-- `std::runtime_error` - Configuration or evaluation errors
-- `std::exception` - Other general errors
+- **Error**: Invalid parameters (empty flag key, empty subject key)
+- **Warn**: Type mismatches (requesting wrong type for a flag)
+- **Info**: Missing flag configurations, subject not in allocation
 
-### When to Use Each Mode
+### Constructor Preconditions
 
-**Graceful Mode (default, `setIsGracefulFailureMode(true)`)**:
-- Production environments
-- When you want maximum uptime
-- When default values are acceptable fallbacks
-- When errors are monitored through application logs
+Some constructors validate preconditions using `assert()` statements:
 
-**Strict Mode (`setIsGracefulFailureMode(false)`)**:
-- Development and testing
-- When you want immediate feedback on configuration issues
-- When silent failures could cause problems
-- When you need to handle errors explicitly in your code
+```cpp
+// LruAssignmentLogger: inner logger must not be null, cache size > 0
+auto logger = std::make_shared<MyAssignmentLogger>();
+auto lruLogger = eppoclient::NewLruAssignmentLogger(logger, 1000);  // OK
 
-### Complete Example with Error Handling
+// This will trigger an assertion failure in debug builds:
+// auto badLogger = eppoclient::NewLruAssignmentLogger(nullptr, 1000);  // Assertion fails!
+```
+
+**Preconditions that trigger assertions in debug builds:**
+- `LruAssignmentLogger`: `logger != nullptr`, `cacheSize > 0`
+- `LruBanditLogger`: `logger != nullptr`, `cacheSize > 0`
+- `TwoQueueCache`: `size > 0`
+
+Always ensure these preconditions are met to avoid assertion failures.
+
+### Complete Example with Error Monitoring
 
 ```cpp
 #include <iostream>
 #include <memory>
-#include <exception>
 #include "client.hpp"
 
 int main() {
-    try {
-        // Initialize client
-        eppoclient::ConfigurationStore configStore;
-        eppoclient::ConfigResponse config = parseConfiguration("config/flags-v1.json");
-        configStore.setConfiguration(eppoclient::Configuration(config));
+    // Initialize client with application logger
+    eppoclient::ConfigurationStore configStore;
+    eppoclient::ConfigResponse config = parseConfiguration(configJson);
+    configStore.setConfiguration(eppoclient::Configuration(config));
 
-        auto applicationLogger = std::make_shared<MyApplicationLogger>();
-        eppoclient::EppoClient client(
-            configStore,
-            nullptr,
-            nullptr,
-            applicationLogger
-        );
+    auto applicationLogger = std::make_shared<MyApplicationLogger>();
+    eppoclient::EppoClient client(
+        configStore,
+        nullptr,
+        nullptr,
+        applicationLogger
+    );
 
-        // Enable strict mode for development
-        client.setIsGracefulFailureMode(false);
+    eppoclient::Attributes attributes;
+    attributes["company_id"] = std::string("42");
 
-        eppoclient::Attributes attributes;
-        attributes["company_id"] = std::string("42");
+    // SDK handles errors gracefully - no exceptions thrown
+    bool isEnabled = client.getBoolAssignment(
+        "new-checkout-flow",
+        "user-123",
+        attributes,
+        false  // Default value
+    );
 
-        try {
-            // Evaluate flag - will throw if there are issues
-            bool isEnabled = client.getBoolAssignment(
-                "new-checkout-flow",
-                "user-123",
-                attributes,
-                false
-            );
-
-            if (isEnabled) {
-                std::cout << "Using new checkout flow" << std::endl;
-            } else {
-                std::cout << "Using old checkout flow" << std::endl;
-            }
-        } catch (const std::invalid_argument& e) {
-            std::cerr << "Invalid flag parameters: " << e.what() << std::endl;
-            // Use fallback logic
-        } catch (const std::exception& e) {
-            std::cerr << "Flag evaluation failed: " << e.what() << std::endl;
-            // Use fallback logic
-        }
-
-        return 0;
-    } catch (const std::exception& e) {
-        std::cerr << "Fatal error: " << e.what() << std::endl;
-        return 1;
+    // Errors are logged through applicationLogger
+    // Application continues normally
+    if (isEnabled) {
+        std::cout << "Using new checkout flow" << std::endl;
+    } else {
+        std::cout << "Using old checkout flow" << std::endl;
     }
+
+    return 0;
 }
 ```
+
+### Compatibility with `-fno-exceptions` Projects
+
+The SDK is fully compatible with projects built with `-fno-exceptions`:
+
+```cmake
+# Your project's CMakeLists.txt
+add_executable(your_app main.cpp)
+target_compile_options(your_app PRIVATE -fno-exceptions)
+target_link_libraries(your_app PRIVATE eppoclient)  # Works!
+```
+
+The SDK library is built with `-fno-exceptions` internally, so it integrates seamlessly with exception-free codebases.
 
 ## Evaluation Details
 

@@ -67,6 +67,9 @@ target_include_directories(eppoclient
         $<INSTALL_INTERFACE:include>
 )
 
+# Configure nlohmann/json to not use exceptions
+target_compile_definitions(eppoclient PUBLIC JSON_NOEXCEPTION)
+
 # Set library properties
 set_target_properties(eppoclient PROPERTIES
     VERSION ${PROJECT_VERSION}
@@ -77,8 +80,12 @@ set_target_properties(eppoclient PROPERTIES
 # Compiler flags
 if(MSVC)
     target_compile_options(eppoclient PRIVATE /W4)
+    # Disable exceptions on MSVC (PRIVATE so it doesn't affect library users)
+    target_compile_options(eppoclient PRIVATE /EHs-c- /D_HAS_EXCEPTIONS=0)
 else()
     target_compile_options(eppoclient PRIVATE -Wall -Wextra)
+    # Disable exceptions on GCC/Clang (PRIVATE so it doesn't affect library users)
+    target_compile_options(eppoclient PRIVATE -fno-exceptions)
 endif()
 
 # Installation
@@ -165,6 +172,13 @@ if(EPPOCLIENT_BUILD_TESTS)
     )
 
     target_link_libraries(test_runner PRIVATE eppoclient)
+
+    # Re-enable exceptions for test code (Catch2 requires them)
+    if(MSVC)
+        target_compile_options(test_runner PRIVATE /EHsc /U_HAS_EXCEPTIONS)
+    else()
+        target_compile_options(test_runner PRIVATE -fexceptions)
+    endif()
 
     add_test(NAME EppoClientTests COMMAND test_runner)
 endif()

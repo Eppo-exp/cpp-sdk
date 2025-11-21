@@ -1,6 +1,5 @@
 #include "client.hpp"
 #include "time_utils.hpp"
-#include <stdexcept>
 #include <chrono>
 
 namespace eppoclient {
@@ -16,122 +15,73 @@ EppoClient::EppoClient(ConfigurationStore& configStore,
     : configurationStore_(configStore),
       assignmentLogger_(assignmentLogger),
       banditLogger_(banditLogger),
-      applicationLogger_(applicationLogger ? applicationLogger : std::make_shared<NoOpApplicationLogger>()),
-      isGracefulFailureMode_(true) {}
+      applicationLogger_(applicationLogger ? applicationLogger : std::make_shared<NoOpApplicationLogger>()) {}
 
 bool EppoClient::getBoolAssignment(const std::string& flagKey,
                                    const std::string& subjectKey,
                                    const Attributes& subjectAttributes,
                                    bool defaultValue) {
-    try {
-        Configuration config = configurationStore_.getConfiguration();
-        auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::BOOLEAN);
-        return extractVariation(variation, flagKey, VariationType::BOOLEAN, defaultValue);
-    } catch (const std::exception& e) {
-        applicationLogger_->error(std::string("Error in getBoolAssignment: ") + e.what());
-        if (!isGracefulFailureMode_) {
-            throw;
-        }
-        return defaultValue;
-    }
+    Configuration config = configurationStore_.getConfiguration();
+    auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::BOOLEAN);
+    return extractVariation(variation, flagKey, VariationType::BOOLEAN, defaultValue);
 }
 
 double EppoClient::getNumericAssignment(const std::string& flagKey,
                                         const std::string& subjectKey,
                                         const Attributes& subjectAttributes,
                                         double defaultValue) {
-    try {
-        Configuration config = configurationStore_.getConfiguration();
-        auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::NUMERIC);
-        return extractVariation(variation, flagKey, VariationType::NUMERIC, defaultValue);
-    } catch (const std::exception& e) {
-        applicationLogger_->error(std::string("Error in getNumericAssignment: ") + e.what());
-        if (!isGracefulFailureMode_) {
-            throw;
-        }
-        return defaultValue;
-    }
+    Configuration config = configurationStore_.getConfiguration();
+    auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::NUMERIC);
+    return extractVariation(variation, flagKey, VariationType::NUMERIC, defaultValue);
 }
 
 int64_t EppoClient::getIntegerAssignment(const std::string& flagKey,
                                          const std::string& subjectKey,
                                          const Attributes& subjectAttributes,
                                          int64_t defaultValue) {
-    try {
-        Configuration config = configurationStore_.getConfiguration();
-        auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::INTEGER);
-        return extractVariation(variation, flagKey, VariationType::INTEGER, defaultValue);
-    } catch (const std::exception& e) {
-        applicationLogger_->error(std::string("Error in getIntegerAssignment: ") + e.what());
-        if (!isGracefulFailureMode_) {
-            throw;
-        }
-        return defaultValue;
-    }
+    Configuration config = configurationStore_.getConfiguration();
+    auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::INTEGER);
+    return extractVariation(variation, flagKey, VariationType::INTEGER, defaultValue);
 }
 
 std::string EppoClient::getStringAssignment(const std::string& flagKey,
                                            const std::string& subjectKey,
                                            const Attributes& subjectAttributes,
                                            const std::string& defaultValue) {
-    try {
-        Configuration config = configurationStore_.getConfiguration();
-        auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::STRING);
-        return extractVariation(variation, flagKey, VariationType::STRING, defaultValue);
-    } catch (const std::exception& e) {
-        applicationLogger_->error(std::string("Error in getStringAssignment: ") + e.what());
-        if (!isGracefulFailureMode_) {
-            throw;
-        }
-        return defaultValue;
-    }
+    Configuration config = configurationStore_.getConfiguration();
+    auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::STRING);
+    return extractVariation(variation, flagKey, VariationType::STRING, defaultValue);
 }
 
 nlohmann::json EppoClient::getJSONAssignment(const std::string& flagKey,
                                             const std::string& subjectKey,
                                             const Attributes& subjectAttributes,
                                             const nlohmann::json& defaultValue) {
-    try {
-        Configuration config = configurationStore_.getConfiguration();
-        auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
-        return extractVariation(variation, flagKey, VariationType::JSON, defaultValue);
-    } catch (const std::exception& e) {
-        applicationLogger_->error(std::string("Error in getJSONAssignment: ") + e.what());
-        if (!isGracefulFailureMode_) {
-            throw;
-        }
-        return defaultValue;
-    }
+    Configuration config = configurationStore_.getConfiguration();
+    auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
+    return extractVariation(variation, flagKey, VariationType::JSON, defaultValue);
 }
 
 std::string EppoClient::getSerializedJSONAssignment(const std::string& flagKey,
                                                    const std::string& subjectKey,
                                                    const Attributes& subjectAttributes,
                                                    const std::string& defaultValue) {
-    try {
-        Configuration config = configurationStore_.getConfiguration();
-        auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
+    Configuration config = configurationStore_.getConfiguration();
+    auto variation = getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
 
-        if (!variation.has_value()) {
-            return defaultValue;
-        }
-
-        if (!std::holds_alternative<nlohmann::json>(*variation)) {
-            std::string actualType = detectVariationType(*variation);
-            std::string expectedType = variationTypeToString(VariationType::JSON);
-            applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
-                                    ", but expected " + expectedType + " for flag " + flagKey);
-            return defaultValue;
-        }
-
-        return std::get<nlohmann::json>(*variation).dump();
-    } catch (const std::exception& e) {
-        applicationLogger_->error(std::string("Error in getSerializedJSONAssignment: ") + e.what());
-        if (!isGracefulFailureMode_) {
-            throw;
-        }
+    if (!variation.has_value()) {
         return defaultValue;
     }
+
+    if (!std::holds_alternative<nlohmann::json>(*variation)) {
+        std::string actualType = detectVariationType(*variation);
+        std::string expectedType = variationTypeToString(VariationType::JSON);
+        applicationLogger_->error("Variation value does not have the correct type. Found " + actualType +
+                                ", but expected " + expectedType + " for flag " + flagKey);
+        return defaultValue;
+    }
+
+    return std::get<nlohmann::json>(*variation).dump();
 }
 
 std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>>
@@ -143,42 +93,40 @@ EppoClient::getAssignment(const Configuration& config,
     // Validate inputs
     if (subjectKey.empty()) {
         applicationLogger_->error("No subject key provided");
-        throw std::invalid_argument("no subject key provided");
+        return std::nullopt;
     }
 
     if (flagKey.empty()) {
         applicationLogger_->error("No flag key provided");
-        throw std::invalid_argument("no flag key provided");
+        return std::nullopt;
     }
 
     // Get flag configuration
     const FlagConfiguration* flag = config.getFlagConfiguration(flagKey);
     if (flag == nullptr) {
         applicationLogger_->info("Failed to get flag configuration for: " + flagKey);
-        throw FlagConfigurationNotFoundException();
+        return std::nullopt;
     }
 
     // Verify flag type
-    try {
-        verifyType(*flag, variationType);
-    } catch (const std::exception& e) {
-        applicationLogger_->warn(std::string("Failed to verify flag type: ") + e.what());
-        throw;
+    if (!verifyType(*flag, variationType)) {
+        applicationLogger_->warn("Failed to verify flag type for: " + flagKey +
+                                " (expected: " + variationTypeToString(variationType) +
+                                ", actual: " + variationTypeToString(flag->variationType) + ")");
+        return std::nullopt;
     }
 
     // Evaluate flag
-    EvalResult result;
-    try {
-        result = evalFlag(*flag, subjectKey, subjectAttributes, applicationLogger_.get());
-    } catch (const std::exception& e) {
-        applicationLogger_->error(std::string("Failed to evaluate flag: ") + e.what());
-        throw;
+    std::optional<EvalResult> result = evalFlag(*flag, subjectKey, subjectAttributes, applicationLogger_.get());
+    if (!result.has_value()) {
+        applicationLogger_->info("Failed to evaluate flag: " + flagKey);
+        return std::nullopt;
     }
 
     // Log assignment event
-    logAssignment(result.event);
+    logAssignment(result->event);
 
-    return result.value;
+    return result->value;
 }
 
 void EppoClient::logAssignment(const std::optional<AssignmentEvent>& event) {
@@ -186,13 +134,7 @@ void EppoClient::logAssignment(const std::optional<AssignmentEvent>& event) {
         return;
     }
 
-    try {
-        assignmentLogger_->logAssignment(*event);
-    } catch (const std::exception& e) {
-        applicationLogger_->error(std::string("Error logging assignment: ") + e.what());
-    } catch (...) {
-        applicationLogger_->error("Unknown error logging assignment");
-    }
+    assignmentLogger_->logAssignment(*event);
 }
 
 void EppoClient::logBanditAction(const BanditEvent& event) {
@@ -200,17 +142,7 @@ void EppoClient::logBanditAction(const BanditEvent& event) {
         return;
     }
 
-    try {
-        banditLogger_->logBanditAction(event);
-    } catch (const std::exception& e) {
-        if (applicationLogger_) {
-            applicationLogger_->error(std::string("Error logging bandit action: ") + e.what());
-        }
-    } catch (...) {
-        if (applicationLogger_) {
-            applicationLogger_->error("Unknown error logging bandit action");
-        }
-    }
+    banditLogger_->logBanditAction(event);
 }
 
 BanditResult EppoClient::getBanditAction(const std::string& flagKey,
@@ -218,20 +150,16 @@ BanditResult EppoClient::getBanditAction(const std::string& flagKey,
                                         const ContextAttributes& subjectAttributes,
                                         const std::map<std::string, ContextAttributes>& actions,
                                         const std::string& defaultVariation) {
-                                            
+
     Configuration config = configurationStore_.getConfiguration();
 
     // Ignoring the error here as we can always proceed with default variation
     std::string variation = defaultVariation;
-    try {
-        auto assignmentValue = getAssignment(config, flagKey, subjectKey,
-                                            toGenericAttributes(subjectAttributes),
-                                            VariationType::STRING);
-        if (assignmentValue.has_value() && std::holds_alternative<std::string>(*assignmentValue)) {
-            variation = std::get<std::string>(*assignmentValue);
-        }
-    } catch (...) {
-        // Silently ignore errors and use default variation
+    auto assignmentValue = getAssignment(config, flagKey, subjectKey,
+                                        toGenericAttributes(subjectAttributes),
+                                        VariationType::STRING);
+    if (assignmentValue.has_value() && std::holds_alternative<std::string>(*assignmentValue)) {
+        variation = std::get<std::string>(*assignmentValue);
     }
 
     // If no actions have been passed, return the variation with no action
@@ -342,11 +270,6 @@ EvaluationResult<std::string> EppoClient::getBanditActionDetails(
     details.banditAction = evaluation.actionKey;
 
     return EvaluationResult<std::string>(variation, evaluation.actionKey, details);
-}
-
-
-void EppoClient::setIsGracefulFailureMode(bool isGracefulFailureMode) {
-    isGracefulFailureMode_ = isGracefulFailureMode;
 }
 
 // ============================================================================
