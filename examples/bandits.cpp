@@ -117,100 +117,103 @@ public:
 };
 
 // Helper function to load flags configuration from JSON file
-eppoclient::ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
+bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigResponse& response) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
-        throw std::runtime_error("Failed to open flags configuration file: " + filepath);
+        std::cerr << "Failed to open flags configuration file: " << filepath << std::endl;
+        return false;
     }
 
     nlohmann::json j;
     file >> j;
 
-    eppoclient::ConfigResponse response = j;
-    return response;
+    response = j;
+    return true;
 }
 
 // Helper function to load bandit models from JSON file
-eppoclient::BanditResponse loadBanditModels(const std::string& filepath) {
+bool loadBanditModels(const std::string& filepath, eppoclient::BanditResponse& response) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
-        throw std::runtime_error("Failed to open bandit models file: " + filepath);
+        std::cerr << "Failed to open bandit models file: " << filepath << std::endl;
+        return false;
     }
 
     nlohmann::json j;
     file >> j;
 
-    eppoclient::BanditResponse response = j;
-    return response;
+    response = j;
+    return true;
 }
 
 int main() {
-    try {
-        // Load the bandit flags and models configuration
-        std::cout << "Loading bandit flags and models configuration..." << std::endl;
-        eppoclient::ConfigResponse banditFlags = loadFlagsConfiguration("config/bandit-flags-v1.json");
-        eppoclient::BanditResponse banditModels = loadBanditModels("config/bandit-models-v1.json");
-
-        // Create configuration store and set the configuration with both flags and bandits
-        eppoclient::ConfigurationStore configStore;
-        configStore.setConfiguration(eppoclient::Configuration(banditFlags, banditModels));
-
-        // Create assignment logger, bandit logger, and application logger
-        auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();
-        auto banditLogger = std::make_shared<ConsoleBanditLogger>();
-        auto applicationLogger = std::make_shared<ConsoleApplicationLogger>();
-
-        // Create EppoClient with all parameters including bandit logger
-        eppoclient::EppoClient client(configStore, assignmentLogger, banditLogger, applicationLogger);
-
-        std::cout << "\n=== Car Bandit: Selecting Car to Recommend ===" << std::endl;
-
-        // Define subject attributes (user/context attributes)
-        // Car bandit doesn't require subject attributes, but we can include them
-        eppoclient::ContextAttributes subjectAttrs;
-
-        // Define available actions (cars) with their attributes
-        std::map<std::string, eppoclient::ContextAttributes> actions;
-
-        // Action 1: Toyota
-        // Attributes: speed (numeric)
-        eppoclient::ContextAttributes toyotaAction;
-        toyotaAction.numericAttributes["speed"] = 120.0;
-        actions["toyota"] = toyotaAction;
-
-        // Action 2: Honda (no specific model, but adding for variety)
-        eppoclient::ContextAttributes hondaAction;
-        hondaAction.numericAttributes["speed"] = 115.0;
-        actions["honda"] = hondaAction;
-
-        // Get bandit action recommendation
-        eppoclient::BanditResult banditResult = client.getBanditAction(
-            "car_bandit_flag",     // flag key
-            "user-abc123",         // subject key
-            subjectAttrs,          // subject attributes
-            actions,               // available actions
-            "car_bandit"           // default variation if flag not found
-        );
-
-        std::cout << "Bandit selected variation: " << banditResult.variation << std::endl;
-        if (banditResult.action.has_value()) {
-            std::cout << "Recommended car: " << banditResult.action.value() << std::endl;
-
-            // Use the recommended action in your application logic
-            if (banditResult.action.value() == "toyota") {
-                std::cout << "✓ Recommending Toyota to user" << std::endl;
-            } else if (banditResult.action.value() == "honda") {
-                std::cout << "✓ Recommending Honda to user" << std::endl;
-            } else {
-                std::cout << "✓ Recommending " << banditResult.action.value() << " to user" << std::endl;
-            }
-        } else {
-            std::cout << "No action selected (using default)" << std::endl;
-        }
-
-        return 0;
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+    // Load the bandit flags and models configuration
+    std::cout << "Loading bandit flags and models configuration..." << std::endl;
+    eppoclient::ConfigResponse banditFlags;
+    eppoclient::BanditResponse banditModels;
+    if (!loadFlagsConfiguration("config/bandit-flags-v1.json", banditFlags)) {
         return 1;
     }
+    if (!loadBanditModels("config/bandit-models-v1.json", banditModels)) {
+        return 1;
+    }
+
+    // Create configuration store and set the configuration with both flags and bandits
+    eppoclient::ConfigurationStore configStore;
+    configStore.setConfiguration(eppoclient::Configuration(banditFlags, banditModels));
+
+    // Create assignment logger, bandit logger, and application logger
+    auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();
+    auto banditLogger = std::make_shared<ConsoleBanditLogger>();
+    auto applicationLogger = std::make_shared<ConsoleApplicationLogger>();
+
+    // Create EppoClient with all parameters including bandit logger
+    eppoclient::EppoClient client(configStore, assignmentLogger, banditLogger, applicationLogger);
+
+    std::cout << "\n=== Car Bandit: Selecting Car to Recommend ===" << std::endl;
+
+    // Define subject attributes (user/context attributes)
+    // Car bandit doesn't require subject attributes, but we can include them
+    eppoclient::ContextAttributes subjectAttrs;
+
+    // Define available actions (cars) with their attributes
+    std::map<std::string, eppoclient::ContextAttributes> actions;
+
+    // Action 1: Toyota
+    // Attributes: speed (numeric)
+    eppoclient::ContextAttributes toyotaAction;
+    toyotaAction.numericAttributes["speed"] = 120.0;
+    actions["toyota"] = toyotaAction;
+
+    // Action 2: Honda (no specific model, but adding for variety)
+    eppoclient::ContextAttributes hondaAction;
+    hondaAction.numericAttributes["speed"] = 115.0;
+    actions["honda"] = hondaAction;
+
+    // Get bandit action recommendation
+    eppoclient::BanditResult banditResult = client.getBanditAction(
+        "car_bandit_flag",     // flag key
+        "user-abc123",         // subject key
+        subjectAttrs,          // subject attributes
+        actions,               // available actions
+        "car_bandit"           // default variation if flag not found
+    );
+
+    std::cout << "Bandit selected variation: " << banditResult.variation << std::endl;
+    if (banditResult.action.has_value()) {
+        std::cout << "Recommended car: " << banditResult.action.value() << std::endl;
+
+        // Use the recommended action in your application logic
+        if (banditResult.action.value() == "toyota") {
+            std::cout << "✓ Recommending Toyota to user" << std::endl;
+        } else if (banditResult.action.value() == "honda") {
+            std::cout << "✓ Recommending Honda to user" << std::endl;
+        } else {
+            std::cout << "✓ Recommending " << banditResult.action.value() << " to user" << std::endl;
+        }
+    } else {
+        std::cout << "No action selected (using default)" << std::endl;
+    }
+
+    return 0;
 }
