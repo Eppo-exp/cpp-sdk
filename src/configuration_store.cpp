@@ -2,18 +2,14 @@
 
 namespace eppoclient {
 
-ConfigurationStore::ConfigurationStore() : configuration_(std::nullopt) {}
+ConfigurationStore::ConfigurationStore() : configuration_(nullptr) {}
 
-ConfigurationStore::ConfigurationStore(const Configuration& config) : configuration_(std::nullopt) {
+ConfigurationStore::ConfigurationStore(const Configuration& config) : configuration_(nullptr) {
     setConfiguration(config);
 }
 
-Configuration ConfigurationStore::getConfiguration() const {
-    if (configuration_.has_value()) {
-        return *configuration_;
-    } else {
-        return Configuration();
-    }
+std::shared_ptr<const Configuration> ConfigurationStore::getConfiguration() const {
+    return configuration_;
 }
 
 void ConfigurationStore::setConfiguration(const Configuration& config) {
@@ -23,8 +19,8 @@ void ConfigurationStore::setConfiguration(const Configuration& config) {
     // Precompute any derived data in the configuration
     newConfig.precompute();
 
-    // Store the configuration
-    configuration_ = newConfig;
+    // Store the configuration as a shared_ptr
+    configuration_ = std::make_shared<const Configuration>(std::move(newConfig));
 }
 
 }  // namespace eppoclient

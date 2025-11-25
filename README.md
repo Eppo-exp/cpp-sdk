@@ -695,9 +695,11 @@ The Eppo C++ SDK is **not thread-safe by design**. If you need to use the SDK fr
 
 ### Key Points
 
-- `ConfigurationStore` is not thread-safe - concurrent reads and writes require external synchronization
+- `ConfigurationStore::setConfiguration()` is not thread-safe - updating configuration while reading requires external synchronization
+- `ConfigurationStore::getConfiguration()` returns a `std::shared_ptr<const Configuration>` with thread-safe reference counting
+- Retrieved configurations are immutable (`const`) and safe to use concurrently once obtained
 - `EppoClient` is not thread-safe - concurrent flag evaluations require external synchronization
-- The caller is responsible for implementing any required synchronization (mutexes, locks, etc.)
+- The caller is responsible for implementing any required synchronization when updating configuration
 
 ### Single-Threaded Usage (No Synchronization Required)
 
@@ -775,7 +777,8 @@ This design choice allows:
 ### Important Notes
 
 - `ConfigurationStore` must outlive any `EppoClient` instances that reference it
-- If you share a `ConfigurationStore` across threads, protect both the store and all clients that reference it
+- Configuration objects retrieved via `getConfiguration()` use `std::shared_ptr` and remain valid even if the store is updated
+- Only `setConfiguration()` needs synchronization when called concurrently with flag evaluations
 - Logger interfaces (`AssignmentLogger`, `BanditLogger`, `ApplicationLogger`) should be thread-safe if used concurrently
 
 ## Additional Resources

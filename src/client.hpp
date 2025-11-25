@@ -241,10 +241,16 @@ EvaluationResult<T> EppoClient::getAssignmentDetails(VariationType variationType
                                     FlagEvaluationCode::ASSIGNMENT_ERROR, "No flag key provided");
     }
 
-    Configuration config = configurationStore_.getConfiguration();
+    auto config = configurationStore_.getConfiguration();
+    if (!config) {
+        applicationLogger_->info("No configuration available");
+        return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
+                                    FlagEvaluationCode::CONFIGURATION_MISSING,
+                                    "No configuration available");
+    }
 
     // Get flag configuration
-    const FlagConfiguration* flag = config.getFlagConfiguration(flagKey);
+    const FlagConfiguration* flag = config->getFlagConfiguration(flagKey);
     if (flag == nullptr) {
         applicationLogger_->info("Failed to get flag configuration for: " + flagKey);
         return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,

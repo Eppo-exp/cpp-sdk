@@ -20,26 +20,38 @@ EppoClient::EppoClient(ConfigurationStore& configStore,
 
 bool EppoClient::getBoolAssignment(const std::string& flagKey, const std::string& subjectKey,
                                    const Attributes& subjectAttributes, bool defaultValue) {
-    Configuration config = configurationStore_.getConfiguration();
+    auto config = configurationStore_.getConfiguration();
+    if (!config) {
+        applicationLogger_->info("No configuration available");
+        return defaultValue;
+    }
     auto variation =
-        getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::BOOLEAN);
+        getAssignment(*config, flagKey, subjectKey, subjectAttributes, VariationType::BOOLEAN);
     return extractVariation(variation, flagKey, VariationType::BOOLEAN, defaultValue);
 }
 
 double EppoClient::getNumericAssignment(const std::string& flagKey, const std::string& subjectKey,
                                         const Attributes& subjectAttributes, double defaultValue) {
-    Configuration config = configurationStore_.getConfiguration();
+    auto config = configurationStore_.getConfiguration();
+    if (!config) {
+        applicationLogger_->info("No configuration available");
+        return defaultValue;
+    }
     auto variation =
-        getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::NUMERIC);
+        getAssignment(*config, flagKey, subjectKey, subjectAttributes, VariationType::NUMERIC);
     return extractVariation(variation, flagKey, VariationType::NUMERIC, defaultValue);
 }
 
 int64_t EppoClient::getIntegerAssignment(const std::string& flagKey, const std::string& subjectKey,
                                          const Attributes& subjectAttributes,
                                          int64_t defaultValue) {
-    Configuration config = configurationStore_.getConfiguration();
+    auto config = configurationStore_.getConfiguration();
+    if (!config) {
+        applicationLogger_->info("No configuration available");
+        return defaultValue;
+    }
     auto variation =
-        getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::INTEGER);
+        getAssignment(*config, flagKey, subjectKey, subjectAttributes, VariationType::INTEGER);
     return extractVariation(variation, flagKey, VariationType::INTEGER, defaultValue);
 }
 
@@ -47,9 +59,13 @@ std::string EppoClient::getStringAssignment(const std::string& flagKey,
                                             const std::string& subjectKey,
                                             const Attributes& subjectAttributes,
                                             const std::string& defaultValue) {
-    Configuration config = configurationStore_.getConfiguration();
+    auto config = configurationStore_.getConfiguration();
+    if (!config) {
+        applicationLogger_->info("No configuration available");
+        return defaultValue;
+    }
     auto variation =
-        getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::STRING);
+        getAssignment(*config, flagKey, subjectKey, subjectAttributes, VariationType::STRING);
     return extractVariation(variation, flagKey, VariationType::STRING, defaultValue);
 }
 
@@ -57,9 +73,13 @@ nlohmann::json EppoClient::getJSONAssignment(const std::string& flagKey,
                                              const std::string& subjectKey,
                                              const Attributes& subjectAttributes,
                                              const nlohmann::json& defaultValue) {
-    Configuration config = configurationStore_.getConfiguration();
+    auto config = configurationStore_.getConfiguration();
+    if (!config) {
+        applicationLogger_->info("No configuration available");
+        return defaultValue;
+    }
     auto variation =
-        getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
+        getAssignment(*config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
     return extractVariation(variation, flagKey, VariationType::JSON, defaultValue);
 }
 
@@ -67,9 +87,13 @@ std::string EppoClient::getSerializedJSONAssignment(const std::string& flagKey,
                                                     const std::string& subjectKey,
                                                     const Attributes& subjectAttributes,
                                                     const std::string& defaultValue) {
-    Configuration config = configurationStore_.getConfiguration();
+    auto config = configurationStore_.getConfiguration();
+    if (!config) {
+        applicationLogger_->info("No configuration available");
+        return defaultValue;
+    }
     auto variation =
-        getAssignment(config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
+        getAssignment(*config, flagKey, subjectKey, subjectAttributes, VariationType::JSON);
 
     if (!variation.has_value()) {
         return defaultValue;
@@ -151,14 +175,17 @@ BanditResult EppoClient::getBanditAction(const std::string& flagKey, const std::
                                          const ContextAttributes& subjectAttributes,
                                          const std::map<std::string, ContextAttributes>& actions,
                                          const std::string& defaultVariation) {
-    Configuration config = configurationStore_.getConfiguration();
+    auto config = configurationStore_.getConfiguration();
 
     // Ignoring the error here as we can always proceed with default variation
     std::string variation = defaultVariation;
-    auto assignmentValue = getAssignment(
-        config, flagKey, subjectKey, toGenericAttributes(subjectAttributes), VariationType::STRING);
-    if (assignmentValue.has_value() && std::holds_alternative<std::string>(*assignmentValue)) {
-        variation = std::get<std::string>(*assignmentValue);
+    if (config) {
+        auto assignmentValue =
+            getAssignment(*config, flagKey, subjectKey, toGenericAttributes(subjectAttributes),
+                          VariationType::STRING);
+        if (assignmentValue.has_value() && std::holds_alternative<std::string>(*assignmentValue)) {
+            variation = std::get<std::string>(*assignmentValue);
+        }
     }
 
     // If no actions have been passed, return the variation with no action
@@ -166,14 +193,18 @@ BanditResult EppoClient::getBanditAction(const std::string& flagKey, const std::
         return BanditResult(variation, std::nullopt);
     }
 
+    if (!config) {
+        return BanditResult(variation, std::nullopt);
+    }
+
     // Get bandit variation
     BanditVariation banditVariation;
-    if (!config.getBanditVariant(flagKey, variation, banditVariation)) {
+    if (!config->getBanditVariant(flagKey, variation, banditVariation)) {
         return BanditResult(variation, std::nullopt);
     }
 
     // Get bandit configuration
-    const BanditConfiguration* bandit = config.getBanditConfiguration(banditVariation.key);
+    const BanditConfiguration* bandit = config->getBanditConfiguration(banditVariation.key);
     if (bandit == nullptr) {
         return BanditResult(variation, std::nullopt);
     }
@@ -214,17 +245,21 @@ EvaluationResult<std::string> EppoClient::getBanditActionDetails(
     }
 
     // Get configuration for bandit operations
-    Configuration config = configurationStore_.getConfiguration();
+    auto config = configurationStore_.getConfiguration();
+    if (!config) {
+        details.banditEvaluationCode = BanditEvaluationCode::CONFIGURATION_MISSING;
+        return EvaluationResult<std::string>(variation, std::nullopt, details);
+    }
 
     // Get bandit variation
     BanditVariation banditVariation;
-    if (!config.getBanditVariant(flagKey, variation, banditVariation)) {
+    if (!config->getBanditVariant(flagKey, variation, banditVariation)) {
         details.banditEvaluationCode = BanditEvaluationCode::NON_BANDIT_VARIATION;
         return EvaluationResult<std::string>(variation, std::nullopt, details);
     }
 
     // Get bandit configuration
-    const BanditConfiguration* bandit = config.getBanditConfiguration(banditVariation.key);
+    const BanditConfiguration* bandit = config->getBanditConfiguration(banditVariation.key);
     if (bandit == nullptr) {
         details.banditEvaluationCode = BanditEvaluationCode::CONFIGURATION_MISSING;
         return EvaluationResult<std::string>(variation, std::nullopt, details);
