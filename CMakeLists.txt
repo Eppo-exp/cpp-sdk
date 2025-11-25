@@ -74,7 +74,6 @@ target_compile_definitions(eppoclient PUBLIC JSON_NOEXCEPTION)
 set_target_properties(eppoclient PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
-    PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/src/client.hpp"
 )
 
 # Compiler flags
@@ -84,6 +83,10 @@ if(MSVC)
     target_compile_options(eppoclient PRIVATE /EHs-c- /D_HAS_EXCEPTIONS=0)
 else()
     target_compile_options(eppoclient PRIVATE -Wall -Wextra)
+    # Clang-specific warnings
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(eppoclient PRIVATE -Wexit-time-destructors)
+    endif()
     # Disable exceptions on GCC/Clang (PRIVATE so it doesn't affect library users)
     target_compile_options(eppoclient PRIVATE -fno-exceptions)
 endif()
