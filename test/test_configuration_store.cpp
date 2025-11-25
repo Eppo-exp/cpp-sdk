@@ -7,9 +7,9 @@ using namespace eppoclient;
 TEST_CASE("ConfigurationStore basic get/set", "[configuration_store]") {
     ConfigurationStore store;
 
-    // Get configuration before setting should return nullptr
+    // Get configuration before setting should return empty configuration
     auto config1 = store.getConfiguration();
-    REQUIRE(config1 == nullptr);
+    REQUIRE(config1 != nullptr);
 
     // Set a configuration
     Configuration newConfig;

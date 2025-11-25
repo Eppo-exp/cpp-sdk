@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **BREAKING**: `ConfigurationStore::getConfiguration()` now returns `std::shared_ptr<const Configuration>` instead of `Configuration` by value
+  - Returns an empty configuration when no configuration is set (graceful behavior, no null checks required)
+  - Eliminates expensive configuration copies on every flag evaluation
+  - Provides thread-safe reference counting via `std::shared_ptr`
+  - Configuration is immutable (`const`) once retrieved
+  - Update your code: use `->` instead of `.` to access configuration methods (no null checks needed)
+
 ## [1.0.0] - 2025-11-14
 
 Initial release of the Eppo C++ SDK.

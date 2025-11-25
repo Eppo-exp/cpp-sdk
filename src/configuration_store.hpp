@@ -27,7 +27,7 @@ public:
 
     /**
      * Returns a shared pointer to the currently active configuration.
-     * If no configuration has been set, returns nullptr.
+     * If no configuration has been set, returns an empty configuration.
      *
      * The returned shared_ptr provides thread-safe reference counting
      * and ensures the configuration remains valid for the lifetime of the pointer.

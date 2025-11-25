@@ -242,12 +242,6 @@ EvaluationResult<T> EppoClient::getAssignmentDetails(VariationType variationType
     }
 
     auto config = configurationStore_.getConfiguration();
-    if (!config) {
-        applicationLogger_->info("No configuration available");
-        return createErrorResult<T>(defaultValue, flagKey, subjectKey, subjectAttributes,
-                                    FlagEvaluationCode::CONFIGURATION_MISSING,
-                                    "No configuration available");
-    }
 
     // Get flag configuration
     const FlagConfiguration* flag = config->getFlagConfiguration(flagKey);

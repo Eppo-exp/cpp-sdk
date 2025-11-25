@@ -2,9 +2,11 @@
 
 namespace eppoclient {
 
-ConfigurationStore::ConfigurationStore() : configuration_(nullptr) {}
+ConfigurationStore::ConfigurationStore()
+    : configuration_(std::make_shared<const Configuration>()) {}
 
-ConfigurationStore::ConfigurationStore(const Configuration& config) : configuration_(nullptr) {
+ConfigurationStore::ConfigurationStore(const Configuration& config)
+    : configuration_(std::make_shared<const Configuration>()) {
     setConfiguration(config);
 }
 
