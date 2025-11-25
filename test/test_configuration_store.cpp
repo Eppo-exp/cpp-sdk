@@ -7,20 +7,23 @@ using namespace eppoclient;
 TEST_CASE("ConfigurationStore basic get/set", "[configuration_store]") {
     ConfigurationStore store;
 
-    // Get configuration before setting should return empty
-    Configuration config1 = store.getConfiguration();
+    // Get configuration before setting should return empty configuration
+    auto config1 = store.getConfiguration();
+    REQUIRE(config1 != nullptr);
 
     // Set a configuration
     Configuration newConfig;
     store.setConfiguration(newConfig);
 
-    // Get configuration should work
-    Configuration config2 = store.getConfiguration();
+    // Get configuration should return a valid shared_ptr
+    auto config2 = store.getConfiguration();
+    REQUIRE(config2 != nullptr);
 }
 
 TEST_CASE("ConfigurationStore constructor with config", "[configuration_store]") {
     Configuration config;
     ConfigurationStore store(config);
 
-    Configuration retrievedConfig = store.getConfiguration();
+    auto retrievedConfig = store.getConfiguration();
+    REQUIRE(retrievedConfig != nullptr);
 }

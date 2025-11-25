@@ -1,7 +1,7 @@
 #ifndef CONFIGURATION_STORE_HPP
 #define CONFIGURATION_STORE_HPP
 
-#include <optional>
+#include <memory>
 #include "configuration.hpp"
 
 namespace eppoclient {
@@ -26,10 +26,13 @@ public:
     ConfigurationStore& operator=(const ConfigurationStore&) = delete;
 
     /**
-     * Returns a copy of the currently active configuration.
+     * Returns a shared pointer to the currently active configuration.
      * If no configuration has been set, returns an empty configuration.
+     *
+     * The returned shared_ptr provides thread-safe reference counting
+     * and ensures the configuration remains valid for the lifetime of the pointer.
      */
-    Configuration getConfiguration() const;
+    std::shared_ptr<const Configuration> getConfiguration() const;
 
     /**
      * Sets the configuration.
@@ -37,7 +40,7 @@ public:
     void setConfiguration(const Configuration& config);
 
 private:
-    std::optional<Configuration> configuration_;
+    std::shared_ptr<const Configuration> configuration_;
 };
 
 }  // namespace eppoclient
