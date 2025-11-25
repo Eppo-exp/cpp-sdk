@@ -461,7 +461,7 @@ The Eppo SDK is built with **`-fno-exceptions`** and does not use exceptions int
 1. **Logs the error** through the `ApplicationLogger` interface
 2. **Returns the default value** you provided
 
-This design ensures your application continues running even if flag evaluation fails, making it suitable for production environments and projects that don't use exceptions.
+See the **Getting Detailed Error Information** section below for more refined error handling.
 
 ### Error Handling Behavior
 
@@ -525,6 +525,49 @@ public:
 auto logger = std::make_shared<MyApplicationLogger>();
 eppoclient::EppoClient client(configStore, nullptr, nullptr, logger);
 ```
+
+### Getting Detailed Error Information
+
+For more granular error handling, use the `*Details()` variants of assignment functions (such as `getBoolAssignmentDetails()`, `getStringAssignmentDetails()`, etc.). These functions return evaluation details that include:
+
+1. **Flag evaluation code**: Indicates why a particular assignment was made or what error occurred
+2. **Flag evaluation details**: Contains specific error messages when errors are encountered
+
+```cpp
+eppoclient::Attributes attributes;
+
+// Use the *Details function to get evaluation information
+auto result = client.getBoolAssignmentDetails(
+    "my-flag",
+    "user-123",
+    attributes,
+    false  // default value
+);
+
+// Check if evaluation details are available
+if (result.evaluationDetails.has_value()) {
+    eppoclient::EvaluationDetails details = (*result.evaluationDetails);
+
+    // Check the flag evaluation code
+    if (details.flagEvaluationCode.has_value()) {
+        std::string code = eppoclient::flagEvaluationCodeToString(*details.flagEvaluationCode);
+        std::cout << "Evaluation code: " << code << std::endl;
+    }
+
+    // Check for error messages
+    if (details.flagEvaluationDetails.has_value()) {
+        std::string message = *details.flagEvaluationDetails;
+        if (!message.empty()) {
+            std::cerr << "Error details: " << message << std::endl;
+        }
+    }
+}
+
+// Use the assigned value
+bool isEnabled = result.variation;
+```
+
+This approach is especially useful when you need to handle specific error conditions differently or want to report detailed error information to monitoring systems.
 
 ### Common Error Scenarios
 
