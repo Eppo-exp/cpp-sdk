@@ -1,13 +1,13 @@
 #include <catch_amalgamated.hpp>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <nlohmann/json.hpp>
+#include <string>
+#include <vector>
+#include "../src/bandit_model.hpp"
 #include "../src/client.hpp"
 #include "../src/config_response.hpp"
-#include "../src/bandit_model.hpp"
-#include <nlohmann/json.hpp>
-#include <fstream>
-#include <filesystem>
-#include <vector>
-#include <string>
-#include <iostream>
 
 using namespace eppoclient;
 using json = nlohmann::json;
@@ -25,7 +25,7 @@ struct BanditTestSubject {
     ContextAttributes subjectAttributes;
     std::vector<TestAction> actions;
     std::string expectedVariation;
-    std::optional<std::string> expectedAction; // Can be null
+    std::optional<std::string> expectedAction;  // Can be null
 };
 
 // Structure to hold bandit test case data
@@ -33,7 +33,7 @@ struct BanditTestCase {
     std::string flag;
     std::string defaultValue;
     std::vector<BanditTestSubject> subjects;
-    std::string filename; // For better error messages
+    std::string filename;  // For better error messages
 };
 
 // Helper function to parse context attributes from JSON
@@ -55,7 +55,8 @@ ContextAttributes parseContextAttributes(const json& attrJson) {
         }
     }
 
-    if (attrJson.contains("categoricalAttributes") && attrJson["categoricalAttributes"].is_object()) {
+    if (attrJson.contains("categoricalAttributes") &&
+        attrJson["categoricalAttributes"].is_object()) {
         for (auto it = attrJson["categoricalAttributes"].begin();
              it != attrJson["categoricalAttributes"].end(); ++it) {
             std::string key = it.key();
@@ -68,8 +69,7 @@ ContextAttributes parseContextAttributes(const json& attrJson) {
             // For dynamic typing tests: convert numbers to strings
             else if (value.is_number_integer()) {
                 attributes.categoricalAttributes[key] = std::to_string(value.get<int64_t>());
-            }
-            else if (value.is_number_float()) {
+            } else if (value.is_number_float()) {
                 attributes.categoricalAttributes[key] = std::to_string(value.get<double>());
             }
             // Skip nulls, booleans, objects, arrays
@@ -166,8 +166,8 @@ std::vector<BanditTestCase> loadAllBanditTestCases(const std::string& directory)
                 try {
                     testCases.push_back(loadBanditTestCase(entry.path().string()));
                 } catch (const std::exception& e) {
-                    std::cerr << "Warning: Failed to load bandit test case " << filename
-                              << ": " << e.what() << std::endl;
+                    std::cerr << "Warning: Failed to load bandit test case " << filename << ": "
+                              << e.what() << std::endl;
                 }
             }
         }
@@ -239,9 +239,7 @@ TEST_CASE("UFC Bandit Test Cases - Bandit Action Selection", "[ufc][bandits]") {
     public:
         std::vector<BanditEvent> loggedEvents;
 
-        void logBanditAction(const BanditEvent& event) override {
-            loggedEvents.push_back(event);
-        }
+        void logBanditAction(const BanditEvent& event) override { loggedEvents.push_back(event); }
     };
 
     auto banditLogger = std::make_shared<MockBanditLogger>();
@@ -272,13 +270,9 @@ TEST_CASE("UFC Bandit Test Cases - Bandit Action Selection", "[ufc][bandits]") {
                     banditLogger->loggedEvents.clear();
 
                     // Get bandit action
-                    BanditResult result = client.getBanditAction(
-                        testCase.flag,
-                        subject.subjectKey,
-                        subject.subjectAttributes,
-                        actionsMap,
-                        testCase.defaultValue
-                    );
+                    BanditResult result = client.getBanditAction(testCase.flag, subject.subjectKey,
+                                                                 subject.subjectAttributes,
+                                                                 actionsMap, testCase.defaultValue);
 
                     // Verify the variation matches expected value
                     INFO("Flag: " << testCase.flag);
@@ -306,7 +300,8 @@ TEST_CASE("UFC Bandit Test Cases - Bandit Action Selection", "[ufc][bandits]") {
                         }
                     } else {
                         INFO("Expected action: null");
-                        INFO("Actual action: " << (result.action.has_value() ? result.action.value() : "null"));
+                        INFO("Actual action: " << (result.action.has_value() ? result.action.value()
+                                                                             : "null"));
                         CHECK(!result.action.has_value());
 
                         // Verify that no bandit action was logged when action is null
@@ -457,13 +452,8 @@ TEST_CASE("Bandit edge cases", "[bandits][edge-cases]") {
 
         std::map<std::string, ContextAttributes> emptyActions;
 
-        BanditResult result = client.getBanditAction(
-            "test-flag",
-            "test-subject",
-            subjectAttrs,
-            emptyActions,
-            "default"
-        );
+        BanditResult result = client.getBanditAction("test-flag", "test-subject", subjectAttrs,
+                                                     emptyActions, "default");
 
         // Should return default variation with no action
         CHECK(result.variation == "default");

@@ -1,10 +1,10 @@
 #ifndef LRU2Q_HPP
 #define LRU2Q_HPP
 
+#include <cassert>
 #include <list>
 #include <unordered_map>
 #include <utility>
-#include <cassert>
 
 namespace eppoclient {
 namespace cache {
@@ -18,7 +18,7 @@ namespace cache {
  *
  * This provides better performance than a simple LRU for many workloads.
  */
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 class TwoQueueCache {
 private:
     // Node structure for doubly linked list
@@ -197,9 +197,7 @@ public:
     /**
      * Gets the current number of items in the cache.
      */
-    size_t Len() const {
-        return recentQueue_.size() + frequentQueue_.size();
-    }
+    size_t Len() const { return recentQueue_.size() + frequentQueue_.size(); }
 
     /**
      * Clears all items from the cache.
@@ -214,7 +212,7 @@ public:
     }
 };
 
-} // namespace cache
-} // namespace eppoclient
+}  // namespace cache
+}  // namespace eppoclient
 
-#endif // LRU2Q_HPP
+#endif  // LRU2Q_HPP

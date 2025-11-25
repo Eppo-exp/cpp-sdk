@@ -2,8 +2,8 @@
 #define CONFIGURATION_HPP
 
 #include <string>
-#include "config_response.hpp"
 #include "bandit_model.hpp"
+#include "config_response.hpp"
 
 namespace eppoclient {
 
@@ -32,8 +32,7 @@ public:
      * Get bandit variation for a given flag key and variation value.
      * Returns true if found, false otherwise.
      */
-    bool getBanditVariant(const std::string& flagKey,
-                          const std::string& variation,
+    bool getBanditVariant(const std::string& flagKey, const std::string& variation,
                           BanditVariation& result) const;
 
     /**
@@ -57,6 +56,6 @@ private:
     std::map<std::string, std::map<std::string, BanditVariation>> banditFlagAssociations_;
 };
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // CONFIGURATION_H
+#endif  // CONFIGURATION_H

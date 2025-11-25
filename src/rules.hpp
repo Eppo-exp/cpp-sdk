@@ -1,12 +1,12 @@
 #ifndef RULES_HPP
 #define RULES_HPP
 
+#include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
-#include <vector>
 #include <unordered_map>
 #include <variant>
-#include <optional>
-#include <nlohmann/json.hpp>
+#include <vector>
 #include "application_logger.hpp"
 
 namespace eppoclient {
@@ -18,13 +18,8 @@ struct Rule;
 
 // Type aliases for attribute values
 // AttributeValue can be string, int64, double, bool, or null
-using AttributeValue = std::variant<
-    std::monostate,  // Represents null/nil
-    std::string,
-    int64_t,
-    double,
-    bool
->;
+using AttributeValue = std::variant<std::monostate,  // Represents null/nil
+                                    std::string, int64_t, double, bool>;
 
 using Attributes = std::unordered_map<std::string, AttributeValue>;
 
@@ -48,24 +43,23 @@ bool isOne(const AttributeValue& attributeValue, const std::string& s);
 
 // Semantic version comparison
 // Returns true/false for comparison
-bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValue,
-                             Operator op);
+bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValue, Operator op);
 
 // Numeric comparison
 // Returns true/false for comparison
-bool evaluateNumericCondition(double subjectValue, double conditionValue,
-                              Operator op);
+bool evaluateNumericCondition(double subjectValue, double conditionValue, Operator op);
 
 // Type conversion utilities
 // Convert AttributeValue to double, returns std::nullopt on failure
 std::optional<double> tryToDouble(const AttributeValue& val);
 
-// Convert nlohmann::json to double (for use in config_response.cpp), returns std::nullopt on failure
+// Convert nlohmann::json to double (for use in config_response.cpp), returns std::nullopt on
+// failure
 std::optional<double> tryToDouble(const nlohmann::json& val);
 
 // Helper to convert AttributeValue to string representation
 std::string attributeValueToString(const AttributeValue& value);
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // RULES_H
+#endif  // RULES_H

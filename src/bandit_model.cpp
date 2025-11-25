@@ -1,15 +1,13 @@
 #include "bandit_model.hpp"
-#include "time_utils.hpp"
 #include <chrono>
+#include "time_utils.hpp"
 namespace eppoclient {
 
 // BanditNumericAttributeCoefficient serialization
 void to_json(nlohmann::json& j, const BanditNumericAttributeCoefficient& bnac) {
-    j = nlohmann::json{
-        {"attributeKey", bnac.attributeKey},
-        {"coefficient", bnac.coefficient},
-        {"missingValueCoefficient", bnac.missingValueCoefficient}
-    };
+    j = nlohmann::json{{"attributeKey", bnac.attributeKey},
+                       {"coefficient", bnac.coefficient},
+                       {"missingValueCoefficient", bnac.missingValueCoefficient}};
 }
 
 void from_json(const nlohmann::json& j, BanditNumericAttributeCoefficient& bnac) {
@@ -20,11 +18,9 @@ void from_json(const nlohmann::json& j, BanditNumericAttributeCoefficient& bnac)
 
 // BanditCategoricalAttributeCoefficient serialization
 void to_json(nlohmann::json& j, const BanditCategoricalAttributeCoefficient& bcac) {
-    j = nlohmann::json{
-        {"attributeKey", bcac.attributeKey},
-        {"missingValueCoefficient", bcac.missingValueCoefficient},
-        {"valueCoefficients", bcac.valueCoefficients}
-    };
+    j = nlohmann::json{{"attributeKey", bcac.attributeKey},
+                       {"missingValueCoefficient", bcac.missingValueCoefficient},
+                       {"valueCoefficients", bcac.valueCoefficients}};
 }
 
 void from_json(const nlohmann::json& j, BanditCategoricalAttributeCoefficient& bcac) {
@@ -35,14 +31,12 @@ void from_json(const nlohmann::json& j, BanditCategoricalAttributeCoefficient& b
 
 // BanditCoefficients serialization
 void to_json(nlohmann::json& j, const BanditCoefficients& bc) {
-    j = nlohmann::json{
-        {"actionKey", bc.actionKey},
-        {"intercept", bc.intercept},
-        {"subjectNumericCoefficients", bc.subjectNumericCoefficients},
-        {"subjectCategoricalCoefficients", bc.subjectCategoricalCoefficients},
-        {"actionNumericCoefficients", bc.actionNumericCoefficients},
-        {"actionCategoricalCoefficients", bc.actionCategoricalCoefficients}
-    };
+    j = nlohmann::json{{"actionKey", bc.actionKey},
+                       {"intercept", bc.intercept},
+                       {"subjectNumericCoefficients", bc.subjectNumericCoefficients},
+                       {"subjectCategoricalCoefficients", bc.subjectCategoricalCoefficients},
+                       {"actionNumericCoefficients", bc.actionNumericCoefficients},
+                       {"actionCategoricalCoefficients", bc.actionCategoricalCoefficients}};
 }
 
 void from_json(const nlohmann::json& j, BanditCoefficients& bc) {
@@ -56,12 +50,10 @@ void from_json(const nlohmann::json& j, BanditCoefficients& bc) {
 
 // BanditModelData serialization
 void to_json(nlohmann::json& j, const BanditModelData& bmd) {
-    j = nlohmann::json{
-        {"gamma", bmd.gamma},
-        {"defaultActionScore", bmd.defaultActionScore},
-        {"actionProbabilityFloor", bmd.actionProbabilityFloor},
-        {"coefficients", bmd.coefficients}
-    };
+    j = nlohmann::json{{"gamma", bmd.gamma},
+                       {"defaultActionScore", bmd.defaultActionScore},
+                       {"actionProbabilityFloor", bmd.actionProbabilityFloor},
+                       {"coefficients", bmd.coefficients}};
 }
 
 void from_json(const nlohmann::json& j, BanditModelData& bmd) {
@@ -73,13 +65,11 @@ void from_json(const nlohmann::json& j, BanditModelData& bmd) {
 
 // BanditConfiguration serialization
 void to_json(nlohmann::json& j, const BanditConfiguration& bc) {
-    j = nlohmann::json{
-        {"banditKey", bc.banditKey},
-        {"modelName", bc.modelName},
-        {"modelVersion", bc.modelVersion},
-        {"modelData", bc.modelData},
-        {"updatedAt", formatISOTimestamp(bc.updatedAt)}
-    };
+    j = nlohmann::json{{"banditKey", bc.banditKey},
+                       {"modelName", bc.modelName},
+                       {"modelVersion", bc.modelVersion},
+                       {"modelData", bc.modelData},
+                       {"updatedAt", formatISOTimestamp(bc.updatedAt)}};
 }
 
 void from_json(const nlohmann::json& j, BanditConfiguration& bc) {
@@ -95,10 +85,7 @@ void from_json(const nlohmann::json& j, BanditConfiguration& bc) {
 
 // BanditResponse serialization
 void to_json(nlohmann::json& j, const BanditResponse& br) {
-    j = nlohmann::json{
-        {"bandits", br.bandits},
-        {"updatedAt", formatISOTimestamp(br.updatedAt)}
-    };
+    j = nlohmann::json{{"bandits", br.bandits}, {"updatedAt", formatISOTimestamp(br.updatedAt)}};
 }
 
 void from_json(const nlohmann::json& j, BanditResponse& br) {
@@ -111,12 +98,10 @@ void from_json(const nlohmann::json& j, BanditResponse& br) {
 
 // BanditVariation serialization
 void to_json(nlohmann::json& j, const BanditVariation& bv) {
-    j = nlohmann::json{
-        {"key", bv.key},
-        {"flagKey", bv.flagKey},
-        {"variationKey", bv.variationKey},
-        {"variationValue", bv.variationValue}
-    };
+    j = nlohmann::json{{"key", bv.key},
+                       {"flagKey", bv.flagKey},
+                       {"variationKey", bv.variationKey},
+                       {"variationValue", bv.variationValue}};
 }
 
 void from_json(const nlohmann::json& j, BanditVariation& bv) {
@@ -126,4 +111,4 @@ void from_json(const nlohmann::json& j, BanditVariation& bv) {
     j.at("variationValue").get_to(bv.variationValue);
 }
 
-} // namespace eppoclient
+}  // namespace eppoclient

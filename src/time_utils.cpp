@@ -1,7 +1,7 @@
 #include "time_utils.hpp"
-#include <sstream>
-#include <iomanip>
 #include <cctype>
+#include <iomanip>
+#include <sstream>
 
 namespace eppoclient {
 
@@ -35,7 +35,8 @@ std::chrono::system_clock::time_point parseISOTimestamp(const std::string& times
             }
         }
         // If less than 3 digits, pad with zeros
-        while (msDigits.size() < 3) msDigits.push_back('0');
+        while (msDigits.size() < 3)
+            msDigits.push_back('0');
         milliseconds = std::stoi(msDigits);
         // The rest (additional sub-ms) is ignored
     }
@@ -63,8 +64,7 @@ std::string formatISOTimestamp(const std::chrono::system_clock::time_point& tp) 
     std::tm tm = *std::gmtime(&tt);
 
     // Add milliseconds
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-        tp.time_since_epoch()) % 1000;
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch()) % 1000;
 
     std::ostringstream ss;
     ss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%S");
@@ -72,4 +72,4 @@ std::string formatISOTimestamp(const std::chrono::system_clock::time_point& tp) 
     return ss.str();
 }
 
-} // namespace eppoclient
+}  // namespace eppoclient

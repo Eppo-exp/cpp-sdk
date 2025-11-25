@@ -3,9 +3,7 @@
 
 namespace eppoclient {
 
-LruBanditLogger::LruBanditLogger(
-    std::shared_ptr<BanditLogger> logger,
-    size_t cacheSize)
+LruBanditLogger::LruBanditLogger(std::shared_ptr<BanditLogger> logger, size_t cacheSize)
     : cache_(cacheSize), inner_(logger) {
     assert(logger && "Error initializing bandit logger: inner logger cannot be null");
 }
@@ -30,10 +28,9 @@ void LruBanditLogger::logBanditAction(const BanditEvent& event) {
     }
 }
 
-std::shared_ptr<BanditLogger> NewLruBanditLogger(
-    std::shared_ptr<BanditLogger> logger,
-    size_t cacheSize) {
+std::shared_ptr<BanditLogger> NewLruBanditLogger(std::shared_ptr<BanditLogger> logger,
+                                                 size_t cacheSize) {
     return std::make_shared<LruBanditLogger>(logger, cacheSize);
 }
 
-} // namespace eppoclient
+}  // namespace eppoclient

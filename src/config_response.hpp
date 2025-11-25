@@ -1,26 +1,20 @@
 #ifndef CONFIG_RESPONSE_HPP
 #define CONFIG_RESPONSE_HPP
 
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <optional>
-#include <variant>
 #include <chrono>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <variant>
+#include <vector>
 #include "bandit_model.hpp"
 
 namespace eppoclient {
 
 // Enum for variation types
-enum class VariationType {
-    STRING,
-    INTEGER,
-    NUMERIC,
-    BOOLEAN,
-    JSON
-};
+enum class VariationType { STRING, INTEGER, NUMERIC, BOOLEAN, JSON };
 
 // serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const VariationType& vt);
@@ -28,12 +22,13 @@ void from_json(const nlohmann::json& j, VariationType& vt);
 
 // Helper functions for VariationType
 std::string variationTypeToString(VariationType type);
-std::string detectVariationType(const std::variant<std::string, int64_t, double, bool, nlohmann::json>& variation);
+std::string detectVariationType(
+    const std::variant<std::string, int64_t, double, bool, nlohmann::json>& variation);
 
 // Parse variation value based on type
 // Returns std::nullopt if parsing fails
-std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>>
-parseVariationValue(const nlohmann::json& value, VariationType type);
+std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>> parseVariationValue(
+    const nlohmann::json& value, VariationType type);
 
 // Shard range structure
 struct ShardRange {
@@ -46,17 +41,7 @@ void to_json(nlohmann::json& j, const ShardRange& sr);
 void from_json(const nlohmann::json& j, ShardRange& sr);
 
 // Operator enum
-enum class Operator {
-    IS_NULL,
-    MATCHES,
-    NOT_MATCHES,
-    ONE_OF,
-    NOT_ONE_OF,
-    GTE,
-    GT,
-    LTE,
-    LT
-};
+enum class Operator { IS_NULL, MATCHES, NOT_MATCHES, ONE_OF, NOT_ONE_OF, GTE, GT, LTE, LT };
 
 // serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Operator& op);
@@ -85,7 +70,7 @@ void from_json(const nlohmann::json& j, Split& s);
 
 // Condition structure
 struct Condition {
-    Operator op; // operator is a C++ keyword, using op
+    Operator op;  // operator is a C++ keyword, using op
     std::string attribute;
     nlohmann::json value;
 
@@ -155,7 +140,9 @@ struct FlagConfiguration {
     int totalShards;
 
     // Cached parsed variations (not serialized)
-    std::unordered_map<std::string, std::variant<std::string, int64_t, double, bool, nlohmann::json>> parsedVariations;
+    std::unordered_map<std::string,
+                       std::variant<std::string, int64_t, double, bool, nlohmann::json>>
+        parsedVariations;
 
     FlagConfiguration();
     void precompute();
@@ -177,6 +164,6 @@ struct ConfigResponse {
 void to_json(nlohmann::json& j, const ConfigResponse& cr);
 void from_json(const nlohmann::json& j, ConfigResponse& cr);
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // CONFIG_RESPONSE_H
+#endif  // CONFIG_RESPONSE_H

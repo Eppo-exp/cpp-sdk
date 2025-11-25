@@ -1,10 +1,10 @@
 #include "config_response.hpp"
-#include "rules.hpp"
-#include "time_utils.hpp"
+#include <cstdlib>
+#include <iomanip>
 #include <semver/semver.hpp>
 #include <sstream>
-#include <iomanip>
-#include <cstdlib>
+#include "rules.hpp"
+#include "time_utils.hpp"
 
 namespace eppoclient {
 
@@ -31,7 +31,7 @@ void to_json(nlohmann::json& j, const VariationType& vt) {
 
 void from_json(const nlohmann::json& j, VariationType& vt) {
     if (!j.is_string()) {
-        vt = VariationType::STRING; // Default
+        vt = VariationType::STRING;  // Default
         return;
     }
     std::string typeStr = j.get<std::string>();
@@ -54,22 +54,34 @@ void from_json(const nlohmann::json& j, VariationType& vt) {
 // Helper function to convert VariationType to string
 std::string variationTypeToString(VariationType type) {
     switch (type) {
-        case VariationType::STRING: return "STRING";
-        case VariationType::INTEGER: return "INTEGER";
-        case VariationType::NUMERIC: return "NUMERIC";
-        case VariationType::BOOLEAN: return "BOOLEAN";
-        case VariationType::JSON: return "JSON";
-        default: return "UNKNOWN";
+        case VariationType::STRING:
+            return "STRING";
+        case VariationType::INTEGER:
+            return "INTEGER";
+        case VariationType::NUMERIC:
+            return "NUMERIC";
+        case VariationType::BOOLEAN:
+            return "BOOLEAN";
+        case VariationType::JSON:
+            return "JSON";
+        default:
+            return "UNKNOWN";
     }
 }
 
 // Helper function to detect the variation type
-std::string detectVariationType(const std::variant<std::string, int64_t, double, bool, nlohmann::json>& variation) {
-    if (std::holds_alternative<std::string>(variation)) return "STRING";
-    if (std::holds_alternative<int64_t>(variation)) return "INTEGER";
-    if (std::holds_alternative<double>(variation)) return "NUMERIC";
-    if (std::holds_alternative<bool>(variation)) return "BOOLEAN";
-    if (std::holds_alternative<nlohmann::json>(variation)) return "JSON";
+std::string detectVariationType(
+    const std::variant<std::string, int64_t, double, bool, nlohmann::json>& variation) {
+    if (std::holds_alternative<std::string>(variation))
+        return "STRING";
+    if (std::holds_alternative<int64_t>(variation))
+        return "INTEGER";
+    if (std::holds_alternative<double>(variation))
+        return "NUMERIC";
+    if (std::holds_alternative<bool>(variation))
+        return "BOOLEAN";
+    if (std::holds_alternative<nlohmann::json>(variation))
+        return "JSON";
     return "UNKNOWN";
 }
 
@@ -108,7 +120,7 @@ void to_json(nlohmann::json& j, const Operator& op) {
 
 void from_json(const nlohmann::json& j, Operator& op) {
     if (!j.is_string()) {
-        op = Operator::ONE_OF; // Default
+        op = Operator::ONE_OF;  // Default
         return;
     }
     std::string opStr = j.get<std::string>();
@@ -138,8 +150,8 @@ void from_json(const nlohmann::json& j, Operator& op) {
 
 // Parse variation value based on type
 // Returns std::nullopt if parsing fails
-std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>>
-parseVariationValue(const nlohmann::json& value, VariationType type) {
+std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>> parseVariationValue(
+    const nlohmann::json& value, VariationType type) {
     switch (type) {
         case VariationType::STRING:
             if (value.is_string()) {
@@ -237,10 +249,7 @@ void from_json(const nlohmann::json& j, Shard& s) {
 // Split JSON conversion
 void to_json(nlohmann::json& j, const Split& s) {
     j = nlohmann::json{
-        {"shards", s.shards},
-        {"variationKey", s.variationKey},
-        {"extraLogging", s.extraLogging}
-    };
+        {"shards", s.shards}, {"variationKey", s.variationKey}, {"extraLogging", s.extraLogging}};
 }
 
 void from_json(const nlohmann::json& j, Split& s) {
@@ -253,10 +262,7 @@ void from_json(const nlohmann::json& j, Split& s) {
 
 // Condition implementation
 Condition::Condition()
-    : numericValue(0.0),
-      numericValueValid(false),
-      semVerValue(nullptr),
-      semVerValueValid(false) {}
+    : numericValue(0.0), numericValueValid(false), semVerValue(nullptr), semVerValueValid(false) {}
 
 void Condition::precompute() {
     // Try to parse as numeric value for performance
@@ -269,9 +275,7 @@ void Condition::precompute() {
 
     // Try to parse as semantic version if operator indicates version comparison
     semVerValueValid = false;
-    if (op == Operator::GTE || op == Operator::GT ||
-        op == Operator::LTE || op == Operator::LT) {
-
+    if (op == Operator::GTE || op == Operator::GT || op == Operator::LTE || op == Operator::LT) {
         // Try to parse the condition value as a semantic version
         if (value.is_string()) {
             auto version = std::make_shared<semver::version<>>();
@@ -285,11 +289,7 @@ void Condition::precompute() {
 }
 
 void to_json(nlohmann::json& j, const Condition& c) {
-    j = nlohmann::json{
-        {"operator", c.op},
-        {"attribute", c.attribute},
-        {"value", c.value}
-    };
+    j = nlohmann::json{{"operator", c.op}, {"attribute", c.attribute}, {"value", c.value}};
 }
 
 void from_json(const nlohmann::json& j, Condition& c) {
@@ -309,11 +309,7 @@ void from_json(const nlohmann::json& j, Rule& r) {
 
 // Allocation JSON conversion
 void to_json(nlohmann::json& j, const Allocation& a) {
-    j = nlohmann::json{
-        {"key", a.key},
-        {"rules", a.rules},
-        {"splits", a.splits}
-    };
+    j = nlohmann::json{{"key", a.key}, {"rules", a.rules}, {"splits", a.splits}};
 
     if (a.startAt.has_value()) {
         auto time = std::chrono::system_clock::to_time_t(a.startAt.value());
@@ -367,10 +363,7 @@ void from_json(const nlohmann::json& j, JsonVariationValue& jvv) {
 
 // Variation JSON conversion
 void to_json(nlohmann::json& j, const Variation& v) {
-    j = nlohmann::json{
-        {"key", v.key},
-        {"value", v.value}
-    };
+    j = nlohmann::json{{"key", v.key}, {"value", v.value}};
 }
 
 void from_json(const nlohmann::json& j, Variation& v) {
@@ -379,10 +372,7 @@ void from_json(const nlohmann::json& j, Variation& v) {
 }
 
 // FlagConfiguration implementation
-FlagConfiguration::FlagConfiguration()
-    : enabled(false),
-      variationType(),
-      totalShards() {}
+FlagConfiguration::FlagConfiguration() : enabled(false), variationType(), totalShards() {}
 
 void FlagConfiguration::precompute() {
     // Parse and cache all variations for performance
@@ -407,14 +397,12 @@ void FlagConfiguration::precompute() {
 }
 
 void to_json(nlohmann::json& j, const FlagConfiguration& fc) {
-    j = nlohmann::json{
-        {"key", fc.key},
-        {"enabled", fc.enabled},
-        {"variationType", fc.variationType},
-        {"variations", fc.variations},
-        {"allocations", fc.allocations},
-        {"totalShards", fc.totalShards}
-    };
+    j = nlohmann::json{{"key", fc.key},
+                       {"enabled", fc.enabled},
+                       {"variationType", fc.variationType},
+                       {"variations", fc.variations},
+                       {"allocations", fc.allocations},
+                       {"totalShards", fc.totalShards}};
 }
 
 void from_json(const nlohmann::json& j, FlagConfiguration& fc) {
@@ -437,10 +425,7 @@ void ConfigResponse::precompute() {
 }
 
 void to_json(nlohmann::json& j, const ConfigResponse& cr) {
-    j = nlohmann::json{
-        {"flags", cr.flags},
-        {"bandits", cr.bandits}
-    };
+    j = nlohmann::json{{"flags", cr.flags}, {"bandits", cr.bandits}};
 }
 
 void from_json(const nlohmann::json& j, ConfigResponse& cr) {
@@ -453,4 +438,4 @@ void from_json(const nlohmann::json& j, ConfigResponse& cr) {
     }
 }
 
-} // namespace eppoclient
+}  // namespace eppoclient

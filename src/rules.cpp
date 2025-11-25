@@ -1,15 +1,14 @@
 #include "rules.hpp"
-#include "config_response.hpp"
-#include <semver/semver.hpp>
+#include <cstdlib>
 #include <memory>
 #include <regex>
-#include <cstdlib>
+#include <semver/semver.hpp>
+#include "config_response.hpp"
 
 namespace eppoclient {
 
 // Rule matches if all conditions match
-bool ruleMatches(const Rule& rule, const Attributes& subjectAttributes,
-                 ApplicationLogger* logger) {
+bool ruleMatches(const Rule& rule, const Attributes& subjectAttributes, ApplicationLogger* logger) {
     for (const auto& condition : rule.conditions) {
         if (!conditionMatches(condition, subjectAttributes, logger)) {
             return false;
@@ -24,7 +23,8 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
     // Handle IS_NULL operator specially
     if (condition.op == Operator::IS_NULL) {
         auto it = subjectAttributes.find(condition.attribute);
-        bool isNull = (it == subjectAttributes.end() || std::holds_alternative<std::monostate>(it->second));
+        bool isNull =
+            (it == subjectAttributes.end() || std::holds_alternative<std::monostate>(it->second));
 
         // condition.value should be a boolean
         if (!condition.value.is_boolean()) {
@@ -68,7 +68,6 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
 
     } else if (condition.op == Operator::GTE || condition.op == Operator::GT ||
                condition.op == Operator::LTE || condition.op == Operator::LT) {
-
         // Try semver comparison first if subject is a string and condition has valid semver
         if (std::holds_alternative<std::string>(subjectValue) && condition.semVerValueValid) {
             const std::string& subjectValueStr = std::get<std::string>(subjectValue);
@@ -77,7 +76,7 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
             auto result = semver::parse(subjectValueStr, subjectSemVer);
             if (result) {
                 return evaluateSemVerCondition(&subjectSemVer, condition.semVerValue.get(),
-                                              condition.op);
+                                               condition.op);
             }
             // Failed to parse as semver, fall through to numeric comparison
         }
@@ -86,7 +85,7 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
         std::optional<double> subjectValueNumeric = tryToDouble(subjectValue);
         if (subjectValueNumeric.has_value() && condition.numericValueValid) {
             return evaluateNumericCondition(*subjectValueNumeric, condition.numericValue,
-                                           condition.op);
+                                            condition.op);
         }
 
         // Neither numeric nor semver comparison worked
@@ -159,7 +158,7 @@ bool isOne(const AttributeValue& attributeValue, const std::string& s) {
         char* end = nullptr;
         double value = std::strtod(s.c_str(), &end);
         if (end == s.c_str() || *end != '\0') {
-            return false; // Parse failed
+            return false;  // Parse failed
         }
         return std::get<double>(attributeValue) == value;
 
@@ -168,7 +167,7 @@ bool isOne(const AttributeValue& attributeValue, const std::string& s) {
         char* end = nullptr;
         long long value = std::strtoll(s.c_str(), &end, 10);
         if (end == s.c_str() || *end != '\0') {
-            return false; // Parse failed
+            return false;  // Parse failed
         }
         return std::get<int64_t>(attributeValue) == value;
 
@@ -191,8 +190,7 @@ bool isOne(const AttributeValue& attributeValue, const std::string& s) {
 }
 
 // Semantic version comparison
-bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValue,
-                             Operator op) {
+bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValue, Operator op) {
     const semver::version<>* subject = static_cast<const semver::version<>*>(subjectValue);
     const semver::version<>* condition = static_cast<const semver::version<>*>(conditionValue);
 
@@ -211,8 +209,7 @@ bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValu
 }
 
 // Numeric comparison
-bool evaluateNumericCondition(double subjectValue, double conditionValue,
-                              Operator op) {
+bool evaluateNumericCondition(double subjectValue, double conditionValue, Operator op) {
     if (op == Operator::GT) {
         return subjectValue > conditionValue;
     } else if (op == Operator::GTE) {
@@ -240,7 +237,7 @@ std::optional<double> tryToDouble(const AttributeValue& val) {
         char* end = nullptr;
         double result = std::strtod(str.c_str(), &end);
         if (end == str.c_str() || *end != '\0') {
-            return std::nullopt; // Parse failed
+            return std::nullopt;  // Parse failed
         }
         return result;
 
@@ -260,7 +257,7 @@ std::optional<double> tryToDouble(const nlohmann::json& val) {
         char* end = nullptr;
         double result = std::strtod(str.c_str(), &end);
         if (end == str.c_str() || *end != '\0') {
-            return std::nullopt; // Parse failed
+            return std::nullopt;  // Parse failed
         }
         return result;
     } else if (val.is_boolean()) {
@@ -285,4 +282,4 @@ std::string attributeValueToString(const AttributeValue& value) {
     return "";
 }
 
-} // namespace eppoclient
+}  // namespace eppoclient

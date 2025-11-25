@@ -202,6 +202,23 @@ test-eval-performance: clean test-data
 	@echo "Running performance tests..."
 	@./$(TEST_EXECUTABLE) "[performance]"
 
+# ============================================================================
+# Code Formatting
+# ============================================================================
+
+# Format all source files with clang-format
+.PHONY: format
+format:
+	@echo "Formatting C++ source files..."
+	@find src test examples -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) -exec clang-format -i {} +
+	@echo "Formatting complete!"
+
+# Check formatting without modifying files
+.PHONY: format-check
+format-check:
+	@echo "Checking C++ source formatting..."
+	@find src test examples -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) -exec clang-format --dry-run -Werror {} + && echo "All files are properly formatted!" || (echo "ERROR: Some files need formatting. Run 'make format' to fix."; exit 1)
+
 # Help target
 .PHONY: help
 help:
@@ -216,6 +233,8 @@ help:
 	@echo "  run-bandits            - Run the bandits example"
 	@echo "  run-flags              - Run the flag assignments example"
 	@echo "  run-assignment-details - Run the assignment details example"
+	@echo "  format                 - Format all C++ source files with clang-format"
+	@echo "  format-check           - Check if files are properly formatted (CI-friendly)"
 	@echo "  clean                  - Remove build artifacts"
 	@echo "  help                   - Show this help message"
 	@echo ""

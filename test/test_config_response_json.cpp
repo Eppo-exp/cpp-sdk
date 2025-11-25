@@ -1,8 +1,8 @@
 #include <catch_amalgamated.hpp>
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include "../src/config_response.hpp"
 #include "../src/configuration.hpp"
-#include <nlohmann/json.hpp>
-#include <fstream>
 
 using namespace eppoclient;
 using json = nlohmann::json;
@@ -153,8 +153,12 @@ TEST_CASE("ConfigResponse serialization - flag with allocations", "[config_respo
     REQUIRE(j["flags"]["allocated-flag"]["allocations"][0]["key"] == "allocation-1");
     REQUIRE(j["flags"]["allocated-flag"]["allocations"][0]["rules"].size() == 1);
     REQUIRE(j["flags"]["allocated-flag"]["allocations"][0]["rules"][0]["conditions"].size() == 1);
-    REQUIRE(j["flags"]["allocated-flag"]["allocations"][0]["rules"][0]["conditions"][0]["operator"] == "GT");
-    REQUIRE(j["flags"]["allocated-flag"]["allocations"][0]["rules"][0]["conditions"][0]["attribute"] == "age");
+    REQUIRE(
+        j["flags"]["allocated-flag"]["allocations"][0]["rules"][0]["conditions"][0]["operator"] ==
+        "GT");
+    REQUIRE(
+        j["flags"]["allocated-flag"]["allocations"][0]["rules"][0]["conditions"][0]["attribute"] ==
+        "age");
 }
 
 TEST_CASE("ConfigResponse deserialization - empty config", "[config_response][json]") {
@@ -306,8 +310,10 @@ TEST_CASE("ConfigResponse deserialization - flag with allocations", "[config_res
     REQUIRE(response.flags["allocated-flag"].allocations[0].key == "allocation-1");
     REQUIRE(response.flags["allocated-flag"].allocations[0].rules.size() == 1);
     REQUIRE(response.flags["allocated-flag"].allocations[0].rules[0].conditions.size() == 1);
-    REQUIRE(response.flags["allocated-flag"].allocations[0].rules[0].conditions[0].op == Operator::GT);
-    REQUIRE(response.flags["allocated-flag"].allocations[0].rules[0].conditions[0].attribute == "age");
+    REQUIRE(response.flags["allocated-flag"].allocations[0].rules[0].conditions[0].op ==
+            Operator::GT);
+    REQUIRE(response.flags["allocated-flag"].allocations[0].rules[0].conditions[0].attribute ==
+            "age");
     REQUIRE(response.flags["allocated-flag"].allocations[0].splits.size() == 1);
     REQUIRE(response.flags["allocated-flag"].allocations[0].splits[0].variationKey == "treatment");
 }
@@ -449,11 +455,14 @@ TEST_CASE("ConfigResponse round-trip - complex flag with allocations", "[config_
     REQUIRE(deserialized.flags["complex-flag"].allocations.size() == 1);
     REQUIRE(deserialized.flags["complex-flag"].allocations[0].rules.size() == 1);
     REQUIRE(deserialized.flags["complex-flag"].allocations[0].rules[0].conditions.size() == 2);
-    REQUIRE(deserialized.flags["complex-flag"].allocations[0].rules[0].conditions[0].op == Operator::GT);
-    REQUIRE(deserialized.flags["complex-flag"].allocations[0].rules[0].conditions[1].op == Operator::MATCHES);
+    REQUIRE(deserialized.flags["complex-flag"].allocations[0].rules[0].conditions[0].op ==
+            Operator::GT);
+    REQUIRE(deserialized.flags["complex-flag"].allocations[0].rules[0].conditions[1].op ==
+            Operator::MATCHES);
     REQUIRE(deserialized.flags["complex-flag"].allocations[0].splits.size() == 1);
     REQUIRE(deserialized.flags["complex-flag"].allocations[0].splits[0].shards.size() == 1);
-    REQUIRE(deserialized.flags["complex-flag"].allocations[0].splits[0].shards[0].ranges.size() == 2);
+    REQUIRE(deserialized.flags["complex-flag"].allocations[0].splits[0].shards[0].ranges.size() ==
+            2);
 }
 
 TEST_CASE("ConfigResponse precompute after deserialization", "[config_response][json]") {

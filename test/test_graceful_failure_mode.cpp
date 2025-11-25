@@ -1,45 +1,37 @@
 #include <catch_amalgamated.hpp>
+#include <memory>
+#include <nlohmann/json.hpp>
 #include "../src/client.hpp"
 #include "../src/config_response.hpp"
-#include <nlohmann/json.hpp>
-#include <memory>
 
 using namespace eppoclient;
 using json = nlohmann::json;
 
 namespace {
-    // Mock logger to capture log messages for testing
-    class MockApplicationLogger : public ApplicationLogger {
-    public:
-        std::vector<std::string> debugMessages;
-        std::vector<std::string> infoMessages;
-        std::vector<std::string> warnMessages;
-        std::vector<std::string> errorMessages;
+// Mock logger to capture log messages for testing
+class MockApplicationLogger : public ApplicationLogger {
+public:
+    std::vector<std::string> debugMessages;
+    std::vector<std::string> infoMessages;
+    std::vector<std::string> warnMessages;
+    std::vector<std::string> errorMessages;
 
-        void debug(const std::string& message) override {
-            debugMessages.push_back(message);
-        }
+    void debug(const std::string& message) override { debugMessages.push_back(message); }
 
-        void info(const std::string& message) override {
-            infoMessages.push_back(message);
-        }
+    void info(const std::string& message) override { infoMessages.push_back(message); }
 
-        void warn(const std::string& message) override {
-            warnMessages.push_back(message);
-        }
+    void warn(const std::string& message) override { warnMessages.push_back(message); }
 
-        void error(const std::string& message) override {
-            errorMessages.push_back(message);
-        }
+    void error(const std::string& message) override { errorMessages.push_back(message); }
 
-        void clear() {
-            debugMessages.clear();
-            infoMessages.clear();
-            warnMessages.clear();
-            errorMessages.clear();
-        }
-    };
-} // anonymous namespace
+    void clear() {
+        debugMessages.clear();
+        infoMessages.clear();
+        warnMessages.clear();
+        errorMessages.clear();
+    }
+};
+}  // anonymous namespace
 
 TEST_CASE("Error handling - returns default values and logs errors", "[error-handling]") {
     // Create a configuration store with empty config (no flags)
@@ -153,7 +145,8 @@ TEST_CASE("Error handling - returns default values and logs errors", "[error-han
     SECTION("getSerializedJSONAssignment returns default value on empty subject key error") {
         mockLogger->clear();
         std::string defaultValue = R"({"default":"value"})";
-        std::string result = client.getSerializedJSONAssignment("test-flag", "", attrs, defaultValue);
+        std::string result =
+            client.getSerializedJSONAssignment("test-flag", "", attrs, defaultValue);
 
         // Should return default value
         CHECK(result == defaultValue);

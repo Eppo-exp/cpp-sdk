@@ -25,6 +25,6 @@ public:
     void error(const std::string&) override {}
 };
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // APPLICATION_LOGGER_H
+#endif  // APPLICATION_LOGGER_H

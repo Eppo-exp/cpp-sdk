@@ -2,12 +2,9 @@
 
 namespace eppoclient {
 
-ConfigurationStore::ConfigurationStore()
-    : configuration_(std::nullopt) {
-}
+ConfigurationStore::ConfigurationStore() : configuration_(std::nullopt) {}
 
-ConfigurationStore::ConfigurationStore(const Configuration& config)
-    : configuration_(std::nullopt) {
+ConfigurationStore::ConfigurationStore(const Configuration& config) : configuration_(std::nullopt) {
     setConfiguration(config);
 }
 
@@ -30,4 +27,4 @@ void ConfigurationStore::setConfiguration(const Configuration& config) {
     configuration_ = newConfig;
 }
 
-} // namespace eppoclient
+}  // namespace eppoclient

@@ -1,9 +1,9 @@
 #ifndef LRU_BANDIT_LOGGER_HPP
 #define LRU_BANDIT_LOGGER_HPP
 
+#include <functional>
 #include <memory>
 #include <string>
-#include <functional>
 #include "client.hpp"
 #include "evalbandits.hpp"
 #include "lru2q.hpp"
@@ -19,8 +19,7 @@ struct BanditCacheKey {
     std::string subjectKey;
 
     BanditCacheKey() = default;
-    BanditCacheKey(const std::string& f, const std::string& s)
-        : flagKey(f), subjectKey(s) {}
+    BanditCacheKey(const std::string& f, const std::string& s) : flagKey(f), subjectKey(s) {}
 
     bool operator==(const BanditCacheKey& other) const {
         return flagKey == other.flagKey && subjectKey == other.subjectKey;
@@ -36,31 +35,28 @@ struct BanditCacheValue {
     std::string actionKey;
 
     BanditCacheValue() = default;
-    BanditCacheValue(const std::string& b, const std::string& a)
-        : banditKey(b), actionKey(a) {}
+    BanditCacheValue(const std::string& b, const std::string& a) : banditKey(b), actionKey(a) {}
 
     bool operator==(const BanditCacheValue& other) const {
         return banditKey == other.banditKey && actionKey == other.actionKey;
     }
 
-    bool operator!=(const BanditCacheValue& other) const {
-        return !(*this == other);
-    }
+    bool operator!=(const BanditCacheValue& other) const { return !(*this == other); }
 };
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
 // Hash function for BanditCacheKey
 namespace std {
-    template<>
-    struct hash<eppoclient::BanditCacheKey> {
-        size_t operator()(const eppoclient::BanditCacheKey& key) const {
-            size_t h1 = std::hash<std::string>{}(key.flagKey);
-            size_t h2 = std::hash<std::string>{}(key.subjectKey);
-            return h1 ^ (h2 << 1);
-        }
-    };
-}
+template <>
+struct hash<eppoclient::BanditCacheKey> {
+    size_t operator()(const eppoclient::BanditCacheKey& key) const {
+        size_t h1 = std::hash<std::string>{}(key.flagKey);
+        size_t h2 = std::hash<std::string>{}(key.subjectKey);
+        return h1 ^ (h2 << 1);
+    }
+};
+}  // namespace std
 
 namespace eppoclient {
 
@@ -116,10 +112,9 @@ public:
  * @return A shared pointer to the created logger
  * @throws std::invalid_argument if cacheSize is invalid
  */
-std::shared_ptr<BanditLogger> NewLruBanditLogger(
-    std::shared_ptr<BanditLogger> logger,
-    size_t cacheSize);
+std::shared_ptr<BanditLogger> NewLruBanditLogger(std::shared_ptr<BanditLogger> logger,
+                                                 size_t cacheSize);
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // LRU_BANDIT_LOGGER_HPP
+#endif  // LRU_BANDIT_LOGGER_HPP

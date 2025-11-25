@@ -1,83 +1,75 @@
 #include <catch_amalgamated.hpp>
+#include <fstream>
+#include <nlohmann/json.hpp>
+#include <vector>
 #include "../src/client.hpp"
 #include "../src/config_response.hpp"
-#include <nlohmann/json.hpp>
-#include <fstream>
-#include <vector>
 
 using namespace eppoclient;
 using json = nlohmann::json;
 
 namespace {
-    // Mock logger to capture log messages for testing
-    class MockApplicationLogger : public ApplicationLogger {
-    public:
-        std::vector<std::string> debugMessages;
-        std::vector<std::string> infoMessages;
-        std::vector<std::string> warnMessages;
-        std::vector<std::string> errorMessages;
+// Mock logger to capture log messages for testing
+class MockApplicationLogger : public ApplicationLogger {
+public:
+    std::vector<std::string> debugMessages;
+    std::vector<std::string> infoMessages;
+    std::vector<std::string> warnMessages;
+    std::vector<std::string> errorMessages;
 
-        void debug(const std::string& message) override {
-            debugMessages.push_back(message);
-        }
+    void debug(const std::string& message) override { debugMessages.push_back(message); }
 
-        void info(const std::string& message) override {
-            infoMessages.push_back(message);
-        }
+    void info(const std::string& message) override { infoMessages.push_back(message); }
 
-        void warn(const std::string& message) override {
-            warnMessages.push_back(message);
-        }
+    void warn(const std::string& message) override { warnMessages.push_back(message); }
 
-        void error(const std::string& message) override {
-            errorMessages.push_back(message);
-        }
+    void error(const std::string& message) override { errorMessages.push_back(message); }
 
-        void clear() {
-            debugMessages.clear();
-            infoMessages.clear();
-            warnMessages.clear();
-            errorMessages.clear();
-        }
-    };
-    // Helper function to load flags configuration from JSON file
-    ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
-        std::ifstream file(filepath);
-        if (!file.is_open()) {
-            throw std::runtime_error("Failed to open flags configuration file: " + filepath);
-        }
-
-        json j;
-        file >> j;
-
-        ConfigResponse response = j;
-        return response;
+    void clear() {
+        debugMessages.clear();
+        infoMessages.clear();
+        warnMessages.clear();
+        errorMessages.clear();
+    }
+};
+// Helper function to load flags configuration from JSON file
+ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open flags configuration file: " + filepath);
     }
 
-    // Helper function to parse attributes from JSON
-    Attributes parseAttributes(const json& attrJson) {
-        Attributes attributes;
+    json j;
+    file >> j;
 
-        for (auto it = attrJson.begin(); it != attrJson.end(); ++it) {
-            std::string key = it.key();
-            const auto& value = it.value();
+    ConfigResponse response = j;
+    return response;
+}
 
-            if (value.is_string()) {
-                attributes[key] = value.get<std::string>();
-            } else if (value.is_number_integer()) {
-                attributes[key] = value.get<int64_t>();
-            } else if (value.is_number_float()) {
-                attributes[key] = value.get<double>();
-            } else if (value.is_boolean()) {
-                attributes[key] = value.get<bool>();
-            } else if (value.is_null()) {
-                continue;
-            }
+// Helper function to parse attributes from JSON
+Attributes parseAttributes(const json& attrJson) {
+    Attributes attributes;
+
+    for (auto it = attrJson.begin(); it != attrJson.end(); ++it) {
+        std::string key = it.key();
+        const auto& value = it.value();
+
+        if (value.is_string()) {
+            attributes[key] = value.get<std::string>();
+        } else if (value.is_number_integer()) {
+            attributes[key] = value.get<int64_t>();
+        } else if (value.is_number_float()) {
+            attributes[key] = value.get<double>();
+        } else if (value.is_boolean()) {
+            attributes[key] = value.get<bool>();
+        } else if (value.is_null()) {
+            continue;
         }
-
-        return attributes;
     }
-} // anonymous namespace
+
+    return attributes;
+}
+}  // anonymous namespace
 
 TEST_CASE("getSerializedJSONAssignment - Basic functionality", "[serialized-json]") {
     // Load flags configuration
@@ -100,12 +92,8 @@ TEST_CASE("getSerializedJSONAssignment - Basic functionality", "[serialized-json
         aliceAttrs["country"] = std::string("US");
 
         std::string defaultValue = R"({"foo":"bar"})";
-        std::string result = client.getSerializedJSONAssignment(
-            "json-config-flag",
-            "alice",
-            aliceAttrs,
-            defaultValue
-        );
+        std::string result = client.getSerializedJSONAssignment("json-config-flag", "alice",
+                                                                aliceAttrs, defaultValue);
 
         // Verify result is not the default
         REQUIRE(result != defaultValue);
@@ -132,12 +120,8 @@ TEST_CASE("getSerializedJSONAssignment - Basic functionality", "[serialized-json
         bobAttrs["country"] = std::string("Canada");
 
         std::string defaultValue = R"({"foo":"bar"})";
-        std::string result = client.getSerializedJSONAssignment(
-            "json-config-flag",
-            "bob",
-            bobAttrs,
-            defaultValue
-        );
+        std::string result =
+            client.getSerializedJSONAssignment("json-config-flag", "bob", bobAttrs, defaultValue);
 
         // Verify result is valid JSON
         json parsedResult = json::parse(result);
@@ -155,12 +139,8 @@ TEST_CASE("getSerializedJSONAssignment - Basic functionality", "[serialized-json
         dianaAttrs["Force Empty"] = true;
 
         std::string defaultValue = R"({"foo":"bar"})";
-        std::string result = client.getSerializedJSONAssignment(
-            "json-config-flag",
-            "diana",
-            dianaAttrs,
-            defaultValue
-        );
+        std::string result = client.getSerializedJSONAssignment("json-config-flag", "diana",
+                                                                dianaAttrs, defaultValue);
 
         // Verify result is valid JSON
         json parsedResult = json::parse(result);
@@ -191,12 +171,8 @@ TEST_CASE("getSerializedJSONAssignment - Default value behavior", "[serialized-j
         attrs["email"] = std::string("test@example.com");
 
         std::string defaultValue = R"({"default":"value"})";
-        std::string result = client.getSerializedJSONAssignment(
-            "non-existent-flag",
-            "test-subject",
-            attrs,
-            defaultValue
-        );
+        std::string result = client.getSerializedJSONAssignment("non-existent-flag", "test-subject",
+                                                                attrs, defaultValue);
 
         CHECK(result == defaultValue);
     }
@@ -205,12 +181,8 @@ TEST_CASE("getSerializedJSONAssignment - Default value behavior", "[serialized-j
         Attributes attrs;
         std::string defaultValue = R"({"default":"value"})";
 
-        std::string result = client.getSerializedJSONAssignment(
-            "json-config-flag",
-            "",
-            attrs,
-            defaultValue
-        );
+        std::string result =
+            client.getSerializedJSONAssignment("json-config-flag", "", attrs, defaultValue);
 
         CHECK(result == defaultValue);
     }
@@ -219,18 +191,15 @@ TEST_CASE("getSerializedJSONAssignment - Default value behavior", "[serialized-j
         Attributes attrs;
         std::string defaultValue = R"({"default":"value"})";
 
-        std::string result = client.getSerializedJSONAssignment(
-            "",
-            "test-subject",
-            attrs,
-            defaultValue
-        );
+        std::string result =
+            client.getSerializedJSONAssignment("", "test-subject", attrs, defaultValue);
 
         CHECK(result == defaultValue);
     }
 }
 
-TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger", "[serialized-json]") {
+TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
+          "[serialized-json]") {
     // Load flags configuration
     std::string flagsPath = "test/data/ufc/flags-v1.json";
     ConfigResponse configResponse = loadFlagsConfiguration(flagsPath);
@@ -255,12 +224,8 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         std::string defaultValue = R"({"default":"value"})";
 
         // Call getSerializedJSONAssignment on an integer flag (integer-flag returns int values)
-        std::string result = client.getSerializedJSONAssignment(
-            "integer-flag",
-            "alice",
-            aliceAttrs,
-            defaultValue
-        );
+        std::string result =
+            client.getSerializedJSONAssignment("integer-flag", "alice", aliceAttrs, defaultValue);
 
         // Should return the default value because of type mismatch
         CHECK(result == defaultValue);
@@ -285,12 +250,8 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         std::string defaultValue = R"({"default":"value"})";
 
         // There should be a string flag in the test data - let's use "empty_string_flag"
-        std::string result = client.getSerializedJSONAssignment(
-            "empty_string_flag",
-            "alice",
-            attrs,
-            defaultValue
-        );
+        std::string result =
+            client.getSerializedJSONAssignment("empty_string_flag", "alice", attrs, defaultValue);
 
         // Should return the default value because of type mismatch
         CHECK(result == defaultValue);
@@ -314,12 +275,8 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         std::string defaultValue = R"({"default":"value"})";
 
         // Use a boolean flag
-        std::string result = client.getSerializedJSONAssignment(
-            "kill-switch",
-            "test-subject",
-            attrs,
-            defaultValue
-        );
+        std::string result =
+            client.getSerializedJSONAssignment("kill-switch", "test-subject", attrs, defaultValue);
 
         // Should return the default value because of type mismatch
         CHECK(result == defaultValue);
@@ -344,12 +301,8 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         std::string defaultValue = R"({"default":"value"})";
 
         // Use a numeric flag
-        std::string result = client.getSerializedJSONAssignment(
-            "numeric_flag",
-            "test-subject",
-            attrs,
-            defaultValue
-        );
+        std::string result =
+            client.getSerializedJSONAssignment("numeric_flag", "test-subject", attrs, defaultValue);
 
         // Should return the default value because of type mismatch
         CHECK(result == defaultValue);
@@ -376,12 +329,8 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         std::string defaultValue = R"({"default":"value"})";
 
         // Call on the correct type - JSON flag
-        std::string result = client.getSerializedJSONAssignment(
-            "json-config-flag",
-            "alice",
-            aliceAttrs,
-            defaultValue
-        );
+        std::string result = client.getSerializedJSONAssignment("json-config-flag", "alice",
+                                                                aliceAttrs, defaultValue);
 
         // Should NOT return the default value
         CHECK(result != defaultValue);
@@ -415,12 +364,8 @@ TEST_CASE("getSerializedJSONAssignment - Complex JSON structures", "[serialized-
         aliceAttrs["country"] = std::string("US");
 
         std::string defaultValue = R"({"nested":{"deep":{"value":"default"}}})";
-        std::string result = client.getSerializedJSONAssignment(
-            "json-config-flag",
-            "alice",
-            aliceAttrs,
-            defaultValue
-        );
+        std::string result = client.getSerializedJSONAssignment("json-config-flag", "alice",
+                                                                aliceAttrs, defaultValue);
 
         // Verify result is valid JSON
         json parsedResult;
@@ -435,12 +380,8 @@ TEST_CASE("getSerializedJSONAssignment - Complex JSON structures", "[serialized-
         Attributes attrs;
         std::string defaultValue = R"({"special":"chars: \n\t\r\"\\","unicode":"测试"})";
 
-        std::string result = client.getSerializedJSONAssignment(
-            "non-existent-flag",
-            "test-subject",
-            attrs,
-            defaultValue
-        );
+        std::string result = client.getSerializedJSONAssignment("non-existent-flag", "test-subject",
+                                                                attrs, defaultValue);
 
         CHECK(result == defaultValue);
 
@@ -455,12 +396,8 @@ TEST_CASE("getSerializedJSONAssignment - Complex JSON structures", "[serialized-
         Attributes attrs;
         std::string defaultValue = R"({"array":[1,2,3],"nested":{"array":["a","b","c"]}})";
 
-        std::string result = client.getSerializedJSONAssignment(
-            "non-existent-flag",
-            "test-subject",
-            attrs,
-            defaultValue
-        );
+        std::string result = client.getSerializedJSONAssignment("non-existent-flag", "test-subject",
+                                                                attrs, defaultValue);
 
         CHECK(result == defaultValue);
 
@@ -492,16 +429,12 @@ TEST_CASE("getSerializedJSONAssignment - JSON formatting", "[serialized-json]") 
         aliceAttrs["country"] = std::string("US");
 
         std::string defaultValue = R"({"foo":"bar"})";
-        std::string result = client.getSerializedJSONAssignment(
-            "json-config-flag",
-            "alice",
-            aliceAttrs,
-            defaultValue
-        );
+        std::string result = client.getSerializedJSONAssignment("json-config-flag", "alice",
+                                                                aliceAttrs, defaultValue);
 
         // Result should not contain newlines (compact format)
         CHECK(result.find('\n') == std::string::npos);
-        CHECK(result.find("  ") == std::string::npos); // No double spaces
+        CHECK(result.find("  ") == std::string::npos);  // No double spaces
     }
 
     SECTION("Preserves JSON key order (as per nlohmann::json)") {
@@ -510,12 +443,8 @@ TEST_CASE("getSerializedJSONAssignment - JSON formatting", "[serialized-json]") 
         aliceAttrs["country"] = std::string("US");
 
         std::string defaultValue = R"({"foo":"bar"})";
-        std::string result = client.getSerializedJSONAssignment(
-            "json-config-flag",
-            "alice",
-            aliceAttrs,
-            defaultValue
-        );
+        std::string result = client.getSerializedJSONAssignment("json-config-flag", "alice",
+                                                                aliceAttrs, defaultValue);
 
         // Parse and verify structure
         json parsed = json::parse(result);
@@ -563,12 +492,8 @@ TEST_CASE("getSerializedJSONAssignment - All test case subjects", "[serialized-j
 
         DYNAMIC_SECTION("Subject: " << subjectKey) {
             // Get serialized assignment
-            std::string result = client.getSerializedJSONAssignment(
-                flagKey,
-                subjectKey,
-                attrs,
-                defaultValue
-            );
+            std::string result =
+                client.getSerializedJSONAssignment(flagKey, subjectKey, attrs, defaultValue);
 
             // Parse result
             json parsedResult = json::parse(result);

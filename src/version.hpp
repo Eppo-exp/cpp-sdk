@@ -13,6 +13,6 @@ inline const char* getVersion() {
     return EPPOCLIENT_VERSION;
 }
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // EPPOCLIENT_VERSION_HPP
+#endif  // EPPOCLIENT_VERSION_HPP

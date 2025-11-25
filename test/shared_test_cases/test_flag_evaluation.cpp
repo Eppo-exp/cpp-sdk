@@ -1,12 +1,12 @@
 #include <catch_amalgamated.hpp>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <nlohmann/json.hpp>
+#include <string>
+#include <vector>
 #include "../src/client.hpp"
 #include "../src/config_response.hpp"
-#include <nlohmann/json.hpp>
-#include <fstream>
-#include <filesystem>
-#include <vector>
-#include <string>
-#include <iostream>
 
 using namespace eppoclient;
 using json = nlohmann::json;
@@ -16,7 +16,7 @@ namespace fs = std::filesystem;
 struct TestSubject {
     std::string subjectKey;
     Attributes subjectAttributes;
-    json expectedAssignment; // Can be bool, int, double, string, or json
+    json expectedAssignment;  // Can be bool, int, double, string, or json
 };
 
 // Structure to hold test case data
@@ -25,7 +25,7 @@ struct TestCase {
     VariationType variationType;
     json defaultValue;
     std::vector<TestSubject> subjects;
-    std::string filename; // For better error messages
+    std::string filename;  // For better error messages
 };
 
 // Helper function to load flags configuration from JSON file
@@ -108,8 +108,8 @@ std::vector<TestCase> loadAllTestCases(const std::string& directory) {
                 try {
                     testCases.push_back(loadTestCase(entry.path().string()));
                 } catch (const std::exception& e) {
-                    std::cerr << "Warning: Failed to load test case " << filename
-                              << ": " << e.what() << std::endl;
+                    std::cerr << "Warning: Failed to load test case " << filename << ": "
+                              << e.what() << std::endl;
                 }
             }
         }
@@ -119,8 +119,10 @@ std::vector<TestCase> loadAllTestCases(const std::string& directory) {
 }
 
 // Helper function to compare expected and actual values
-bool compareValues(const json& expected, const std::optional<std::variant<std::string, int64_t, double, bool, json>>& actual,
-                   VariationType type) {
+bool compareValues(
+    const json& expected,
+    const std::optional<std::variant<std::string, int64_t, double, bool, json>>& actual,
+    VariationType type) {
     if (!actual.has_value()) {
         return false;
     }
@@ -195,73 +197,60 @@ TEST_CASE("UFC Test Cases - Flag Assignments", "[ufc][flags]") {
                 const auto& subject = testCase.subjects[i];
 
                 DYNAMIC_SECTION("Subject " << i << ": " << subject.subjectKey) {
-                    std::optional<std::variant<std::string, int64_t, double, bool, json>> assignment;
+                    std::optional<std::variant<std::string, int64_t, double, bool, json>>
+                        assignment;
 
                     // Get assignment based on variation type
                     switch (testCase.variationType) {
                         case VariationType::BOOLEAN: {
                             bool defaultVal = testCase.defaultValue.get<bool>();
-                            bool result = client.getBoolAssignment(
-                                testCase.flag,
-                                subject.subjectKey,
-                                subject.subjectAttributes,
-                                defaultVal
-                            );
+                            bool result =
+                                client.getBoolAssignment(testCase.flag, subject.subjectKey,
+                                                         subject.subjectAttributes, defaultVal);
                             assignment = result;
                             break;
                         }
 
                         case VariationType::STRING: {
                             std::string defaultVal = testCase.defaultValue.get<std::string>();
-                            std::string result = client.getStringAssignment(
-                                testCase.flag,
-                                subject.subjectKey,
-                                subject.subjectAttributes,
-                                defaultVal
-                            );
+                            std::string result =
+                                client.getStringAssignment(testCase.flag, subject.subjectKey,
+                                                           subject.subjectAttributes, defaultVal);
                             assignment = result;
                             break;
                         }
 
                         case VariationType::INTEGER: {
                             int64_t defaultVal = testCase.defaultValue.get<int64_t>();
-                            int64_t result = client.getIntegerAssignment(
-                                testCase.flag,
-                                subject.subjectKey,
-                                subject.subjectAttributes,
-                                defaultVal
-                            );
+                            int64_t result =
+                                client.getIntegerAssignment(testCase.flag, subject.subjectKey,
+                                                            subject.subjectAttributes, defaultVal);
                             assignment = result;
                             break;
                         }
 
                         case VariationType::NUMERIC: {
                             double defaultVal = testCase.defaultValue.get<double>();
-                            double result = client.getNumericAssignment(
-                                testCase.flag,
-                                subject.subjectKey,
-                                subject.subjectAttributes,
-                                defaultVal
-                            );
+                            double result =
+                                client.getNumericAssignment(testCase.flag, subject.subjectKey,
+                                                            subject.subjectAttributes, defaultVal);
                             assignment = result;
                             break;
                         }
 
                         case VariationType::JSON: {
                             json defaultVal = testCase.defaultValue;
-                            json result = client.getJSONAssignment(
-                                testCase.flag,
-                                subject.subjectKey,
-                                subject.subjectAttributes,
-                                defaultVal
-                            );
+                            json result =
+                                client.getJSONAssignment(testCase.flag, subject.subjectKey,
+                                                         subject.subjectAttributes, defaultVal);
                             assignment = result;
                             break;
                         }
                     }
 
                     // Verify the assignment matches expected value
-                    bool matches = compareValues(subject.expectedAssignment, assignment, testCase.variationType);
+                    bool matches = compareValues(subject.expectedAssignment, assignment,
+                                                 testCase.variationType);
 
                     if (!matches) {
                         INFO("Flag: " << testCase.flag);
@@ -269,20 +258,22 @@ TEST_CASE("UFC Test Cases - Flag Assignments", "[ufc][flags]") {
                         INFO("Expected: " << subject.expectedAssignment.dump());
                         if (assignment.has_value()) {
                             std::string actualStr;
-                            std::visit([&actualStr](auto&& arg) {
-                                using T = std::decay_t<decltype(arg)>;
-                                if constexpr (std::is_same_v<T, std::string>) {
-                                    actualStr = arg;
-                                } else if constexpr (std::is_same_v<T, bool>) {
-                                    actualStr = arg ? "true" : "false";
-                                } else if constexpr (std::is_same_v<T, int64_t>) {
-                                    actualStr = std::to_string(arg);
-                                } else if constexpr (std::is_same_v<T, double>) {
-                                    actualStr = std::to_string(arg);
-                                } else if constexpr (std::is_same_v<T, json>) {
-                                    actualStr = arg.dump();
-                                }
-                            }, *assignment);
+                            std::visit(
+                                [&actualStr](auto&& arg) {
+                                    using T = std::decay_t<decltype(arg)>;
+                                    if constexpr (std::is_same_v<T, std::string>) {
+                                        actualStr = arg;
+                                    } else if constexpr (std::is_same_v<T, bool>) {
+                                        actualStr = arg ? "true" : "false";
+                                    } else if constexpr (std::is_same_v<T, int64_t>) {
+                                        actualStr = std::to_string(arg);
+                                    } else if constexpr (std::is_same_v<T, double>) {
+                                        actualStr = std::to_string(arg);
+                                    } else if constexpr (std::is_same_v<T, json>) {
+                                        actualStr = arg.dump();
+                                    }
+                                },
+                                *assignment);
                             INFO("Actual: " << actualStr);
                         } else {
                             INFO("Actual: (no value)");

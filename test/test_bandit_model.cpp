@@ -1,6 +1,6 @@
 #include <catch_amalgamated.hpp>
-#include "../src/bandit_model.hpp"
 #include <nlohmann/json.hpp>
+#include "../src/bandit_model.hpp"
 
 using namespace eppoclient;
 using json = nlohmann::json;
@@ -195,7 +195,6 @@ TEST_CASE("BanditResponse serialization", "[bandit_model]") {
 }
 
 TEST_CASE("Complete JSON round-trip", "[bandit_model]") {
-
     // Create a complete bandit configuration JSON similar to what might come from the API
     std::string jsonStr = R"({
         "bandits": {

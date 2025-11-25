@@ -24,6 +24,28 @@ env:
   TEST_DATA_BRANCH_NAME: ${{ inputs.test_data_branch || 'main' }}
 
 jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    name: Check code formatting
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || 'Eppo-exp/cpp-sdk' }}
+          ref: ${{ env.SDK_BRANCH_NAME }}
+
+      - name: Install clang-format
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 18
+          sudo apt-get install -y clang-format-18
+          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
+
+      - name: Check formatting
+        run: make format-check
+
   build:
     runs-on: ubuntu-latest
 

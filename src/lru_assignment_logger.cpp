@@ -3,14 +3,13 @@
 
 namespace eppoclient {
 
-LruAssignmentLogger::LruAssignmentLogger(
-    std::shared_ptr<AssignmentLogger> logger,
-    size_t cacheSize)
+LruAssignmentLogger::LruAssignmentLogger(std::shared_ptr<AssignmentLogger> logger, size_t cacheSize)
     : cache_(cacheSize), inner_(logger) {
     assert(logger && "Error initializing assignment logger: inner logger cannot be null");
 }
 
-bool LruAssignmentLogger::shouldLog(const AssignmentCacheKey& key, const AssignmentCacheValue& value) {
+bool LruAssignmentLogger::shouldLog(const AssignmentCacheKey& key,
+                                    const AssignmentCacheValue& value) {
     auto [previousValue, recentlyLogged] = cache_.Get(key);
     return !recentlyLogged || previousValue != value;
 }
@@ -30,10 +29,9 @@ void LruAssignmentLogger::logAssignment(const AssignmentEvent& event) {
     }
 }
 
-std::shared_ptr<AssignmentLogger> NewLruAssignmentLogger(
-    std::shared_ptr<AssignmentLogger> logger,
-    size_t cacheSize) {
+std::shared_ptr<AssignmentLogger> NewLruAssignmentLogger(std::shared_ptr<AssignmentLogger> logger,
+                                                         size_t cacheSize) {
     return std::make_shared<LruAssignmentLogger>(logger, cacheSize);
 }
 
-} // namespace eppoclient
+}  // namespace eppoclient

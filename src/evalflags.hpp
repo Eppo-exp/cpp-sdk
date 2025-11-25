@@ -1,12 +1,12 @@
 #ifndef EVALFLAGS_HPP
 #define EVALFLAGS_HPP
 
-#include <string>
-#include <unordered_map>
-#include <optional>
-#include <variant>
 #include <chrono>
 #include <nlohmann/json.hpp>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <variant>
 #include "application_logger.hpp"
 #include "config_response.hpp"
 #include "rules.hpp"
@@ -130,7 +130,8 @@ int64_t getShard(const std::string& input, int64_t totalShards);
 bool isShardInRange(int64_t shard, const ShardRange& range);
 
 // Augment subject attributes with subject key
-Attributes augmentWithSubjectKey(const Attributes& subjectAttributes, const std::string& subjectKey);
+Attributes augmentWithSubjectKey(const Attributes& subjectAttributes,
+                                 const std::string& subjectKey);
 
 // FlagConfiguration member functions
 // Verify that the flag has the expected variation type
@@ -139,23 +140,19 @@ bool verifyType(const FlagConfiguration& flag, VariationType expectedType);
 
 // Evaluate a flag for a given subject
 // Returns std::nullopt if evaluation fails
-std::optional<EvalResult> evalFlag(const FlagConfiguration& flag,
-                   const std::string& subjectKey,
-                   const Attributes& subjectAttributes,
-                   ApplicationLogger* logger = nullptr);
+std::optional<EvalResult> evalFlag(const FlagConfiguration& flag, const std::string& subjectKey,
+                                   const Attributes& subjectAttributes,
+                                   ApplicationLogger* logger = nullptr);
 
 // Evaluate a flag and return detailed evaluation information
-EvalResultWithDetails evalFlagDetails(const FlagConfiguration& flag,
-                                     const std::string& subjectKey,
-                                     const Attributes& subjectAttributes,
-                                     ApplicationLogger* logger = nullptr);
+EvalResultWithDetails evalFlagDetails(const FlagConfiguration& flag, const std::string& subjectKey,
+                                      const Attributes& subjectAttributes,
+                                      ApplicationLogger* logger = nullptr);
 
 // Allocation member functions
 // Find a matching split for the given subject
-const Split* findMatchingSplit(const Allocation& allocation,
-                               const std::string& subjectKey,
-                               const Attributes& augmentedSubjectAttributes,
-                               int64_t totalShards,
+const Split* findMatchingSplit(const Allocation& allocation, const std::string& subjectKey,
+                               const Attributes& augmentedSubjectAttributes, int64_t totalShards,
                                const std::chrono::system_clock::time_point& now,
                                ApplicationLogger* logger = nullptr);
 
@@ -179,8 +176,9 @@ std::string allocationEvaluationCodeToString(AllocationEvaluationCode code);
 
 // Helper function to convert string to AllocationEvaluationCode
 // Returns std::nullopt if the code string is not recognized
-std::optional<AllocationEvaluationCode> stringToAllocationEvaluationCode(const std::string& codeStr);
+std::optional<AllocationEvaluationCode> stringToAllocationEvaluationCode(
+    const std::string& codeStr);
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // EVALFLAGS_H
+#endif  // EVALFLAGS_H

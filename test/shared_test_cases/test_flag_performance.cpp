@@ -1,17 +1,17 @@
+#include <algorithm>
 #include <catch_amalgamated.hpp>
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <map>
+#include <nlohmann/json.hpp>
+#include <numeric>
+#include <vector>
 #include "../src/client.hpp"
 #include "../src/config_response.hpp"
 #include "../src/rules.hpp"
-#include <nlohmann/json.hpp>
-#include <fstream>
-#include <chrono>
-#include <vector>
-#include <algorithm>
-#include <numeric>
-#include <iostream>
-#include <iomanip>
-#include <filesystem>
-#include <map>
 
 using namespace eppoclient;
 using json = nlohmann::json;
@@ -114,7 +114,8 @@ static PerformanceTestCase loadTestCase(const std::string& filepath) {
             }
 
             Attributes subjectAttributes = parseAttributes(subjectJson["subjectAttributes"]);
-            testCase.subjects.push_back(PerformanceTestSubject{std::move(subjectKey), std::move(subjectAttributes)});
+            testCase.subjects.push_back(
+                PerformanceTestSubject{std::move(subjectKey), std::move(subjectAttributes)});
         }
     }
 
@@ -122,7 +123,8 @@ static PerformanceTestCase loadTestCase(const std::string& filepath) {
 }
 
 // Helper function to load all test cases from directory
-static std::vector<PerformanceTestCase> loadAllTestCases(const std::string& directory, size_t maxTestCases = 20) {
+static std::vector<PerformanceTestCase> loadAllTestCases(const std::string& directory,
+                                                         size_t maxTestCases = 20) {
     std::vector<PerformanceTestCase> testCases;
 
     try {
@@ -148,14 +150,15 @@ static std::vector<PerformanceTestCase> loadAllTestCases(const std::string& dire
             try {
                 std::cout << "  Loading " << filename << "..." << std::endl;
                 PerformanceTestCase testCase = loadTestCase(entry.path().string());
-                std::cout << "    Flag: " << testCase.flag << ", Subjects: " << testCase.subjects.size() << std::endl;
+                std::cout << "    Flag: " << testCase.flag
+                          << ", Subjects: " << testCase.subjects.size() << std::endl;
                 if (!testCase.subjects.empty()) {
                     testCases.push_back(testCase);
                 }
             } catch (const std::exception& e) {
                 // Skip files that can't be loaded
-                std::cerr << "Warning: Failed to load test case " << filename
-                          << ": " << e.what() << std::endl;
+                std::cerr << "Warning: Failed to load test case " << filename << ": " << e.what()
+                          << std::endl;
             }
         }
     } catch (const std::exception& e) {
@@ -229,9 +232,9 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
     const int MAX_ITERATIONS = 10000;
     const int ITERATIONS_PER_SUBJECT = 100;
 
-    int iterations = std::min(MAX_ITERATIONS,
-                             std::max(MIN_ITERATIONS,
-                                     static_cast<int>(totalSubjects * ITERATIONS_PER_SUBJECT)));
+    int iterations = std::min(
+        MAX_ITERATIONS,
+        std::max(MIN_ITERATIONS, static_cast<int>(totalSubjects * ITERATIONS_PER_SUBJECT)));
 
     std::cout << "Running " << iterations << " iterations\n";
 
@@ -246,34 +249,40 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
     // Warmup - run through all test cases once
     std::cout << "Starting warmup...\n";
     for (const auto& testCase : testCases) {
-        if (testCase.subjects.empty()) continue;
+        if (testCase.subjects.empty())
+            continue;
 
         for (const auto& subject : testCase.subjects) {
             try {
                 switch (testCase.variationType) {
                     case VariationType::BOOLEAN: {
                         bool defaultVal = testCase.defaultValue.get<bool>();
-                        client.getBoolAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                        client.getBoolAssignment(testCase.flag, subject.subjectKey,
+                                                 subject.subjectAttributes, defaultVal);
                         break;
                     }
                     case VariationType::STRING: {
                         std::string defaultVal = testCase.defaultValue.get<std::string>();
-                        client.getStringAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                        client.getStringAssignment(testCase.flag, subject.subjectKey,
+                                                   subject.subjectAttributes, defaultVal);
                         break;
                     }
                     case VariationType::INTEGER: {
                         int64_t defaultVal = testCase.defaultValue.get<int64_t>();
-                        client.getIntegerAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                        client.getIntegerAssignment(testCase.flag, subject.subjectKey,
+                                                    subject.subjectAttributes, defaultVal);
                         break;
                     }
                     case VariationType::NUMERIC: {
                         double defaultVal = testCase.defaultValue.get<double>();
-                        client.getNumericAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                        client.getNumericAssignment(testCase.flag, subject.subjectKey,
+                                                    subject.subjectAttributes, defaultVal);
                         break;
                     }
                     case VariationType::JSON: {
                         json defaultVal = testCase.defaultValue;
-                        client.getJSONAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                        client.getJSONAssignment(testCase.flag, subject.subjectKey,
+                                                 subject.subjectAttributes, defaultVal);
                         break;
                     }
                 }
@@ -302,27 +311,32 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
             switch (testCase.variationType) {
                 case VariationType::BOOLEAN: {
                     bool defaultVal = testCase.defaultValue.get<bool>();
-                    client.getBoolAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                    client.getBoolAssignment(testCase.flag, subject.subjectKey,
+                                             subject.subjectAttributes, defaultVal);
                     break;
                 }
                 case VariationType::STRING: {
                     std::string defaultVal = testCase.defaultValue.get<std::string>();
-                    client.getStringAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                    client.getStringAssignment(testCase.flag, subject.subjectKey,
+                                               subject.subjectAttributes, defaultVal);
                     break;
                 }
                 case VariationType::INTEGER: {
                     int64_t defaultVal = testCase.defaultValue.get<int64_t>();
-                    client.getIntegerAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                    client.getIntegerAssignment(testCase.flag, subject.subjectKey,
+                                                subject.subjectAttributes, defaultVal);
                     break;
                 }
                 case VariationType::NUMERIC: {
                     double defaultVal = testCase.defaultValue.get<double>();
-                    client.getNumericAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                    client.getNumericAssignment(testCase.flag, subject.subjectKey,
+                                                subject.subjectAttributes, defaultVal);
                     break;
                 }
                 case VariationType::JSON: {
                     json defaultVal = testCase.defaultValue;
-                    client.getJSONAssignment(testCase.flag, subject.subjectKey, subject.subjectAttributes, defaultVal);
+                    client.getJSONAssignment(testCase.flag, subject.subjectKey,
+                                             subject.subjectAttributes, defaultVal);
                     break;
                 }
             }
@@ -338,7 +352,8 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
             result.variationType = testCase.variationType;
             allTimingResults.push_back(result);
         } catch (const std::exception& e) {
-            std::cerr << "Error during iteration " << i << " for " << testCase.flag << ": " << e.what() << std::endl;
+            std::cerr << "Error during iteration " << i << " for " << testCase.flag << ": "
+                      << e.what() << std::endl;
         }
     }
     std::cout << "Performance test complete. Collected " << allTimingResults.size() << " results\n";
@@ -356,9 +371,11 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
         }
 
         // Find min and max results
-        auto minResult = *std::min_element(results.begin(), results.end(),
+        auto minResult = *std::min_element(
+            results.begin(), results.end(),
             [](const TimingResult& a, const TimingResult& b) { return a.time_us < b.time_us; });
-        auto maxResult = *std::max_element(results.begin(), results.end(),
+        auto maxResult = *std::max_element(
+            results.begin(), results.end(),
             [](const TimingResult& a, const TimingResult& b) { return a.time_us < b.time_us; });
 
         // Calculate statistics
@@ -379,7 +396,8 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
         double p99_time = times[p99_index];
 
         // Output statistics
-        std::cout << "\n=== " << variationTypeToString(varType) << " Flag Evaluation Performance ===\n";
+        std::cout << "\n=== " << variationTypeToString(varType)
+                  << " Flag Evaluation Performance ===\n";
         std::cout << std::fixed << std::setprecision(3);
         std::cout << "Evaluations: " << results.size() << "\n";
         std::cout << "Min:    " << minResult.time_us << " μs"

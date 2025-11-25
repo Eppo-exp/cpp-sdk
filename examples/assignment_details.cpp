@@ -1,5 +1,5 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include "../src/client.hpp"
@@ -12,7 +12,9 @@ void printEvaluationDetails(const eppoclient::EvaluationDetails& details) {
     std::cout << "Timestamp: " << details.timestamp << std::endl;
 
     if (details.flagEvaluationCode.has_value()) {
-        std::cout << "Flag Evaluation Code: " << eppoclient::flagEvaluationCodeToString(*details.flagEvaluationCode) << std::endl;
+        std::cout << "Flag Evaluation Code: "
+                  << eppoclient::flagEvaluationCodeToString(*details.flagEvaluationCode)
+                  << std::endl;
     }
     std::cout << "Flag Evaluation Description: " << details.flagEvaluationDescription << std::endl;
 
@@ -29,7 +31,7 @@ void printEvaluationDetails(const eppoclient::EvaluationDetails& details) {
     }
 
     std::cout << "========================\n" << std::endl;
-}   
+}
 
 // Simple console-based assignment logger
 class ConsoleAssignmentLogger : public eppoclient::AssignmentLogger {
@@ -104,12 +106,8 @@ int main() {
     std::cout << "\n=== Example 1: Boolean Assignment with Details ===" << std::endl;
     eppoclient::Attributes attributes1;
     attributes1["should_disable_feature"] = false;
-    auto result1 = client.getBooleanAssignmentDetails(
-        "boolean-false-assignment",
-        "user-123",
-        attributes1,
-        false
-    );
+    auto result1 = client.getBooleanAssignmentDetails("boolean-false-assignment", "user-123",
+                                                      attributes1, false);
     std::cout << "Boolean Result: " << (result1.variation ? "true" : "false") << std::endl;
     if (result1.evaluationDetails.has_value()) {
         printEvaluationDetails(*result1.evaluationDetails);
@@ -118,12 +116,8 @@ int main() {
     // Example 2: String assignment with details
     std::cout << "\n=== Example 2: String Assignment with Details ===" << std::endl;
     eppoclient::Attributes attributes2;
-    auto result2 = client.getStringAssignmentDetails(
-        "kill-switch",
-        "user-456",
-        attributes2,
-        "default-value"
-    );
+    auto result2 =
+        client.getStringAssignmentDetails("kill-switch", "user-456", attributes2, "default-value");
     std::cout << "String Result: " << result2.variation << std::endl;
     if (result2.evaluationDetails.has_value()) {
         printEvaluationDetails(*result2.evaluationDetails);
@@ -133,12 +127,7 @@ int main() {
     std::cout << "\n=== Example 3: Integer Assignment with Details ===" << std::endl;
     eppoclient::Attributes attributes3;
     attributes3["age"] = 25.0;
-    auto result3 = client.getIntegerAssignmentDetails(
-        "integer-flag",
-        "user-789",
-        attributes3,
-        42
-    );
+    auto result3 = client.getIntegerAssignmentDetails("integer-flag", "user-789", attributes3, 42);
     std::cout << "Integer Result: " << result3.variation << std::endl;
     if (result3.evaluationDetails.has_value()) {
         printEvaluationDetails(*result3.evaluationDetails);
@@ -147,12 +136,8 @@ int main() {
     // Example 4: Numeric assignment with details
     std::cout << "\n=== Example 4: Numeric Assignment with Details ===" << std::endl;
     eppoclient::Attributes attributes4;
-    auto result4 = client.getNumericAssignmentDetails(
-        "numeric_flag",
-        "user-999",
-        attributes4,
-        3.14
-    );
+    auto result4 =
+        client.getNumericAssignmentDetails("numeric_flag", "user-999", attributes4, 3.14);
     std::cout << "Numeric Result: " << result4.variation << std::endl;
     if (result4.evaluationDetails.has_value()) {
         printEvaluationDetails(*result4.evaluationDetails);
@@ -160,12 +145,8 @@ int main() {
 
     // Example 5: Non-existent flag (demonstrates error handling)
     std::cout << "\n=== Example 5: Non-existent Flag ===" << std::endl;
-    auto result5 = client.getStringAssignmentDetails(
-        "non-existent-flag",
-        "user-404",
-        eppoclient::Attributes(),
-        "fallback-value"
-    );
+    auto result5 = client.getStringAssignmentDetails("non-existent-flag", "user-404",
+                                                     eppoclient::Attributes(), "fallback-value");
     std::cout << "Result: " << result5.variation << std::endl;
     if (result5.evaluationDetails.has_value()) {
         printEvaluationDetails(*result5.evaluationDetails);

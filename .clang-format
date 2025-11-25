@@ -1,0 +1,51 @@
+# clang-format configuration for cpp-sdk
+# Based on Google style with customizations to match existing code style
+
+BasedOnStyle: Google
+
+# Indentation
+IndentWidth: 4
+ContinuationIndentWidth: 4
+AccessModifierOffset: -4
+
+# Line length
+ColumnLimit: 100
+
+# Braces
+BreakBeforeBraces: Attach
+
+# Pointers and references
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+# Includes
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
+
+# Namespaces
+NamespaceIndentation: None
+
+# Functions
+AllowShortFunctionsOnASingleLine: Inline
+AlwaysBreakAfterReturnType: None
+
+# Control statements
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Spaces
+SpaceAfterCStyleCast: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInContainerLiterals: false
+
+# Comments
+ReflowComments: true
+SpacesBeforeTrailingComments: 2
+
+# Other
+Standard: c++17
+UseTab: Never
+TabWidth: 4
+MaxEmptyLinesToKeep: 2

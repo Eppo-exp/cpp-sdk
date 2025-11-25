@@ -1,6 +1,6 @@
 #include <catch_amalgamated.hpp>
-#include "../src/configuration_store.hpp"
 #include "../src/configuration.hpp"
+#include "../src/configuration_store.hpp"
 
 using namespace eppoclient;
 
@@ -24,4 +24,3 @@ TEST_CASE("ConfigurationStore constructor with config", "[configuration_store]")
 
     Configuration retrievedConfig = store.getConfiguration();
 }
-

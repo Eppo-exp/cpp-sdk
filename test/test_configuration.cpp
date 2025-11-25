@@ -1,6 +1,6 @@
 #include <catch_amalgamated.hpp>
-#include "../src/configuration.hpp"
 #include <nlohmann/json.hpp>
+#include "../src/configuration.hpp"
 
 using namespace eppoclient;
 using json = nlohmann::json;
