@@ -1,7 +1,7 @@
 #include <catch_amalgamated.hpp>
-#include "../src/lru_assignment_logger.hpp"
 #include <memory>
 #include <vector>
+#include "../src/lru_assignment_logger.hpp"
 
 using namespace eppoclient;
 
@@ -18,25 +18,19 @@ public:
         loggedEvents.push_back(event);
     }
 
-    size_t callCount() const {
-        return loggedEvents.size();
-    }
+    size_t callCount() const { return loggedEvents.size(); }
 
-    void clear() {
-        loggedEvents.clear();
-    }
+    void clear() { loggedEvents.clear(); }
 };
 
 namespace {
 // Helper to create a test assignment event
-AssignmentEvent createTestEvent(
-    const std::string& featureFlag = "testFeatureFlag",
-    const std::string& allocation = "testAllocation",
-    const std::string& variation = "testVariation",
-    const std::string& subject = "testSubject",
-    const std::string& experiment = "testExperiment",
-    const std::string& timestamp = "testTimestamp") {
-
+AssignmentEvent createTestEvent(const std::string& featureFlag = "testFeatureFlag",
+                                const std::string& allocation = "testAllocation",
+                                const std::string& variation = "testVariation",
+                                const std::string& subject = "testSubject",
+                                const std::string& experiment = "testExperiment",
+                                const std::string& timestamp = "testTimestamp") {
     AssignmentEvent event;
     event.featureFlag = featureFlag;
     event.allocation = allocation;
@@ -47,7 +41,7 @@ AssignmentEvent createTestEvent(
     event.subjectAttributes["testKey"] = std::string("testValue");
     return event;
 }
-} // anonymous namespace
+}  // anonymous namespace
 
 TEST_CASE("LruAssignmentLogger - cache assignment", "[lru][assignment-logger]") {
     auto innerLogger = std::make_shared<MockAssignmentLogger>();
@@ -61,18 +55,17 @@ TEST_CASE("LruAssignmentLogger - cache assignment", "[lru][assignment-logger]") 
     CHECK(innerLogger->callCount() == 1);
 }
 
-TEST_CASE("LruAssignmentLogger - timestamp and attributes are not important", "[lru][assignment-logger]") {
+TEST_CASE("LruAssignmentLogger - timestamp and attributes are not important",
+          "[lru][assignment-logger]") {
     auto innerLogger = std::make_shared<MockAssignmentLogger>();
     auto logger = NewLruAssignmentLogger(innerLogger, 1000);
 
-    AssignmentEvent event1 = createTestEvent(
-        "testFeatureFlag", "testAllocation", "testVariation",
-        "testSubject", "testExperiment", "t1");
+    AssignmentEvent event1 = createTestEvent("testFeatureFlag", "testAllocation", "testVariation",
+                                             "testSubject", "testExperiment", "t1");
     event1.subjectAttributes["testKey"] = std::string("testValue1");
 
-    AssignmentEvent event2 = createTestEvent(
-        "testFeatureFlag", "testAllocation", "testVariation",
-        "testSubject", "testExperiment", "t2");
+    AssignmentEvent event2 = createTestEvent("testFeatureFlag", "testAllocation", "testVariation",
+                                             "testSubject", "testExperiment", "t2");
     event2.subjectAttributes["testKey"] = std::string("testValue2");
 
     logger->logAssignment(event1);
@@ -89,13 +82,11 @@ TEST_CASE("LruAssignmentLogger - change in allocation causes logging", "[lru][as
     auto innerLogger = std::make_shared<MockAssignmentLogger>();
     auto logger = NewLruAssignmentLogger(innerLogger, 1000);
 
-    AssignmentEvent event1 = createTestEvent(
-        "testFeatureFlag", "testAllocation1", "variation",
-        "testSubject", "testExperiment", "testTimestamp");
+    AssignmentEvent event1 = createTestEvent("testFeatureFlag", "testAllocation1", "variation",
+                                             "testSubject", "testExperiment", "testTimestamp");
 
-    AssignmentEvent event2 = createTestEvent(
-        "testFeatureFlag", "testAllocation2", "variation",
-        "testSubject", "testExperiment", "testTimestamp");
+    AssignmentEvent event2 = createTestEvent("testFeatureFlag", "testAllocation2", "variation",
+                                             "testSubject", "testExperiment", "testTimestamp");
 
     logger->logAssignment(event1);
     logger->logAssignment(event2);
@@ -107,13 +98,11 @@ TEST_CASE("LruAssignmentLogger - change in variation causes logging", "[lru][ass
     auto innerLogger = std::make_shared<MockAssignmentLogger>();
     auto logger = NewLruAssignmentLogger(innerLogger, 1000);
 
-    AssignmentEvent event1 = createTestEvent(
-        "testFeatureFlag", "testAllocation", "variation1",
-        "testSubject", "testExperiment", "testTimestamp");
+    AssignmentEvent event1 = createTestEvent("testFeatureFlag", "testAllocation", "variation1",
+                                             "testSubject", "testExperiment", "testTimestamp");
 
-    AssignmentEvent event2 = createTestEvent(
-        "testFeatureFlag", "testAllocation", "variation2",
-        "testSubject", "testExperiment", "testTimestamp");
+    AssignmentEvent event2 = createTestEvent("testFeatureFlag", "testAllocation", "variation2",
+                                             "testSubject", "testExperiment", "testTimestamp");
 
     logger->logAssignment(event1);
     logger->logAssignment(event2);
@@ -125,21 +114,17 @@ TEST_CASE("LruAssignmentLogger - allocation oscillation logs all", "[lru][assign
     auto innerLogger = std::make_shared<MockAssignmentLogger>();
     auto logger = NewLruAssignmentLogger(innerLogger, 1000);
 
-    AssignmentEvent event1 = createTestEvent(
-        "testFeatureFlag", "testAllocation1", "variation",
-        "testSubject", "testExperiment", "t1");
+    AssignmentEvent event1 = createTestEvent("testFeatureFlag", "testAllocation1", "variation",
+                                             "testSubject", "testExperiment", "t1");
 
-    AssignmentEvent event2 = createTestEvent(
-        "testFeatureFlag", "testAllocation2", "variation",
-        "testSubject", "testExperiment", "t2");
+    AssignmentEvent event2 = createTestEvent("testFeatureFlag", "testAllocation2", "variation",
+                                             "testSubject", "testExperiment", "t2");
 
-    AssignmentEvent event3 = createTestEvent(
-        "testFeatureFlag", "testAllocation1", "variation",
-        "testSubject", "testExperiment", "t3");
+    AssignmentEvent event3 = createTestEvent("testFeatureFlag", "testAllocation1", "variation",
+                                             "testSubject", "testExperiment", "t3");
 
-    AssignmentEvent event4 = createTestEvent(
-        "testFeatureFlag", "testAllocation2", "variation",
-        "testSubject", "testExperiment", "t4");
+    AssignmentEvent event4 = createTestEvent("testFeatureFlag", "testAllocation2", "variation",
+                                             "testSubject", "testExperiment", "t4");
 
     logger->logAssignment(event1);
     logger->logAssignment(event2);
@@ -153,21 +138,17 @@ TEST_CASE("LruAssignmentLogger - variation oscillation logs all", "[lru][assignm
     auto innerLogger = std::make_shared<MockAssignmentLogger>();
     auto logger = NewLruAssignmentLogger(innerLogger, 1000);
 
-    AssignmentEvent event1 = createTestEvent(
-        "testFeatureFlag", "testAllocation", "variation1",
-        "testSubject", "testExperiment", "t1");
+    AssignmentEvent event1 = createTestEvent("testFeatureFlag", "testAllocation", "variation1",
+                                             "testSubject", "testExperiment", "t1");
 
-    AssignmentEvent event2 = createTestEvent(
-        "testFeatureFlag", "testAllocation", "variation2",
-        "testSubject", "testExperiment", "t2");
+    AssignmentEvent event2 = createTestEvent("testFeatureFlag", "testAllocation", "variation2",
+                                             "testSubject", "testExperiment", "t2");
 
-    AssignmentEvent event3 = createTestEvent(
-        "testFeatureFlag", "testAllocation", "variation1",
-        "testSubject", "testExperiment", "t3");
+    AssignmentEvent event3 = createTestEvent("testFeatureFlag", "testAllocation", "variation1",
+                                             "testSubject", "testExperiment", "t3");
 
-    AssignmentEvent event4 = createTestEvent(
-        "testFeatureFlag", "testAllocation", "variation2",
-        "testSubject", "testExperiment", "t4");
+    AssignmentEvent event4 = createTestEvent("testFeatureFlag", "testAllocation", "variation2",
+                                             "testSubject", "testExperiment", "t4");
 
     logger->logAssignment(event1);
     logger->logAssignment(event2);
@@ -177,17 +158,16 @@ TEST_CASE("LruAssignmentLogger - variation oscillation logs all", "[lru][assignm
     CHECK(innerLogger->callCount() == 4);
 }
 
-TEST_CASE("LruAssignmentLogger - different subjects are logged separately", "[lru][assignment-logger]") {
+TEST_CASE("LruAssignmentLogger - different subjects are logged separately",
+          "[lru][assignment-logger]") {
     auto innerLogger = std::make_shared<MockAssignmentLogger>();
     auto logger = NewLruAssignmentLogger(innerLogger, 1000);
 
-    AssignmentEvent event1 = createTestEvent(
-        "testFeatureFlag", "testAllocation", "variation",
-        "subject1", "testExperiment", "testTimestamp");
+    AssignmentEvent event1 = createTestEvent("testFeatureFlag", "testAllocation", "variation",
+                                             "subject1", "testExperiment", "testTimestamp");
 
-    AssignmentEvent event2 = createTestEvent(
-        "testFeatureFlag", "testAllocation", "variation",
-        "subject2", "testExperiment", "testTimestamp");
+    AssignmentEvent event2 = createTestEvent("testFeatureFlag", "testAllocation", "variation",
+                                             "subject2", "testExperiment", "testTimestamp");
 
     logger->logAssignment(event1);
     logger->logAssignment(event2);
@@ -196,17 +176,16 @@ TEST_CASE("LruAssignmentLogger - different subjects are logged separately", "[lr
     CHECK(innerLogger->callCount() == 2);
 }
 
-TEST_CASE("LruAssignmentLogger - different flags are logged separately", "[lru][assignment-logger]") {
+TEST_CASE("LruAssignmentLogger - different flags are logged separately",
+          "[lru][assignment-logger]") {
     auto innerLogger = std::make_shared<MockAssignmentLogger>();
     auto logger = NewLruAssignmentLogger(innerLogger, 1000);
 
-    AssignmentEvent event1 = createTestEvent(
-        "flag1", "testAllocation", "variation",
-        "testSubject", "testExperiment", "testTimestamp");
+    AssignmentEvent event1 = createTestEvent("flag1", "testAllocation", "variation", "testSubject",
+                                             "testExperiment", "testTimestamp");
 
-    AssignmentEvent event2 = createTestEvent(
-        "flag2", "testAllocation", "variation",
-        "testSubject", "testExperiment", "testTimestamp");
+    AssignmentEvent event2 = createTestEvent("flag2", "testAllocation", "variation", "testSubject",
+                                             "testExperiment", "testTimestamp");
 
     logger->logAssignment(event1);
     logger->logAssignment(event2);

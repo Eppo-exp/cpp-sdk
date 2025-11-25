@@ -1,9 +1,9 @@
 #ifndef EVALBANDITS_HPP
 #define EVALBANDITS_HPP
 
-#include <string>
 #include <map>
 #include <optional>
+#include <string>
 #include "bandit_model.hpp"
 #include "rules.hpp"
 
@@ -103,17 +103,14 @@ BanditEvaluationDetails evaluateBandit(const BanditModelData& modelData,
 /**
  * Scores a single action using the bandit model coefficients.
  */
-double scoreAction(const BanditModelData& modelData,
-                  const ContextAttributes& subjectAttributes,
-                  const std::string& actionKey,
-                  const ContextAttributes& actionAttributes);
+double scoreAction(const BanditModelData& modelData, const ContextAttributes& subjectAttributes,
+                   const std::string& actionKey, const ContextAttributes& actionAttributes);
 
 /**
  * Scores numeric attributes using coefficients.
  */
-double scoreNumericAttributes(
-    const std::vector<BanditNumericAttributeCoefficient>& coefficients,
-    const std::map<std::string, double>& attributes);
+double scoreNumericAttributes(const std::vector<BanditNumericAttributeCoefficient>& coefficients,
+                              const std::map<std::string, double>& attributes);
 
 /**
  * Scores categorical attributes using coefficients.
@@ -131,13 +128,11 @@ int64_t getShard(const std::string& input, int64_t totalShards);
  * Creates a BanditEvent from evaluation results.
  * Centralizes the logic for constructing bandit logging events.
  */
-BanditEvent createBanditEvent(const std::string& flagKey,
-                             const std::string& subjectKey,
-                             const std::string& banditKey,
-                             const std::string& modelVersion,
-                             const BanditEvaluationDetails& evaluation,
-                             const std::string& timestamp);
+BanditEvent createBanditEvent(const std::string& flagKey, const std::string& subjectKey,
+                              const std::string& banditKey, const std::string& modelVersion,
+                              const BanditEvaluationDetails& evaluation,
+                              const std::string& timestamp);
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // EVALBANDITS_H
+#endif  // EVALBANDITS_H

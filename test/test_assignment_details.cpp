@@ -1,72 +1,60 @@
 #include <catch_amalgamated.hpp>
-#include "../src/client.hpp"
-#include "../src/config_response.hpp"
-#include <nlohmann/json.hpp>
 #include <fstream>
 #include <memory>
+#include <nlohmann/json.hpp>
+#include "../src/client.hpp"
+#include "../src/config_response.hpp"
 
 using namespace eppoclient;
 using json = nlohmann::json;
 
 namespace {
-    // Mock application logger
-    class MockApplicationLogger : public ApplicationLogger {
-    public:
-        std::vector<std::string> debugMessages;
-        std::vector<std::string> infoMessages;
-        std::vector<std::string> warnMessages;
-        std::vector<std::string> errorMessages;
+// Mock application logger
+class MockApplicationLogger : public ApplicationLogger {
+public:
+    std::vector<std::string> debugMessages;
+    std::vector<std::string> infoMessages;
+    std::vector<std::string> warnMessages;
+    std::vector<std::string> errorMessages;
 
-        void debug(const std::string& message) override {
-            debugMessages.push_back(message);
-        }
+    void debug(const std::string& message) override { debugMessages.push_back(message); }
 
-        void info(const std::string& message) override {
-            infoMessages.push_back(message);
-        }
+    void info(const std::string& message) override { infoMessages.push_back(message); }
 
-        void warn(const std::string& message) override {
-            warnMessages.push_back(message);
-        }
+    void warn(const std::string& message) override { warnMessages.push_back(message); }
 
-        void error(const std::string& message) override {
-            errorMessages.push_back(message);
-        }
+    void error(const std::string& message) override { errorMessages.push_back(message); }
 
-        void clear() {
-            debugMessages.clear();
-            infoMessages.clear();
-            warnMessages.clear();
-            errorMessages.clear();
-        }
-    };
-
-    // Mock assignment logger
-    class MockAssignmentLogger : public AssignmentLogger {
-    public:
-        std::vector<AssignmentEvent> loggedEvents;
-
-        void logAssignment(const AssignmentEvent& event) override {
-            loggedEvents.push_back(event);
-        }
-
-        void clear() {
-            loggedEvents.clear();
-        }
-    };
-
-    // Helper function to load flags configuration
-    ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
-        std::ifstream file(filepath);
-        if (!file.is_open()) {
-            throw std::runtime_error("Failed to open flags configuration file: " + filepath);
-        }
-
-        json j;
-        file >> j;
-        return j.get<ConfigResponse>();
+    void clear() {
+        debugMessages.clear();
+        infoMessages.clear();
+        warnMessages.clear();
+        errorMessages.clear();
     }
+};
+
+// Mock assignment logger
+class MockAssignmentLogger : public AssignmentLogger {
+public:
+    std::vector<AssignmentEvent> loggedEvents;
+
+    void logAssignment(const AssignmentEvent& event) override { loggedEvents.push_back(event); }
+
+    void clear() { loggedEvents.clear(); }
+};
+
+// Helper function to load flags configuration
+ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open flags configuration file: " + filepath);
+    }
+
+    json j;
+    file >> j;
+    return j.get<ConfigResponse>();
 }
+}  // namespace
 
 TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-details]") {
     ConfigurationStore configStore;
@@ -82,12 +70,8 @@ TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-detai
         Attributes attrs;
         attrs["should_disable_feature"] = false;
 
-        auto result = client.getBooleanAssignmentDetails(
-            "boolean-false-assignment",
-            "test-subject",
-            attrs,
-            false
-        );
+        auto result = client.getBooleanAssignmentDetails("boolean-false-assignment", "test-subject",
+                                                         attrs, false);
 
         // Check variation value
         CHECK(result.variation == true);
@@ -108,12 +92,8 @@ TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-detai
     SECTION("Non-existent flag returns default with details") {
         mockAppLogger->clear();
 
-        auto result = client.getBooleanAssignmentDetails(
-            "non-existent-flag",
-            "test-subject",
-            Attributes(),
-            false
-        );
+        auto result = client.getBooleanAssignmentDetails("non-existent-flag", "test-subject",
+                                                         Attributes(), false);
 
         // Check default value is returned
         CHECK(result.variation == false);
@@ -122,23 +102,22 @@ TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-detai
         REQUIRE(result.evaluationDetails.has_value());
         CHECK(result.evaluationDetails->flagKey == "non-existent-flag");
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED);
+        CHECK(*result.evaluationDetails->flagEvaluationCode ==
+              FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED);
     }
 
     SECTION("Empty subject key returns default with error details") {
-        auto result = client.getBooleanAssignmentDetails(
-            "boolean-false-assignment",
-            "",
-            Attributes(),
-            true
-        );
+        auto result =
+            client.getBooleanAssignmentDetails("boolean-false-assignment", "", Attributes(), true);
 
         CHECK(result.variation == true);  // Returns default
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::ASSIGNMENT_ERROR);
-        CHECK(result.evaluationDetails->flagEvaluationDescription.find("subject key") != std::string::npos);
+        CHECK(*result.evaluationDetails->flagEvaluationCode ==
+              FlagEvaluationCode::ASSIGNMENT_ERROR);
+        CHECK(result.evaluationDetails->flagEvaluationDescription.find("subject key") !=
+              std::string::npos);
     }
 }
 
@@ -154,12 +133,7 @@ TEST_CASE("Assignment Details - getIntegerAssignmentDetails", "[assignment-detai
         Attributes attrs;
         attrs["age"] = 25.0;
 
-        auto result = client.getIntegerAssignmentDetails(
-            "integer-flag",
-            "alice",
-            attrs,
-            0
-        );
+        auto result = client.getIntegerAssignmentDetails("integer-flag", "alice", attrs, 0);
 
         // Check variation is an integer
         REQUIRE(result.evaluationDetails.has_value());
@@ -175,12 +149,8 @@ TEST_CASE("Assignment Details - getIntegerAssignmentDetails", "[assignment-detai
         Attributes attrs;
         attrs["should_disable_feature"] = false;
 
-        auto result = client.getIntegerAssignmentDetails(
-            "boolean-false-assignment",
-            "test-subject",
-            attrs,
-            999
-        );
+        auto result = client.getIntegerAssignmentDetails("boolean-false-assignment", "test-subject",
+                                                         attrs, 999);
 
         CHECK(result.variation == 999);  // Returns default
 
@@ -199,12 +169,8 @@ TEST_CASE("Assignment Details - getNumericAssignmentDetails", "[assignment-detai
     EppoClient client(configStore, nullptr, nullptr, mockAppLogger);
 
     SECTION("Successful numeric assignment with details") {
-        auto result = client.getNumericAssignmentDetails(
-            "numeric_flag",
-            "test-subject",
-            Attributes(),
-            0.0
-        );
+        auto result =
+            client.getNumericAssignmentDetails("numeric_flag", "test-subject", Attributes(), 0.0);
 
         // Check result has details
         REQUIRE(result.evaluationDetails.has_value());
@@ -229,12 +195,8 @@ TEST_CASE("Assignment Details - getStringAssignmentDetails", "[assignment-detail
 
     SECTION("Successful string assignment with details") {
         // Use empty_string_flag which is actually a string type
-        auto result = client.getStringAssignmentDetails(
-            "empty_string_flag",
-            "test-subject",
-            Attributes(),
-            "default"
-        );
+        auto result = client.getStringAssignmentDetails("empty_string_flag", "test-subject",
+                                                        Attributes(), "default");
 
         // Check result has details
         REQUIRE(result.evaluationDetails.has_value());
@@ -246,18 +208,15 @@ TEST_CASE("Assignment Details - getStringAssignmentDetails", "[assignment-detail
     }
 
     SECTION("Non-existent flag returns default with details") {
-        auto result = client.getStringAssignmentDetails(
-            "non-existent-string-flag",
-            "test-subject",
-            Attributes(),
-            "default-value"
-        );
+        auto result = client.getStringAssignmentDetails("non-existent-string-flag", "test-subject",
+                                                        Attributes(), "default-value");
 
         CHECK(result.variation == "default-value");
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED);
+        CHECK(*result.evaluationDetails->flagEvaluationCode ==
+              FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED);
     }
 }
 
@@ -272,12 +231,8 @@ TEST_CASE("Assignment Details - getJsonAssignmentDetails", "[assignment-details]
     SECTION("Successful JSON assignment with details") {
         json defaultJson = {{"default", "value"}};
 
-        auto result = client.getJsonAssignmentDetails(
-            "json-config-flag",
-            "test-subject-1",
-            Attributes(),
-            defaultJson
-        );
+        auto result = client.getJsonAssignmentDetails("json-config-flag", "test-subject-1",
+                                                      Attributes(), defaultJson);
 
         // Check result has details
         REQUIRE(result.evaluationDetails.has_value());
@@ -293,18 +248,15 @@ TEST_CASE("Assignment Details - getJsonAssignmentDetails", "[assignment-details]
     SECTION("Non-existent flag returns default JSON") {
         json defaultJson = {{"fallback", true}};
 
-        auto result = client.getJsonAssignmentDetails(
-            "non-existent-json-flag",
-            "test-subject",
-            Attributes(),
-            defaultJson
-        );
+        auto result = client.getJsonAssignmentDetails("non-existent-json-flag", "test-subject",
+                                                      Attributes(), defaultJson);
 
         CHECK(result.variation == defaultJson);
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED);
+        CHECK(*result.evaluationDetails->flagEvaluationCode ==
+              FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED);
     }
 }
 
@@ -320,11 +272,7 @@ TEST_CASE("Assignment Details - getSerializedJsonAssignmentDetails", "[assignmen
         std::string defaultValue = R"({"default":"value"})";
 
         auto result = client.getSerializedJsonAssignmentDetails(
-            "json-config-flag",
-            "test-subject-1",
-            Attributes(),
-            defaultValue
-        );
+            "json-config-flag", "test-subject-1", Attributes(), defaultValue);
 
         // Check result has details
         REQUIRE(result.evaluationDetails.has_value());
@@ -347,11 +295,7 @@ TEST_CASE("Assignment Details - getSerializedJsonAssignmentDetails", "[assignmen
         attrs["should_disable_feature"] = false;
 
         auto result = client.getSerializedJsonAssignmentDetails(
-            "boolean-false-assignment",
-            "test-subject",
-            attrs,
-            R"({"fallback":"data"})"
-        );
+            "boolean-false-assignment", "test-subject", attrs, R"({"fallback":"data"})");
 
         CHECK(result.variation == R"({"fallback":"data"})");
 
@@ -369,12 +313,8 @@ TEST_CASE("Assignment Details - Evaluation details timestamp", "[assignment-deta
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Evaluation details contain valid timestamp") {
-        auto result = client.getBooleanAssignmentDetails(
-            "boolean-false-assignment",
-            "test-subject",
-            Attributes(),
-            false
-        );
+        auto result = client.getBooleanAssignmentDetails("boolean-false-assignment", "test-subject",
+                                                         Attributes(), false);
 
         REQUIRE(result.evaluationDetails.has_value());
         CHECK_FALSE(result.evaluationDetails->timestamp.empty());
@@ -398,12 +338,8 @@ TEST_CASE("Assignment Details - Subject attributes preserved", "[assignment-deta
         attrs["country"] = std::string("USA");
         attrs["premium"] = true;
 
-        auto result = client.getStringAssignmentDetails(
-            "kill-switch",
-            "test-subject",
-            attrs,
-            "default"
-        );
+        auto result =
+            client.getStringAssignmentDetails("kill-switch", "test-subject", attrs, "default");
 
         REQUIRE(result.evaluationDetails.has_value());
         CHECK(result.evaluationDetails->subjectAttributes.size() == 3);
@@ -429,18 +365,15 @@ TEST_CASE("Assignment Details - Error handling behavior", "[assignment-details]"
     EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
     SECTION("Returns default with error details when flag key is empty") {
-        auto result = client.getBooleanAssignmentDetails(
-            "",  // Empty flag key to trigger error
-            "test-subject",
-            Attributes(),
-            true
-        );
+        auto result = client.getBooleanAssignmentDetails("",  // Empty flag key to trigger error
+                                                         "test-subject", Attributes(), true);
 
         CHECK(result.variation == true);  // Returns default
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::ASSIGNMENT_ERROR);
+        CHECK(*result.evaluationDetails->flagEvaluationCode ==
+              FlagEvaluationCode::ASSIGNMENT_ERROR);
 
         // Should have logged error
         CHECK_FALSE(mockLogger->errorMessages.empty());
@@ -458,12 +391,8 @@ TEST_CASE("Assignment Details - Variation value in details", "[assignment-detail
         Attributes attrs;
         attrs["should_disable_feature"] = false;
 
-        auto result = client.getBooleanAssignmentDetails(
-            "boolean-false-assignment",
-            "test-subject",
-            attrs,
-            false
-        );
+        auto result = client.getBooleanAssignmentDetails("boolean-false-assignment", "test-subject",
+                                                         attrs, false);
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->variationValue.has_value());
@@ -474,12 +403,8 @@ TEST_CASE("Assignment Details - Variation value in details", "[assignment-detail
     }
 
     SECTION("Numeric variation value is present in details") {
-        auto result = client.getNumericAssignmentDetails(
-            "numeric_flag",
-            "test-subject",
-            Attributes(),
-            0.0
-        );
+        auto result =
+            client.getNumericAssignmentDetails("numeric_flag", "test-subject", Attributes(), 0.0);
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->variationValue.has_value());
@@ -489,17 +414,14 @@ TEST_CASE("Assignment Details - Variation value in details", "[assignment-detail
     }
 
     SECTION("String variation value is present in details") {
-        auto result = client.getStringAssignmentDetails(
-            "empty_string_flag",
-            "test-subject",
-            Attributes(),
-            "default"
-        );
+        auto result = client.getStringAssignmentDetails("empty_string_flag", "test-subject",
+                                                        Attributes(), "default");
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->variationValue.has_value());
 
-        std::string valueInDetails = std::get<std::string>(*result.evaluationDetails->variationValue);
+        std::string valueInDetails =
+            std::get<std::string>(*result.evaluationDetails->variationValue);
         CHECK(valueInDetails == result.variation);
     }
 }
@@ -513,32 +435,20 @@ TEST_CASE("Assignment Details - Multiple flags in sequence", "[assignment-detail
 
     SECTION("Can get details for multiple flags in sequence") {
         // Get boolean flag details
-        auto result1 = client.getBooleanAssignmentDetails(
-            "boolean-false-assignment",
-            "user1",
-            Attributes(),
-            false
-        );
+        auto result1 = client.getBooleanAssignmentDetails("boolean-false-assignment", "user1",
+                                                          Attributes(), false);
         REQUIRE(result1.evaluationDetails.has_value());
         CHECK(result1.evaluationDetails->flagKey == "boolean-false-assignment");
 
         // Get string flag details
-        auto result2 = client.getStringAssignmentDetails(
-            "kill-switch",
-            "user2",
-            Attributes(),
-            "default"
-        );
+        auto result2 =
+            client.getStringAssignmentDetails("kill-switch", "user2", Attributes(), "default");
         REQUIRE(result2.evaluationDetails.has_value());
         CHECK(result2.evaluationDetails->flagKey == "kill-switch");
 
         // Get numeric flag details
-        auto result3 = client.getNumericAssignmentDetails(
-            "numeric_flag",
-            "user3",
-            Attributes(),
-            0.0
-        );
+        auto result3 =
+            client.getNumericAssignmentDetails("numeric_flag", "user3", Attributes(), 0.0);
         REQUIRE(result3.evaluationDetails.has_value());
         CHECK(result3.evaluationDetails->flagKey == "numeric_flag");
 
@@ -557,19 +467,15 @@ TEST_CASE("Assignment Details - Empty flag key handling", "[assignment-details]"
     EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
     SECTION("Empty flag key in graceful mode returns default with details") {
-        auto result = client.getBooleanAssignmentDetails(
-            "",
-            "test-subject",
-            Attributes(),
-            true
-        );
+        auto result = client.getBooleanAssignmentDetails("", "test-subject", Attributes(), true);
 
         CHECK(result.variation == true);
 
         REQUIRE(result.evaluationDetails.has_value());
         CHECK(result.evaluationDetails->flagKey.empty());
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::ASSIGNMENT_ERROR);
+        CHECK(*result.evaluationDetails->flagEvaluationCode ==
+              FlagEvaluationCode::ASSIGNMENT_ERROR);
     }
 }
 
@@ -587,12 +493,8 @@ TEST_CASE("Assignment Details - Assignment logging still works", "[assignment-de
 
         mockAssignmentLogger->clear();
 
-        auto result = client.getBooleanAssignmentDetails(
-            "boolean-false-assignment",
-            "test-subject",
-            attrs,
-            false
-        );
+        auto result = client.getBooleanAssignmentDetails("boolean-false-assignment", "test-subject",
+                                                         attrs, false);
 
         // Check that assignment was logged
         CHECK(mockAssignmentLogger->loggedEvents.size() == 1);

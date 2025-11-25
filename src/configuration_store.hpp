@@ -40,6 +40,6 @@ private:
     std::optional<Configuration> configuration_;
 };
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // CONFIGURATION_STORE_H
+#endif  // CONFIGURATION_STORE_H

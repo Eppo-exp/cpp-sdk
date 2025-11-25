@@ -1,26 +1,26 @@
 #include <catch_amalgamated.hpp>
-#include "../src/client.hpp"
-#include "../src/config_response.hpp"
-#include <nlohmann/json.hpp>
 #include <fstream>
 #include <memory>
+#include <nlohmann/json.hpp>
+#include "../src/client.hpp"
+#include "../src/config_response.hpp"
 
 using namespace eppoclient;
 using json = nlohmann::json;
 
 namespace {
-    // Helper function to load flags configuration
-    ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
-        std::ifstream file(filepath);
-        if (!file.is_open()) {
-            throw std::runtime_error("Failed to open flags configuration file: " + filepath);
-        }
-
-        json j;
-        file >> j;
-        return j.get<ConfigResponse>();
+// Helper function to load flags configuration
+ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open flags configuration file: " + filepath);
     }
+
+    json j;
+    file >> j;
+    return j.get<ConfigResponse>();
 }
+}  // namespace
 
 TEST_CASE("Allocation Evaluation Details - BEFORE_START_TIME", "[allocation-details]") {
     ConfigurationStore configStore;
@@ -32,11 +32,7 @@ TEST_CASE("Allocation Evaluation Details - BEFORE_START_TIME", "[allocation-deta
     SECTION("Flag with start date tracks time-based codes") {
         // The start-and-end-date-test flag has allocations with start times
         auto result = client.getBooleanAssignmentDetails(
-            "start-and-end-date-test",
-            "test-subject-before",
-            Attributes(),
-            false
-        );
+            "start-and-end-date-test", "test-subject-before", Attributes(), false);
 
         REQUIRE(result.evaluationDetails.has_value());
 
@@ -45,9 +41,11 @@ TEST_CASE("Allocation Evaluation Details - BEFORE_START_TIME", "[allocation-deta
             for (const auto& alloc : result.evaluationDetails->allocations) {
                 // Each allocation should have a valid evaluation code
                 CHECK((alloc.allocationEvaluationCode == AllocationEvaluationCode::MATCH ||
-                       alloc.allocationEvaluationCode == AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS ||
+                       alloc.allocationEvaluationCode ==
+                           AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS ||
                        alloc.allocationEvaluationCode == AllocationEvaluationCode::FAILING_RULE ||
-                       alloc.allocationEvaluationCode == AllocationEvaluationCode::BEFORE_START_TIME ||
+                       alloc.allocationEvaluationCode ==
+                           AllocationEvaluationCode::BEFORE_START_TIME ||
                        alloc.allocationEvaluationCode == AllocationEvaluationCode::AFTER_END_TIME));
                 CHECK_FALSE(alloc.key.empty());
             }
@@ -67,12 +65,8 @@ TEST_CASE("Allocation Evaluation Details - AFTER_END_TIME", "[allocation-details
 
     SECTION("Flag with time-based allocations tracks evaluation codes") {
         // The start-and-end-date-test flag has allocations with end times
-        auto result = client.getBooleanAssignmentDetails(
-            "start-and-end-date-test",
-            "test-subject-after",
-            Attributes(),
-            false
-        );
+        auto result = client.getBooleanAssignmentDetails("start-and-end-date-test",
+                                                         "test-subject-after", Attributes(), false);
 
         REQUIRE(result.evaluationDetails.has_value());
 
@@ -81,9 +75,11 @@ TEST_CASE("Allocation Evaluation Details - AFTER_END_TIME", "[allocation-details
             for (const auto& alloc : result.evaluationDetails->allocations) {
                 // Each allocation should have a valid evaluation code
                 CHECK((alloc.allocationEvaluationCode == AllocationEvaluationCode::MATCH ||
-                       alloc.allocationEvaluationCode == AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS ||
+                       alloc.allocationEvaluationCode ==
+                           AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS ||
                        alloc.allocationEvaluationCode == AllocationEvaluationCode::FAILING_RULE ||
-                       alloc.allocationEvaluationCode == AllocationEvaluationCode::BEFORE_START_TIME ||
+                       alloc.allocationEvaluationCode ==
+                           AllocationEvaluationCode::BEFORE_START_TIME ||
                        alloc.allocationEvaluationCode == AllocationEvaluationCode::AFTER_END_TIME));
                 CHECK_FALSE(alloc.key.empty());
             }
@@ -105,12 +101,8 @@ TEST_CASE("Allocation Evaluation Details - FAILING_RULE", "[allocation-details]"
         Attributes attrs;
         attrs["company_id"] = std::string("non-matching-company");
 
-        auto result = client.getBooleanAssignmentDetails(
-            "kill-switch",
-            "test-subject",
-            attrs,
-            false
-        );
+        auto result =
+            client.getBooleanAssignmentDetails("kill-switch", "test-subject", attrs, false);
 
         REQUIRE(result.evaluationDetails.has_value());
         CHECK_FALSE(result.evaluationDetails->allocations.empty());
@@ -119,7 +111,8 @@ TEST_CASE("Allocation Evaluation Details - FAILING_RULE", "[allocation-details]"
         for (const auto& alloc : result.evaluationDetails->allocations) {
             // Each allocation should have a valid code
             CHECK((alloc.allocationEvaluationCode == AllocationEvaluationCode::MATCH ||
-                   alloc.allocationEvaluationCode == AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS ||
+                   alloc.allocationEvaluationCode ==
+                       AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS ||
                    alloc.allocationEvaluationCode == AllocationEvaluationCode::FAILING_RULE ||
                    alloc.allocationEvaluationCode == AllocationEvaluationCode::BEFORE_START_TIME ||
                    alloc.allocationEvaluationCode == AllocationEvaluationCode::AFTER_END_TIME));
@@ -132,12 +125,8 @@ TEST_CASE("Allocation Evaluation Details - FAILING_RULE", "[allocation-details]"
 
     SECTION("Subject matching rules shows MATCH code") {
         // Empty attributes should match the default allocation
-        auto result = client.getBooleanAssignmentDetails(
-            "kill-switch",
-            "alice",
-            Attributes(),
-            false
-        );
+        auto result =
+            client.getBooleanAssignmentDetails("kill-switch", "alice", Attributes(), false);
 
         REQUIRE(result.evaluationDetails.has_value());
         CHECK_FALSE(result.evaluationDetails->allocations.empty());
@@ -168,11 +157,7 @@ TEST_CASE("Allocation Evaluation Details - TRAFFIC_EXPOSURE_MISS", "[allocation-
         Attributes attrs;
 
         auto result = client.getBooleanAssignmentDetails(
-            "kill-switch",
-            "test-subject-not-in-traffic",
-            attrs,
-            false
-        );
+            "kill-switch", "test-subject-not-in-traffic", attrs, false);
 
         REQUIRE(result.evaluationDetails.has_value());
         CHECK_FALSE(result.evaluationDetails->allocations.empty());
@@ -181,7 +166,8 @@ TEST_CASE("Allocation Evaluation Details - TRAFFIC_EXPOSURE_MISS", "[allocation-
         for (const auto& alloc : result.evaluationDetails->allocations) {
             // Each allocation should have a valid code
             CHECK((alloc.allocationEvaluationCode == AllocationEvaluationCode::MATCH ||
-                   alloc.allocationEvaluationCode == AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS ||
+                   alloc.allocationEvaluationCode ==
+                       AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS ||
                    alloc.allocationEvaluationCode == AllocationEvaluationCode::FAILING_RULE ||
                    alloc.allocationEvaluationCode == AllocationEvaluationCode::BEFORE_START_TIME ||
                    alloc.allocationEvaluationCode == AllocationEvaluationCode::AFTER_END_TIME));
@@ -197,12 +183,8 @@ TEST_CASE("Allocation Evaluation Details - Multiple allocations tracked", "[allo
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("All allocations are evaluated and tracked") {
-        auto result = client.getBooleanAssignmentDetails(
-            "kill-switch",
-            "alice",
-            Attributes(),
-            false
-        );
+        auto result =
+            client.getBooleanAssignmentDetails("kill-switch", "alice", Attributes(), false);
 
         REQUIRE(result.evaluationDetails.has_value());
         CHECK_FALSE(result.evaluationDetails->allocations.empty());
@@ -214,7 +196,8 @@ TEST_CASE("Allocation Evaluation Details - Multiple allocations tracked", "[allo
             CHECK(alloc.orderPosition >= 1);
             // Should have an evaluation code
             CHECK((alloc.allocationEvaluationCode == AllocationEvaluationCode::MATCH ||
-                   alloc.allocationEvaluationCode == AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS ||
+                   alloc.allocationEvaluationCode ==
+                       AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS ||
                    alloc.allocationEvaluationCode == AllocationEvaluationCode::FAILING_RULE ||
                    alloc.allocationEvaluationCode == AllocationEvaluationCode::BEFORE_START_TIME ||
                    alloc.allocationEvaluationCode == AllocationEvaluationCode::AFTER_END_TIME));
@@ -234,12 +217,8 @@ TEST_CASE("Allocation Evaluation Details - Multiple allocations tracked", "[allo
     }
 
     SECTION("Allocation order positions are sequential") {
-        auto result = client.getStringAssignmentDetails(
-            "empty_string_flag",
-            "test-subject",
-            Attributes(),
-            "default"
-        );
+        auto result = client.getStringAssignmentDetails("empty_string_flag", "test-subject",
+                                                        Attributes(), "default");
 
         REQUIRE(result.evaluationDetails.has_value());
         if (!result.evaluationDetails->allocations.empty()) {
@@ -251,7 +230,8 @@ TEST_CASE("Allocation Evaluation Details - Multiple allocations tracked", "[allo
     }
 }
 
-TEST_CASE("Allocation Evaluation Details - First matching allocation wins", "[allocation-details]") {
+TEST_CASE("Allocation Evaluation Details - First matching allocation wins",
+          "[allocation-details]") {
     ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
     configStore.setConfiguration(Configuration(ufc));
@@ -259,18 +239,13 @@ TEST_CASE("Allocation Evaluation Details - First matching allocation wins", "[al
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("When multiple allocations match, first one is used") {
-        auto result = client.getBooleanAssignmentDetails(
-            "kill-switch",
-            "alice",
-            Attributes(),
-            false
-        );
+        auto result =
+            client.getBooleanAssignmentDetails("kill-switch", "alice", Attributes(), false);
 
         REQUIRE(result.evaluationDetails.has_value());
 
         if (result.evaluationDetails->flagEvaluationCode.has_value() &&
             *result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::MATCH) {
-
             // Find the first MATCH allocation
             size_t firstMatchPosition = SIZE_MAX;
             for (const auto& alloc : result.evaluationDetails->allocations) {
@@ -294,18 +269,15 @@ TEST_CASE("Allocation Evaluation Details - No allocations case", "[allocation-de
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Flag with no allocations has empty allocations list") {
-        auto result = client.getBooleanAssignmentDetails(
-            "no_allocations_flag",
-            "test-subject",
-            Attributes(),
-            false
-        );
+        auto result = client.getBooleanAssignmentDetails("no_allocations_flag", "test-subject",
+                                                         Attributes(), false);
 
         REQUIRE(result.evaluationDetails.has_value());
 
         // Should have empty allocations or DEFAULT_ALLOCATION_NULL code
         if (result.evaluationDetails->flagEvaluationCode.has_value() &&
-            *result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::DEFAULT_ALLOCATION_NULL) {
+            *result.evaluationDetails->flagEvaluationCode ==
+                FlagEvaluationCode::DEFAULT_ALLOCATION_NULL) {
             // This is expected for flags with no allocations
             CHECK(result.variation == false);  // Should return default
         }
@@ -323,12 +295,7 @@ TEST_CASE("Allocation Evaluation Details - Integer flag allocations", "[allocati
         Attributes attrs;
         attrs["age"] = 25.0;
 
-        auto result = client.getIntegerAssignmentDetails(
-            "integer-flag",
-            "alice",
-            attrs,
-            0
-        );
+        auto result = client.getIntegerAssignmentDetails("integer-flag", "alice", attrs, 0);
 
         REQUIRE(result.evaluationDetails.has_value());
 
@@ -357,12 +324,8 @@ TEST_CASE("Allocation Evaluation Details - JSON flag allocations", "[allocation-
     SECTION("JSON flags track allocation details") {
         json defaultJson = {{"default", "value"}};
 
-        auto result = client.getJsonAssignmentDetails(
-            "json-config-flag",
-            "test-subject-1",
-            Attributes(),
-            defaultJson
-        );
+        auto result = client.getJsonAssignmentDetails("json-config-flag", "test-subject-1",
+                                                      Attributes(), defaultJson);
 
         REQUIRE(result.evaluationDetails.has_value());
         CHECK_FALSE(result.evaluationDetails->allocations.empty());
@@ -382,12 +345,8 @@ TEST_CASE("Allocation Evaluation Details - Allocation key preserved", "[allocati
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("Allocation keys are preserved in details") {
-        auto result = client.getBooleanAssignmentDetails(
-            "boolean-false-assignment",
-            "test-subject",
-            Attributes(),
-            false
-        );
+        auto result = client.getBooleanAssignmentDetails("boolean-false-assignment", "test-subject",
+                                                         Attributes(), false);
 
         REQUIRE(result.evaluationDetails.has_value());
 

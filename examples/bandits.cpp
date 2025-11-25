@@ -1,5 +1,5 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include "../src/client.hpp"
@@ -20,16 +20,18 @@ public:
             std::cout << "Subject Attributes:" << std::endl;
             for (const auto& [key, value] : event.subjectAttributes) {
                 std::cout << "  " << key << ": ";
-                std::visit([](const auto& v) {
-                    using T = std::decay_t<decltype(v)>;
-                    if constexpr (std::is_same_v<T, std::monostate>) {
-                        std::cout << "(none)";
-                    } else if constexpr (std::is_same_v<T, bool>) {
-                        std::cout << (v ? "true" : "false");
-                    } else {
-                        std::cout << v;
-                    }
-                }, value);
+                std::visit(
+                    [](const auto& v) {
+                        using T = std::decay_t<decltype(v)>;
+                        if constexpr (std::is_same_v<T, std::monostate>) {
+                            std::cout << "(none)";
+                        } else if constexpr (std::is_same_v<T, bool>) {
+                            std::cout << (v ? "true" : "false");
+                        } else {
+                            std::cout << v;
+                        }
+                    },
+                    value);
                 std::cout << std::endl;
             }
         }
@@ -191,13 +193,13 @@ int main() {
     actions["honda"] = hondaAction;
 
     // Get bandit action recommendation
-    eppoclient::BanditResult banditResult = client.getBanditAction(
-        "car_bandit_flag",     // flag key
-        "user-abc123",         // subject key
-        subjectAttrs,          // subject attributes
-        actions,               // available actions
-        "car_bandit"           // default variation if flag not found
-    );
+    eppoclient::BanditResult banditResult =
+        client.getBanditAction("car_bandit_flag",  // flag key
+                               "user-abc123",      // subject key
+                               subjectAttrs,       // subject attributes
+                               actions,            // available actions
+                               "car_bandit"        // default variation if flag not found
+        );
 
     std::cout << "Bandit selected variation: " << banditResult.variation << std::endl;
     if (banditResult.action.has_value()) {
@@ -209,7 +211,8 @@ int main() {
         } else if (banditResult.action.value() == "honda") {
             std::cout << "✓ Recommending Honda to user" << std::endl;
         } else {
-            std::cout << "✓ Recommending " << banditResult.action.value() << " to user" << std::endl;
+            std::cout << "✓ Recommending " << banditResult.action.value() << " to user"
+                      << std::endl;
         }
     } else {
         std::cout << "No action selected (using default)" << std::endl;

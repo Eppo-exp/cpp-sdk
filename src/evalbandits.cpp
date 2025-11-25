@@ -1,8 +1,8 @@
 #include "evalbandits.hpp"
-#include "evalflags.hpp"
 #include <algorithm>
 #include <limits>
 #include <vector>
+#include "evalflags.hpp"
 
 namespace eppoclient {
 
@@ -39,10 +39,8 @@ Attributes toGenericAttributes(const ContextAttributes& contextAttrs) {
     return result;
 }
 
-double scoreNumericAttributes(
-    const std::vector<BanditNumericAttributeCoefficient>& coefficients,
-    const std::map<std::string, double>& attributes) {
-
+double scoreNumericAttributes(const std::vector<BanditNumericAttributeCoefficient>& coefficients,
+                              const std::map<std::string, double>& attributes) {
     double score = 0.0;
     for (const auto& coefficient : coefficients) {
         auto it = attributes.find(coefficient.attributeKey);
@@ -58,7 +56,6 @@ double scoreNumericAttributes(
 double scoreCategoricalAttributes(
     const std::vector<BanditCategoricalAttributeCoefficient>& coefficients,
     const std::map<std::string, std::string>& attributes) {
-
     double score = 0.0;
     for (const auto& coefficient : coefficients) {
         auto attrIt = attributes.find(coefficient.attributeKey);
@@ -76,11 +73,8 @@ double scoreCategoricalAttributes(
     return score;
 }
 
-double scoreAction(const BanditModelData& modelData,
-                  const ContextAttributes& subjectAttributes,
-                  const std::string& actionKey,
-                  const ContextAttributes& actionAttributes) {
-
+double scoreAction(const BanditModelData& modelData, const ContextAttributes& subjectAttributes,
+                   const std::string& actionKey, const ContextAttributes& actionAttributes) {
     auto coeffIt = modelData.coefficients.find(actionKey);
     if (coeffIt == modelData.coefficients.end()) {
         return modelData.defaultActionScore;
@@ -90,11 +84,11 @@ double scoreAction(const BanditModelData& modelData,
 
     double score = coefficients.intercept;
     score += scoreNumericAttributes(coefficients.actionNumericCoefficients,
-                                     actionAttributes.numericAttributes);
+                                    actionAttributes.numericAttributes);
     score += scoreCategoricalAttributes(coefficients.actionCategoricalCoefficients,
                                         actionAttributes.categoricalAttributes);
     score += scoreNumericAttributes(coefficients.subjectNumericCoefficients,
-                                     subjectAttributes.numericAttributes);
+                                    subjectAttributes.numericAttributes);
     score += scoreCategoricalAttributes(coefficients.subjectCategoricalCoefficients,
                                         subjectAttributes.categoricalAttributes);
 
@@ -109,8 +103,8 @@ BanditEvaluationDetails evaluateBandit(const BanditModelData& modelData,
     // Score all actions
     std::map<std::string, double> scores;
     for (const auto& [actionKey, actionAttributes] : context.actions) {
-        scores[actionKey] = scoreAction(modelData, context.subjectAttributes,
-                                       actionKey, actionAttributes);
+        scores[actionKey] =
+            scoreAction(modelData, context.subjectAttributes, actionKey, actionAttributes);
     }
 
     // Find best action and best score
@@ -133,7 +127,8 @@ BanditEvaluationDetails evaluateBandit(const BanditModelData& modelData,
 
         // Adjust probability floor for number of actions to control the sum
         double minProbability = modelData.actionProbabilityFloor / static_cast<double>(nActions);
-        double weight = 1.0 / (static_cast<double>(nActions) + modelData.gamma * (bestScore - score));
+        double weight =
+            1.0 / (static_cast<double>(nActions) + modelData.gamma * (bestScore - score));
         weights[actionKey] = std::max(minProbability, weight);
     }
 
@@ -150,8 +145,8 @@ BanditEvaluationDetails evaluateBandit(const BanditModelData& modelData,
 
     for (const auto& [actionKey, _] : context.actions) {
         shuffledActions.push_back(actionKey);
-        shards[actionKey] = getShard(context.flagKey + "-" + context.subjectKey + "-" + actionKey,
-                                     totalShards);
+        shards[actionKey] =
+            getShard(context.flagKey + "-" + context.subjectKey + "-" + actionKey, totalShards);
     }
 
     // Sort actions by their shard value, using action key as tie breaker
@@ -170,8 +165,9 @@ BanditEvaluationDetails evaluateBandit(const BanditModelData& modelData,
               });
 
     // Select action based on shard value
-    double shardValue = static_cast<double>(getShard(context.flagKey + "-" + context.subjectKey,
-                                                      totalShards)) / static_cast<double>(totalShards);
+    double shardValue =
+        static_cast<double>(getShard(context.flagKey + "-" + context.subjectKey, totalShards)) /
+        static_cast<double>(totalShards);
 
     double cumulativeWeight = 0.0;
     std::string selectedAction = shuffledActions.back();  // Default to last action
@@ -199,12 +195,10 @@ BanditEvaluationDetails evaluateBandit(const BanditModelData& modelData,
     return details;
 }
 
-BanditEvent createBanditEvent(const std::string& flagKey,
-                             const std::string& subjectKey,
-                             const std::string& banditKey,
-                             const std::string& modelVersion,
-                             const BanditEvaluationDetails& evaluation,
-                             const std::string& timestamp) {
+BanditEvent createBanditEvent(const std::string& flagKey, const std::string& subjectKey,
+                              const std::string& banditKey, const std::string& modelVersion,
+                              const BanditEvaluationDetails& evaluation,
+                              const std::string& timestamp) {
     BanditEvent event;
     event.flagKey = flagKey;
     event.banditKey = banditKey;
@@ -223,4 +217,4 @@ BanditEvent createBanditEvent(const std::string& flagKey,
     return event;
 }
 
-} // namespace eppoclient
+}  // namespace eppoclient

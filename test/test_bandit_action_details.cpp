@@ -1,74 +1,63 @@
 #include <catch_amalgamated.hpp>
-#include "../src/client.hpp"
-#include "../src/config_response.hpp"
-#include <nlohmann/json.hpp>
 #include <fstream>
 #include <memory>
+#include <nlohmann/json.hpp>
+#include "../src/client.hpp"
+#include "../src/config_response.hpp"
 
 using namespace eppoclient;
 using json = nlohmann::json;
 
 namespace {
-    // Mock application logger
-    class MockApplicationLogger : public ApplicationLogger {
-    public:
-        std::vector<std::string> debugMessages;
-        std::vector<std::string> infoMessages;
-        std::vector<std::string> warnMessages;
-        std::vector<std::string> errorMessages;
+// Mock application logger
+class MockApplicationLogger : public ApplicationLogger {
+public:
+    std::vector<std::string> debugMessages;
+    std::vector<std::string> infoMessages;
+    std::vector<std::string> warnMessages;
+    std::vector<std::string> errorMessages;
 
-        void debug(const std::string& message) override {
-            debugMessages.push_back(message);
-        }
+    void debug(const std::string& message) override { debugMessages.push_back(message); }
 
-        void info(const std::string& message) override {
-            infoMessages.push_back(message);
-        }
+    void info(const std::string& message) override { infoMessages.push_back(message); }
 
-        void warn(const std::string& message) override {
-            warnMessages.push_back(message);
-        }
+    void warn(const std::string& message) override { warnMessages.push_back(message); }
 
-        void error(const std::string& message) override {
-            errorMessages.push_back(message);
-        }
+    void error(const std::string& message) override { errorMessages.push_back(message); }
 
-        void clear() {
-            debugMessages.clear();
-            infoMessages.clear();
-            warnMessages.clear();
-            errorMessages.clear();
-        }
-    };
-
-    // Mock bandit logger
-    class MockBanditLogger : public BanditLogger {
-    public:
-        std::vector<BanditEvent> loggedEvents;
-
-        void logBanditAction(const BanditEvent& event) override {
-            loggedEvents.push_back(event);
-        }
-
-        void clear() {
-            loggedEvents.clear();
-        }
-    };
-
-    // Helper function to load flags configuration
-    ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
-        std::ifstream file(filepath);
-        if (!file.is_open()) {
-            throw std::runtime_error("Failed to open flags configuration file: " + filepath);
-        }
-
-        json j;
-        file >> j;
-        return j.get<ConfigResponse>();
+    void clear() {
+        debugMessages.clear();
+        infoMessages.clear();
+        warnMessages.clear();
+        errorMessages.clear();
     }
-}
+};
 
-TEST_CASE("Bandit Action Details - getBanditActionDetails with actions", "[bandit-action-details]") {
+// Mock bandit logger
+class MockBanditLogger : public BanditLogger {
+public:
+    std::vector<BanditEvent> loggedEvents;
+
+    void logBanditAction(const BanditEvent& event) override { loggedEvents.push_back(event); }
+
+    void clear() { loggedEvents.clear(); }
+};
+
+// Helper function to load flags configuration
+ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open flags configuration file: " + filepath);
+    }
+
+    json j;
+    file >> j;
+    return j.get<ConfigResponse>();
+}
+}  // namespace
+
+TEST_CASE("Bandit Action Details - getBanditActionDetails with actions",
+          "[bandit-action-details]") {
     ConfigurationStore configStore;
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
     configStore.setConfiguration(Configuration(ufc));
@@ -91,13 +80,8 @@ TEST_CASE("Bandit Action Details - getBanditActionDetails with actions", "[bandi
 
         mockBanditLogger->clear();
 
-        auto result = client.getBanditActionDetails(
-            "banner_bandit_flag",
-            "test-subject",
-            subjectAttrs,
-            actions,
-            "default-variation"
-        );
+        auto result = client.getBanditActionDetails("banner_bandit_flag", "test-subject",
+                                                    subjectAttrs, actions, "default-variation");
 
         // Check that result has evaluation details
         REQUIRE(result.evaluationDetails.has_value());
@@ -127,13 +111,8 @@ TEST_CASE("Bandit Action Details - getBanditActionDetails with actions", "[bandi
         actions["action1"] = ContextAttributes();
         actions["action2"] = ContextAttributes();
 
-        auto result = client.getBanditActionDetails(
-            "banner_bandit_flag",
-            "test-subject",
-            subjectAttrs,
-            actions,
-            "default"
-        );
+        auto result = client.getBanditActionDetails("banner_bandit_flag", "test-subject",
+                                                    subjectAttrs, actions, "default");
 
         REQUIRE(result.evaluationDetails.has_value());
         CHECK_FALSE(result.evaluationDetails->timestamp.empty());
@@ -158,20 +137,18 @@ TEST_CASE("Bandit Action Details - No actions supplied", "[bandit-action-details
 
         mockBanditLogger->clear();
 
-        auto result = client.getBanditActionDetails(
-            "banner_bandit_flag",
-            "test-subject",
-            subjectAttrs,
-            emptyActions,  // Empty actions map
-            "default-variation"
-        );
+        auto result =
+            client.getBanditActionDetails("banner_bandit_flag", "test-subject", subjectAttrs,
+                                          emptyActions,  // Empty actions map
+                                          "default-variation");
 
         // Check evaluation details
         REQUIRE(result.evaluationDetails.has_value());
 
         // Check bandit evaluation code indicates no actions
         REQUIRE(result.evaluationDetails->banditEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->banditEvaluationCode == BanditEvaluationCode::NO_ACTIONS_SUPPLIED_FOR_BANDIT);
+        CHECK(*result.evaluationDetails->banditEvaluationCode ==
+              BanditEvaluationCode::NO_ACTIONS_SUPPLIED_FOR_BANDIT);
 
         // Check no action was returned
         CHECK_FALSE(result.action.has_value());
@@ -194,19 +171,15 @@ TEST_CASE("Bandit Action Details - Non-bandit variation", "[bandit-action-detail
         actions["action1"] = ContextAttributes();
 
         // Use a non-bandit flag
-        auto result = client.getBanditActionDetails(
-            "non_bandit_flag",
-            "test-subject",
-            subjectAttrs,
-            actions,
-            "default"
-        );
+        auto result = client.getBanditActionDetails("non_bandit_flag", "test-subject", subjectAttrs,
+                                                    actions, "default");
 
         REQUIRE(result.evaluationDetails.has_value());
 
         // Check bandit evaluation code indicates non-bandit variation
         REQUIRE(result.evaluationDetails->banditEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->banditEvaluationCode == BanditEvaluationCode::NON_BANDIT_VARIATION);
+        CHECK(*result.evaluationDetails->banditEvaluationCode ==
+              BanditEvaluationCode::NON_BANDIT_VARIATION);
 
         // Check no action was returned
         CHECK_FALSE(result.action.has_value());
@@ -225,19 +198,15 @@ TEST_CASE("Bandit Action Details - Non-existent flag", "[bandit-action-details]"
         std::map<std::string, ContextAttributes> actions;
         actions["action1"] = ContextAttributes();
 
-        auto result = client.getBanditActionDetails(
-            "non-existent-bandit-flag",
-            "test-subject",
-            subjectAttrs,
-            actions,
-            "fallback"
-        );
+        auto result = client.getBanditActionDetails("non-existent-bandit-flag", "test-subject",
+                                                    subjectAttrs, actions, "fallback");
 
         CHECK(result.variation == "fallback");
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED);
+        CHECK(*result.evaluationDetails->flagEvaluationCode ==
+              FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED);
     }
 }
 
@@ -254,13 +223,8 @@ TEST_CASE("Bandit Action Details - Bandit key in details", "[bandit-action-detai
         actions["action1"] = ContextAttributes();
         actions["action2"] = ContextAttributes();
 
-        auto result = client.getBanditActionDetails(
-            "banner_bandit_flag",
-            "test-subject",
-            subjectAttrs,
-            actions,
-            "default"
-        );
+        auto result = client.getBanditActionDetails("banner_bandit_flag", "test-subject",
+                                                    subjectAttrs, actions, "default");
 
         REQUIRE(result.evaluationDetails.has_value());
 
@@ -289,21 +253,11 @@ TEST_CASE("Bandit Action Details - Multiple calls preserve details", "[bandit-ac
         actions["action1"] = ContextAttributes();
         actions["action2"] = ContextAttributes();
 
-        auto result1 = client.getBanditActionDetails(
-            "banner_bandit_flag",
-            "user1",
-            subjectAttrs1,
-            actions,
-            "default"
-        );
+        auto result1 = client.getBanditActionDetails("banner_bandit_flag", "user1", subjectAttrs1,
+                                                     actions, "default");
 
-        auto result2 = client.getBanditActionDetails(
-            "banner_bandit_flag",
-            "user2",
-            subjectAttrs2,
-            actions,
-            "default"
-        );
+        auto result2 = client.getBanditActionDetails("banner_bandit_flag", "user2", subjectAttrs2,
+                                                     actions, "default");
 
         // Check both have evaluation details
         REQUIRE(result1.evaluationDetails.has_value());
@@ -332,19 +286,16 @@ TEST_CASE("Bandit Action Details - Empty subject key handling", "[bandit-action-
         std::map<std::string, ContextAttributes> actions;
         actions["action1"] = ContextAttributes();
 
-        auto result = client.getBanditActionDetails(
-            "banner_bandit_flag",
-            "",  // Empty subject key
-            ContextAttributes(),
-            actions,
-            "default"
-        );
+        auto result = client.getBanditActionDetails("banner_bandit_flag",
+                                                    "",  // Empty subject key
+                                                    ContextAttributes(), actions, "default");
 
         CHECK(result.variation == "default");
 
         REQUIRE(result.evaluationDetails.has_value());
         REQUIRE(result.evaluationDetails->flagEvaluationCode.has_value());
-        CHECK(*result.evaluationDetails->flagEvaluationCode == FlagEvaluationCode::ASSIGNMENT_ERROR);
+        CHECK(*result.evaluationDetails->flagEvaluationCode ==
+              FlagEvaluationCode::ASSIGNMENT_ERROR);
     }
 }
 
@@ -361,13 +312,8 @@ TEST_CASE("Bandit Action Details - Variation and action consistency", "[bandit-a
         actions["action1"] = ContextAttributes();
         actions["action2"] = ContextAttributes();
 
-        auto result = client.getBanditActionDetails(
-            "banner_bandit_flag",
-            "test-subject",
-            subjectAttrs,
-            actions,
-            "default"
-        );
+        auto result = client.getBanditActionDetails("banner_bandit_flag", "test-subject",
+                                                    subjectAttrs, actions, "default");
 
         REQUIRE(result.evaluationDetails.has_value());
 
@@ -404,13 +350,8 @@ TEST_CASE("Bandit Action Details - Bandit logging still works", "[bandit-action-
 
         mockBanditLogger->clear();
 
-        auto result = client.getBanditActionDetails(
-            "banner_bandit_flag",
-            "test-subject",
-            subjectAttrs,
-            actions,
-            "default"
-        );
+        auto result = client.getBanditActionDetails("banner_bandit_flag", "test-subject",
+                                                    subjectAttrs, actions, "default");
 
         // If a bandit action was selected, event should be logged
         if (result.action.has_value()) {

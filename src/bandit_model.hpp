@@ -1,11 +1,11 @@
 #ifndef BANDIT_MODEL_HPP
 #define BANDIT_MODEL_HPP
 
+#include <chrono>
+#include <map>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
-#include <map>
-#include <chrono>
-#include <nlohmann/json.hpp>
 
 namespace eppoclient {
 
@@ -18,8 +18,7 @@ struct BanditNumericAttributeCoefficient {
     double coefficient;
     double missingValueCoefficient;
 
-    BanditNumericAttributeCoefficient()
-        : coefficient(0.0), missingValueCoefficient(0.0) {}
+    BanditNumericAttributeCoefficient() : coefficient(0.0), missingValueCoefficient(0.0) {}
 };
 
 void to_json(nlohmann::json& j, const BanditNumericAttributeCoefficient& bnac);
@@ -34,8 +33,7 @@ struct BanditCategoricalAttributeCoefficient {
     double missingValueCoefficient;
     std::map<std::string, double> valueCoefficients;
 
-    BanditCategoricalAttributeCoefficient()
-        : missingValueCoefficient(0.0) {}
+    BanditCategoricalAttributeCoefficient() : missingValueCoefficient(0.0) {}
 };
 
 void to_json(nlohmann::json& j, const BanditCategoricalAttributeCoefficient& bcac);
@@ -69,8 +67,7 @@ struct BanditModelData {
     double actionProbabilityFloor;
     std::map<std::string, BanditCoefficients> coefficients;
 
-    BanditModelData()
-        : gamma(0.0), defaultActionScore(0.0), actionProbabilityFloor(0.0) {}
+    BanditModelData() : gamma(0.0), defaultActionScore(0.0), actionProbabilityFloor(0.0) {}
 };
 
 void to_json(nlohmann::json& j, const BanditModelData& bmd);
@@ -123,6 +120,6 @@ struct BanditVariation {
 void to_json(nlohmann::json& j, const BanditVariation& bv);
 void from_json(const nlohmann::json& j, BanditVariation& bv);
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // BANDIT_MODEL_H
+#endif  // BANDIT_MODEL_H

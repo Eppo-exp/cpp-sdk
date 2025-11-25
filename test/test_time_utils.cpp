@@ -1,7 +1,7 @@
 #include <catch_amalgamated.hpp>
-#include "../src/time_utils.hpp"
 #include <chrono>
 #include <ctime>
+#include "../src/time_utils.hpp"
 
 using namespace eppoclient;
 
@@ -38,7 +38,8 @@ TEST_CASE("parseISOTimestamp - valid timestamp with milliseconds", "[time_utils]
 
     // Check milliseconds by calculating the difference
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(result.time_since_epoch());
-    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(result.time_since_epoch()) - seconds;
+    auto milliseconds =
+        std::chrono::duration_cast<std::chrono::milliseconds>(result.time_since_epoch()) - seconds;
     REQUIRE(milliseconds.count() == 123);
 }
 
@@ -48,7 +49,8 @@ TEST_CASE("parseISOTimestamp - timestamp with single digit milliseconds", "[time
 
     // Should pad to 500 milliseconds
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(result.time_since_epoch());
-    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(result.time_since_epoch()) - seconds;
+    auto milliseconds =
+        std::chrono::duration_cast<std::chrono::milliseconds>(result.time_since_epoch()) - seconds;
     REQUIRE(milliseconds.count() == 500);
 }
 
@@ -58,17 +60,20 @@ TEST_CASE("parseISOTimestamp - timestamp with two digit milliseconds", "[time_ut
 
     // Should pad to 450 milliseconds
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(result.time_since_epoch());
-    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(result.time_since_epoch()) - seconds;
+    auto milliseconds =
+        std::chrono::duration_cast<std::chrono::milliseconds>(result.time_since_epoch()) - seconds;
     REQUIRE(milliseconds.count() == 450);
 }
 
-TEST_CASE("parseISOTimestamp - timestamp with microseconds (ignores extra precision)", "[time_utils]") {
+TEST_CASE("parseISOTimestamp - timestamp with microseconds (ignores extra precision)",
+          "[time_utils]") {
     std::string timestamp = "2024-06-09T14:23:11.123456";
     auto result = parseISOTimestamp(timestamp);
 
     // Should only use first 3 digits (123 milliseconds)
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(result.time_since_epoch());
-    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(result.time_since_epoch()) - seconds;
+    auto milliseconds =
+        std::chrono::duration_cast<std::chrono::milliseconds>(result.time_since_epoch()) - seconds;
     REQUIRE(milliseconds.count() == 123);
 }
 
@@ -129,7 +134,7 @@ TEST_CASE("formatISOTimestamp - formats time_point to ISO 8601 string", "[time_u
 
     // The result should be in ISO 8601 format with milliseconds and Z suffix
     // Note: The exact time may vary based on timezone conversion
-    REQUIRE(result.size() == 24); // YYYY-MM-DDTHH:MM:SS.sssZ is 24 characters
+    REQUIRE(result.size() == 24);  // YYYY-MM-DDTHH:MM:SS.sssZ is 24 characters
     REQUIRE(result[4] == '-');
     REQUIRE(result[7] == '-');
     REQUIRE(result[10] == 'T');
@@ -147,7 +152,8 @@ TEST_CASE("formatISOTimestamp - default time_point formats to epoch", "[time_uti
     REQUIRE(result == "1970-01-01T00:00:00.000Z");
 }
 
-TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip without milliseconds", "[time_utils]") {
+TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip without milliseconds",
+          "[time_utils]") {
     std::string original = "2024-06-09T14:23:11Z";
 
     // Parse and format
@@ -158,7 +164,8 @@ TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip without millise
     REQUIRE(formatted == "2024-06-09T14:23:11.000Z");
 }
 
-TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip preserves milliseconds", "[time_utils]") {
+TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip preserves milliseconds",
+          "[time_utils]") {
     std::string original = "2024-06-09T14:23:11.123";
 
     // Parse and format
@@ -169,6 +176,7 @@ TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip preserves milli
 
     // But the milliseconds should be preserved in the time_point
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(parsed.time_since_epoch());
-    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(parsed.time_since_epoch()) - seconds;
+    auto milliseconds =
+        std::chrono::duration_cast<std::chrono::milliseconds>(parsed.time_since_epoch()) - seconds;
     REQUIRE(milliseconds.count() == 123);
 }

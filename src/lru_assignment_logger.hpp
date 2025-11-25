@@ -1,9 +1,9 @@
 #ifndef LRU_ASSIGNMENT_LOGGER_HPP
 #define LRU_ASSIGNMENT_LOGGER_HPP
 
+#include <functional>
 #include <memory>
 #include <string>
-#include <functional>
 #include "client.hpp"
 #include "evalflags.hpp"
 #include "lru2q.hpp"
@@ -19,8 +19,7 @@ struct AssignmentCacheKey {
     std::string subject;
 
     AssignmentCacheKey() = default;
-    AssignmentCacheKey(const std::string& f, const std::string& s)
-        : flag(f), subject(s) {}
+    AssignmentCacheKey(const std::string& f, const std::string& s) : flag(f), subject(s) {}
 
     bool operator==(const AssignmentCacheKey& other) const {
         return flag == other.flag && subject == other.subject;
@@ -43,24 +42,22 @@ struct AssignmentCacheValue {
         return allocation == other.allocation && variation == other.variation;
     }
 
-    bool operator!=(const AssignmentCacheValue& other) const {
-        return !(*this == other);
-    }
+    bool operator!=(const AssignmentCacheValue& other) const { return !(*this == other); }
 };
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
 // Hash function for AssignmentCacheKey
 namespace std {
-    template<>
-    struct hash<eppoclient::AssignmentCacheKey> {
-        size_t operator()(const eppoclient::AssignmentCacheKey& key) const {
-            size_t h1 = std::hash<std::string>{}(key.flag);
-            size_t h2 = std::hash<std::string>{}(key.subject);
-            return h1 ^ (h2 << 1);
-        }
-    };
-}
+template <>
+struct hash<eppoclient::AssignmentCacheKey> {
+    size_t operator()(const eppoclient::AssignmentCacheKey& key) const {
+        size_t h1 = std::hash<std::string>{}(key.flag);
+        size_t h2 = std::hash<std::string>{}(key.subject);
+        return h1 ^ (h2 << 1);
+    }
+};
+}  // namespace std
 
 namespace eppoclient {
 
@@ -115,10 +112,9 @@ public:
  * @return A shared pointer to the created logger
  * @throws std::invalid_argument if cacheSize is invalid
  */
-std::shared_ptr<AssignmentLogger> NewLruAssignmentLogger(
-    std::shared_ptr<AssignmentLogger> logger,
-    size_t cacheSize);
+std::shared_ptr<AssignmentLogger> NewLruAssignmentLogger(std::shared_ptr<AssignmentLogger> logger,
+                                                         size_t cacheSize);
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // LRU_ASSIGNMENT_LOGGER_HPP
+#endif  // LRU_ASSIGNMENT_LOGGER_HPP

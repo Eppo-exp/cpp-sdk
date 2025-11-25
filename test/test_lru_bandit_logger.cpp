@@ -1,7 +1,7 @@
 #include <catch_amalgamated.hpp>
-#include "../src/lru_bandit_logger.hpp"
 #include <memory>
 #include <vector>
+#include "../src/lru_bandit_logger.hpp"
 
 using namespace eppoclient;
 
@@ -18,25 +18,19 @@ public:
         loggedEvents.push_back(event);
     }
 
-    size_t callCount() const {
-        return loggedEvents.size();
-    }
+    size_t callCount() const { return loggedEvents.size(); }
 
-    void clear() {
-        loggedEvents.clear();
-    }
+    void clear() { loggedEvents.clear(); }
 };
 
 namespace {
 // Helper to create a test bandit event
-BanditEvent createTestEvent(
-    const std::string& flagKey = "flag",
-    const std::string& banditKey = "bandit",
-    const std::string& subject = "subject",
-    const std::string& action = "action",
-    const std::string& modelVersion = "model-version",
-    const std::string& timestamp = "timestamp") {
-
+BanditEvent createTestEvent(const std::string& flagKey = "flag",
+                            const std::string& banditKey = "bandit",
+                            const std::string& subject = "subject",
+                            const std::string& action = "action",
+                            const std::string& modelVersion = "model-version",
+                            const std::string& timestamp = "timestamp") {
     BanditEvent event;
     event.flagKey = flagKey;
     event.banditKey = banditKey;
@@ -48,7 +42,7 @@ BanditEvent createTestEvent(
     event.timestamp = timestamp;
     return event;
 }
-} // anonymous namespace
+}  // anonymous namespace
 
 TEST_CASE("LruBanditLogger - cache bandit action", "[lru][bandit-logger]") {
     auto innerLogger = std::make_shared<MockBanditLogger>();
@@ -126,7 +120,8 @@ TEST_CASE("LruBanditLogger - different bandit keys cause logging", "[lru][bandit
     CHECK(innerLogger->callCount() == 2);
 }
 
-TEST_CASE("LruBanditLogger - timestamp and probabilities are not important", "[lru][bandit-logger]") {
+TEST_CASE("LruBanditLogger - timestamp and probabilities are not important",
+          "[lru][bandit-logger]") {
     auto innerLogger = std::make_shared<MockBanditLogger>();
     auto logger = NewLruBanditLogger(innerLogger, 1000);
 

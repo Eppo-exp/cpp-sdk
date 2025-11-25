@@ -28,6 +28,6 @@ std::chrono::system_clock::time_point parseISOTimestamp(const std::string& times
  */
 std::string formatISOTimestamp(const std::chrono::system_clock::time_point& tp);
 
-} // namespace eppoclient
+}  // namespace eppoclient
 
-#endif // EPPOCLIENT_TIME_UTILS_HPP_
+#endif  // EPPOCLIENT_TIME_UTILS_HPP_

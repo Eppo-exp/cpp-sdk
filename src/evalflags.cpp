@@ -1,8 +1,8 @@
 #include "evalflags.hpp"
-#include "version.hpp"
-#include "time_utils.hpp"
-#include "third_party/md5_wrapper.h"
 #include <cstring>
+#include "third_party/md5_wrapper.h"
+#include "time_utils.hpp"
+#include "version.hpp"
 
 namespace eppoclient {
 
@@ -16,10 +16,8 @@ bool verifyType(const FlagConfiguration& flag, VariationType expectedType) {
 
 // Evaluate a flag for a given subject
 // Returns std::nullopt if evaluation fails
-std::optional<EvalResult> evalFlag(const FlagConfiguration& flag,
-                   const std::string& subjectKey,
-                   const Attributes& subjectAttributes,
-                   ApplicationLogger* logger) {
+std::optional<EvalResult> evalFlag(const FlagConfiguration& flag, const std::string& subjectKey,
+                                   const Attributes& subjectAttributes, ApplicationLogger* logger) {
     // Check if flag is enabled
     if (!flag.enabled) {
         if (logger) {
@@ -36,14 +34,8 @@ std::optional<EvalResult> evalFlag(const FlagConfiguration& flag,
     const Split* matchedSplit = nullptr;
 
     for (const auto& allocation : flag.allocations) {
-        const Split* split = findMatchingSplit(
-            allocation,
-            subjectKey,
-            augmentedSubjectAttributes,
-            flag.totalShards,
-            now,
-            logger
-        );
+        const Split* split = findMatchingSplit(allocation, subjectKey, augmentedSubjectAttributes,
+                                               flag.totalShards, now, logger);
         if (split != nullptr) {
             matchedAllocation = &allocation;
             matchedSplit = split;
@@ -85,10 +77,7 @@ std::optional<EvalResult> evalFlag(const FlagConfiguration& flag,
         event.subject = subjectKey;
         event.subjectAttributes = subjectAttributes;
         event.timestamp = formatISOTimestamp(now);
-        event.metaData = {
-            {"sdkLanguage", "cpp"},
-            {"sdkVersion", SDK_VERSION}
-        };
+        event.metaData = {{"sdkLanguage", "cpp"}, {"sdkVersion", SDK_VERSION}};
 
         // Convert extraLogging JSON to map of strings
         if (matchedSplit->extraLogging.is_object()) {
@@ -109,14 +98,10 @@ std::optional<EvalResult> evalFlag(const FlagConfiguration& flag,
 
 // Helper function to evaluate allocation with details
 AllocationEvaluationDetails evaluateAllocationWithDetails(
-    const Allocation& allocation,
-    const std::string& subjectKey,
-    const Attributes& augmentedSubjectAttributes,
-    int64_t totalShards,
-    const std::chrono::system_clock::time_point& now,
-    size_t orderPosition,
+    const Allocation& allocation, const std::string& subjectKey,
+    const Attributes& augmentedSubjectAttributes, int64_t totalShards,
+    const std::chrono::system_clock::time_point& now, size_t orderPosition,
     ApplicationLogger* logger) {
-
     AllocationEvaluationDetails details;
     details.key = allocation.key;
     details.orderPosition = orderPosition;
@@ -165,10 +150,9 @@ AllocationEvaluationDetails evaluateAllocationWithDetails(
 }
 
 // Evaluate a flag and return detailed evaluation information
-EvalResultWithDetails evalFlagDetails(const FlagConfiguration& flag,
-                                     const std::string& subjectKey,
-                                     const Attributes& subjectAttributes,
-                                     ApplicationLogger* logger) {
+EvalResultWithDetails evalFlagDetails(const FlagConfiguration& flag, const std::string& subjectKey,
+                                      const Attributes& subjectAttributes,
+                                      ApplicationLogger* logger) {
     auto now = std::chrono::system_clock::now();
     std::string timestamp = formatISOTimestamp(now);
 
@@ -200,30 +184,20 @@ EvalResultWithDetails evalFlagDetails(const FlagConfiguration& flag,
         // If we already found a match, mark remaining allocations as UNEVALUATED
         if (foundMatch) {
             allocDetails.key = allocation.key;
-            allocDetails.orderPosition = i + 1;  // 1-indexed to match shared test data    
+            allocDetails.orderPosition = i + 1;  // 1-indexed to match shared test data
             allocDetails.allocationEvaluationCode = AllocationEvaluationCode::UNEVALUATED;
         } else {
             // Track allocation evaluation details
             allocDetails = evaluateAllocationWithDetails(
-                allocation,
-                subjectKey,
-                augmentedSubjectAttributes,
-                flag.totalShards,
-                now,
+                allocation, subjectKey, augmentedSubjectAttributes, flag.totalShards, now,
                 i + 1,  // 1-indexed to match shared test data
-                logger
-            );
+                logger);
 
             // If this allocation matched and we don't have a match yet, use it
             if (allocDetails.allocationEvaluationCode == AllocationEvaluationCode::MATCH) {
-                const Split* split = findMatchingSplit(
-                    allocation,
-                    subjectKey,
-                    augmentedSubjectAttributes,
-                    flag.totalShards,
-                    now,
-                    logger
-                );
+                const Split* split =
+                    findMatchingSplit(allocation, subjectKey, augmentedSubjectAttributes,
+                                      flag.totalShards, now, logger);
                 if (split != nullptr) {
                     matchedAllocation = &allocation;
                     matchedSplit = split;
@@ -245,7 +219,8 @@ EvalResultWithDetails evalFlagDetails(const FlagConfiguration& flag,
     auto it = flag.parsedVariations.find(matchedSplit->variationKey);
     if (it == flag.parsedVariations.end()) {
         result.details.flagEvaluationCode = FlagEvaluationCode::ASSIGNMENT_ERROR;
-        result.details.flagEvaluationDescription = "Cannot find variation: " + matchedSplit->variationKey;
+        result.details.flagEvaluationDescription =
+            "Cannot find variation: " + matchedSplit->variationKey;
         return result;
     }
 
@@ -270,10 +245,7 @@ EvalResultWithDetails evalFlagDetails(const FlagConfiguration& flag,
         event.subject = subjectKey;
         event.subjectAttributes = subjectAttributes;
         event.timestamp = timestamp;
-        event.metaData = {
-            {"sdkLanguage", "cpp"},
-            {"sdkVersion", SDK_VERSION}
-        };
+        event.metaData = {{"sdkLanguage", "cpp"}, {"sdkVersion", SDK_VERSION}};
 
         // Convert extraLogging JSON to map of strings
         if (matchedSplit->extraLogging.is_object()) {
@@ -294,7 +266,8 @@ EvalResultWithDetails evalFlagDetails(const FlagConfiguration& flag,
 
 // Augment subject attributes by setting "id" attribute to subjectKey
 // if "id" is not already present
-Attributes augmentWithSubjectKey(const Attributes& subjectAttributes, const std::string& subjectKey) {
+Attributes augmentWithSubjectKey(const Attributes& subjectAttributes,
+                                 const std::string& subjectKey) {
     auto it = subjectAttributes.find("id");
     if (it != subjectAttributes.end()) {
         // "id" already exists, return as-is
@@ -308,10 +281,8 @@ Attributes augmentWithSubjectKey(const Attributes& subjectAttributes, const std:
 }
 
 // Find a matching split for the given subject
-const Split* findMatchingSplit(const Allocation& allocation,
-                               const std::string& subjectKey,
-                               const Attributes& augmentedSubjectAttributes,
-                               int64_t totalShards,
+const Split* findMatchingSplit(const Allocation& allocation, const std::string& subjectKey,
+                               const Attributes& augmentedSubjectAttributes, int64_t totalShards,
                                const std::chrono::system_clock::time_point& now,
                                ApplicationLogger* logger) {
     // Check time constraints
@@ -375,8 +346,7 @@ int64_t getShard(const std::string& input, int64_t totalShards) {
     // Use first 4 bytes of MD5 hash in big-endian format
     uint32_t intVal = (static_cast<uint32_t>(hash[0]) << 24) |
                       (static_cast<uint32_t>(hash[1]) << 16) |
-                      (static_cast<uint32_t>(hash[2]) << 8) |
-                      static_cast<uint32_t>(hash[3]);
+                      (static_cast<uint32_t>(hash[2]) << 8) | static_cast<uint32_t>(hash[3]);
 
     return static_cast<int64_t>(intVal) % totalShards;
 }
@@ -409,12 +379,18 @@ std::string flagEvaluationCodeToString(FlagEvaluationCode code) {
 // Helper function to convert string to FlagEvaluationCode
 // Returns std::nullopt if the code string is not recognized
 std::optional<FlagEvaluationCode> stringToFlagEvaluationCode(const std::string& codeStr) {
-    if (codeStr == "MATCH") return FlagEvaluationCode::MATCH;
-    if (codeStr == "CONFIGURATION_MISSING") return FlagEvaluationCode::CONFIGURATION_MISSING;
-    if (codeStr == "FLAG_UNRECOGNIZED_OR_DISABLED") return FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED;
-    if (codeStr == "DEFAULT_ALLOCATION_NULL") return FlagEvaluationCode::DEFAULT_ALLOCATION_NULL;
-    if (codeStr == "TYPE_MISMATCH") return FlagEvaluationCode::TYPE_MISMATCH;
-    if (codeStr == "ASSIGNMENT_ERROR") return FlagEvaluationCode::ASSIGNMENT_ERROR;
+    if (codeStr == "MATCH")
+        return FlagEvaluationCode::MATCH;
+    if (codeStr == "CONFIGURATION_MISSING")
+        return FlagEvaluationCode::CONFIGURATION_MISSING;
+    if (codeStr == "FLAG_UNRECOGNIZED_OR_DISABLED")
+        return FlagEvaluationCode::FLAG_UNRECOGNIZED_OR_DISABLED;
+    if (codeStr == "DEFAULT_ALLOCATION_NULL")
+        return FlagEvaluationCode::DEFAULT_ALLOCATION_NULL;
+    if (codeStr == "TYPE_MISMATCH")
+        return FlagEvaluationCode::TYPE_MISMATCH;
+    if (codeStr == "ASSIGNMENT_ERROR")
+        return FlagEvaluationCode::ASSIGNMENT_ERROR;
     // Return nullopt for unknown codes
     return std::nullopt;
 }
@@ -441,15 +417,22 @@ std::string allocationEvaluationCodeToString(AllocationEvaluationCode code) {
 
 // Helper function to convert string to AllocationEvaluationCode
 // Returns std::nullopt if the code string is not recognized
-std::optional<AllocationEvaluationCode> stringToAllocationEvaluationCode(const std::string& codeStr) {
-    if (codeStr == "UNEVALUATED") return AllocationEvaluationCode::UNEVALUATED;
-    if (codeStr == "MATCH") return AllocationEvaluationCode::MATCH;
-    if (codeStr == "BEFORE_START_TIME") return AllocationEvaluationCode::BEFORE_START_TIME;
-    if (codeStr == "AFTER_END_TIME") return AllocationEvaluationCode::AFTER_END_TIME;
-    if (codeStr == "FAILING_RULE") return AllocationEvaluationCode::FAILING_RULE;
-    if (codeStr == "TRAFFIC_EXPOSURE_MISS") return AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS;
+std::optional<AllocationEvaluationCode> stringToAllocationEvaluationCode(
+    const std::string& codeStr) {
+    if (codeStr == "UNEVALUATED")
+        return AllocationEvaluationCode::UNEVALUATED;
+    if (codeStr == "MATCH")
+        return AllocationEvaluationCode::MATCH;
+    if (codeStr == "BEFORE_START_TIME")
+        return AllocationEvaluationCode::BEFORE_START_TIME;
+    if (codeStr == "AFTER_END_TIME")
+        return AllocationEvaluationCode::AFTER_END_TIME;
+    if (codeStr == "FAILING_RULE")
+        return AllocationEvaluationCode::FAILING_RULE;
+    if (codeStr == "TRAFFIC_EXPOSURE_MISS")
+        return AllocationEvaluationCode::TRAFFIC_EXPOSURE_MISS;
     // Return nullopt for unknown codes
     return std::nullopt;
 }
 
-} // namespace eppoclient
+}  // namespace eppoclient

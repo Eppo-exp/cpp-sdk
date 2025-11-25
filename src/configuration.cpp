@@ -2,12 +2,12 @@
 
 namespace eppoclient {
 
-Configuration::Configuration(const ConfigResponse& response)
-    : flags_(response) {
+Configuration::Configuration(const ConfigResponse& response) : flags_(response) {
     precompute();
 }
 
-Configuration::Configuration(const ConfigResponse& flagsResponse, const BanditResponse& banditsResponse)
+Configuration::Configuration(const ConfigResponse& flagsResponse,
+                             const BanditResponse& banditsResponse)
     : flags_(flagsResponse), bandits_(banditsResponse) {
     precompute();
 }
@@ -36,9 +36,8 @@ void Configuration::precompute() {
     }
 }
 
-bool Configuration::getBanditVariant(const std::string& flagKey,
-                                      const std::string& variation,
-                                      BanditVariation& result) const {
+bool Configuration::getBanditVariant(const std::string& flagKey, const std::string& variation,
+                                     BanditVariation& result) const {
     auto flagIt = banditFlagAssociations_.find(flagKey);
     if (flagIt == banditFlagAssociations_.end()) {
         return false;
@@ -70,4 +69,4 @@ const BanditConfiguration* Configuration::getBanditConfiguration(const std::stri
     return &(it->second);
 }
 
-} // namespace eppoclient
+}  // namespace eppoclient
