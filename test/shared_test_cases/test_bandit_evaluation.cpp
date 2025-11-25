@@ -231,8 +231,8 @@ TEST_CASE("UFC Bandit Test Cases - Bandit Action Selection", "[ufc][bandits]") {
     Configuration combinedConfig(configResponse, banditResponse);
 
     // Create client with configuration
-    auto configStore = std::make_shared<ConfigurationStore>();
-    configStore->setConfiguration(combinedConfig);
+    ConfigurationStore configStore;
+    configStore.setConfiguration(combinedConfig);
 
     // Mock bandit logger to verify logging
     class MockBanditLogger : public BanditLogger {
@@ -245,7 +245,7 @@ TEST_CASE("UFC Bandit Test Cases - Bandit Action Selection", "[ufc][bandits]") {
     };
 
     auto banditLogger = std::make_shared<MockBanditLogger>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, banditLogger, nullptr);
+    EppoClient client(configStore, nullptr, banditLogger, nullptr);
 
     // Load all bandit test cases
     std::string testCasesDir = "test/data/ufc/bandit-tests";
@@ -272,7 +272,7 @@ TEST_CASE("UFC Bandit Test Cases - Bandit Action Selection", "[ufc][bandits]") {
                     banditLogger->loggedEvents.clear();
 
                     // Get bandit action
-                    BanditResult result = client->getBanditAction(
+                    BanditResult result = client.getBanditAction(
                         testCase.flag,
                         subject.subjectKey,
                         subject.subjectAttributes,
@@ -448,8 +448,8 @@ TEST_CASE("ContextAttributes conversion functions", "[bandits][helpers]") {
 // Test edge cases
 TEST_CASE("Bandit edge cases", "[bandits][edge-cases]") {
     // Create a simple configuration
-    auto configStore = std::make_shared<ConfigurationStore>();
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, nullptr);
+    ConfigurationStore configStore;
+    EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("getBanditAction with empty actions returns variation without action") {
         ContextAttributes subjectAttrs;
@@ -457,7 +457,7 @@ TEST_CASE("Bandit edge cases", "[bandits][edge-cases]") {
 
         std::map<std::string, ContextAttributes> emptyActions;
 
-        BanditResult result = client->getBanditAction(
+        BanditResult result = client.getBanditAction(
             "test-flag",
             "test-subject",
             subjectAttrs,

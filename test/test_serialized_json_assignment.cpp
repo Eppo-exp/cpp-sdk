@@ -89,9 +89,9 @@ TEST_CASE("getSerializedJSONAssignment - Basic functionality", "[serialized-json
     config.precompute();
 
     // Create client
-    auto configStore = std::make_shared<ConfigurationStore>();
-    configStore->setConfiguration(config);
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr);
+    ConfigurationStore configStore;
+    configStore.setConfiguration(config);
+    EppoClient client(configStore, nullptr, nullptr);
 
     SECTION("Returns stringified JSON for valid assignment") {
         // Test with alice who should get {"integer": 1, "string": "one", "float": 1.0}
@@ -100,7 +100,7 @@ TEST_CASE("getSerializedJSONAssignment - Basic functionality", "[serialized-json
         aliceAttrs["country"] = std::string("US");
 
         std::string defaultValue = R"({"foo":"bar"})";
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "json-config-flag",
             "alice",
             aliceAttrs,
@@ -132,7 +132,7 @@ TEST_CASE("getSerializedJSONAssignment - Basic functionality", "[serialized-json
         bobAttrs["country"] = std::string("Canada");
 
         std::string defaultValue = R"({"foo":"bar"})";
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "json-config-flag",
             "bob",
             bobAttrs,
@@ -155,7 +155,7 @@ TEST_CASE("getSerializedJSONAssignment - Basic functionality", "[serialized-json
         dianaAttrs["Force Empty"] = true;
 
         std::string defaultValue = R"({"foo":"bar"})";
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "json-config-flag",
             "diana",
             dianaAttrs,
@@ -182,16 +182,16 @@ TEST_CASE("getSerializedJSONAssignment - Default value behavior", "[serialized-j
     config.precompute();
 
     // Create client
-    auto configStore = std::make_shared<ConfigurationStore>();
-    configStore->setConfiguration(config);
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr);
+    ConfigurationStore configStore;
+    configStore.setConfiguration(config);
+    EppoClient client(configStore, nullptr, nullptr);
 
     SECTION("Returns default value for non-existent flag") {
         Attributes attrs;
         attrs["email"] = std::string("test@example.com");
 
         std::string defaultValue = R"({"default":"value"})";
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "non-existent-flag",
             "test-subject",
             attrs,
@@ -205,7 +205,7 @@ TEST_CASE("getSerializedJSONAssignment - Default value behavior", "[serialized-j
         Attributes attrs;
         std::string defaultValue = R"({"default":"value"})";
 
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "json-config-flag",
             "",
             attrs,
@@ -219,7 +219,7 @@ TEST_CASE("getSerializedJSONAssignment - Default value behavior", "[serialized-j
         Attributes attrs;
         std::string defaultValue = R"({"default":"value"})";
 
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "",
             "test-subject",
             attrs,
@@ -243,9 +243,9 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
     auto mockLogger = std::make_shared<MockApplicationLogger>();
 
     // Create client with mock logger
-    auto configStore = std::make_shared<ConfigurationStore>();
-    configStore->setConfiguration(config);
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr, mockLogger);
+    ConfigurationStore configStore;
+    configStore.setConfiguration(config);
+    EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
     SECTION("Calling getSerializedJSONAssignment on an INTEGER flag logs type mismatch error") {
         Attributes aliceAttrs;
@@ -255,7 +255,7 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         std::string defaultValue = R"({"default":"value"})";
 
         // Call getSerializedJSONAssignment on an integer flag (integer-flag returns int values)
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "integer-flag",
             "alice",
             aliceAttrs,
@@ -295,7 +295,7 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         std::string defaultValue = R"({"default":"value"})";
 
         // There should be a string flag in the test data - let's use "empty_string_flag"
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "empty_string_flag",
             "alice",
             attrs,
@@ -328,7 +328,7 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         std::string defaultValue = R"({"default":"value"})";
 
         // Use a boolean flag
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "kill-switch",
             "test-subject",
             attrs,
@@ -361,7 +361,7 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         std::string defaultValue = R"({"default":"value"})";
 
         // Use a numeric flag
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "numeric_flag",
             "test-subject",
             attrs,
@@ -396,7 +396,7 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
         std::string defaultValue = R"({"default":"value"})";
 
         // Call on the correct type - JSON flag
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "json-config-flag",
             "alice",
             aliceAttrs,
@@ -425,9 +425,9 @@ TEST_CASE("getSerializedJSONAssignment - Complex JSON structures", "[serialized-
     config.precompute();
 
     // Create client
-    auto configStore = std::make_shared<ConfigurationStore>();
-    configStore->setConfiguration(config);
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr);
+    ConfigurationStore configStore;
+    configStore.setConfiguration(config);
+    EppoClient client(configStore, nullptr, nullptr);
 
     SECTION("Handles nested JSON structures") {
         Attributes aliceAttrs;
@@ -435,7 +435,7 @@ TEST_CASE("getSerializedJSONAssignment - Complex JSON structures", "[serialized-
         aliceAttrs["country"] = std::string("US");
 
         std::string defaultValue = R"({"nested":{"deep":{"value":"default"}}})";
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "json-config-flag",
             "alice",
             aliceAttrs,
@@ -455,7 +455,7 @@ TEST_CASE("getSerializedJSONAssignment - Complex JSON structures", "[serialized-
         Attributes attrs;
         std::string defaultValue = R"({"special":"chars: \n\t\r\"\\","unicode":"测试"})";
 
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "non-existent-flag",
             "test-subject",
             attrs,
@@ -475,7 +475,7 @@ TEST_CASE("getSerializedJSONAssignment - Complex JSON structures", "[serialized-
         Attributes attrs;
         std::string defaultValue = R"({"array":[1,2,3],"nested":{"array":["a","b","c"]}})";
 
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "non-existent-flag",
             "test-subject",
             attrs,
@@ -502,9 +502,9 @@ TEST_CASE("getSerializedJSONAssignment - JSON formatting", "[serialized-json]") 
     config.precompute();
 
     // Create client
-    auto configStore = std::make_shared<ConfigurationStore>();
-    configStore->setConfiguration(config);
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr);
+    ConfigurationStore configStore;
+    configStore.setConfiguration(config);
+    EppoClient client(configStore, nullptr, nullptr);
 
     SECTION("Returns compact JSON (no pretty printing)") {
         Attributes aliceAttrs;
@@ -512,7 +512,7 @@ TEST_CASE("getSerializedJSONAssignment - JSON formatting", "[serialized-json]") 
         aliceAttrs["country"] = std::string("US");
 
         std::string defaultValue = R"({"foo":"bar"})";
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "json-config-flag",
             "alice",
             aliceAttrs,
@@ -530,7 +530,7 @@ TEST_CASE("getSerializedJSONAssignment - JSON formatting", "[serialized-json]") 
         aliceAttrs["country"] = std::string("US");
 
         std::string defaultValue = R"({"foo":"bar"})";
-        std::string result = client->getSerializedJSONAssignment(
+        std::string result = client.getSerializedJSONAssignment(
             "json-config-flag",
             "alice",
             aliceAttrs,
@@ -560,9 +560,9 @@ TEST_CASE("getSerializedJSONAssignment - All test case subjects", "[serialized-j
     config.precompute();
 
     // Create client
-    auto configStore = std::make_shared<ConfigurationStore>();
-    configStore->setConfiguration(config);
-    auto client = std::make_shared<EppoClient>(configStore, nullptr, nullptr);
+    ConfigurationStore configStore;
+    configStore.setConfiguration(config);
+    EppoClient client(configStore, nullptr, nullptr);
 
     // Load test case
     std::ifstream file("test/data/ufc/tests/test-json-config-flag.json");
@@ -583,7 +583,7 @@ TEST_CASE("getSerializedJSONAssignment - All test case subjects", "[serialized-j
 
         DYNAMIC_SECTION("Subject: " << subjectKey) {
             // Get serialized assignment
-            std::string result = client->getSerializedJSONAssignment(
+            std::string result = client.getSerializedJSONAssignment(
                 flagKey,
                 subjectKey,
                 attrs,

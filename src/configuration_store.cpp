@@ -3,36 +3,30 @@
 namespace eppoclient {
 
 ConfigurationStore::ConfigurationStore()
-    : configuration_(nullptr) {
+    : configuration_(std::nullopt) {
 }
 
 ConfigurationStore::ConfigurationStore(const Configuration& config)
-    : configuration_(nullptr) {
+    : configuration_(std::nullopt) {
     setConfiguration(config);
 }
 
 Configuration ConfigurationStore::getConfiguration() const {
-    // Lock and get a copy of the shared_ptr
-    std::lock_guard<std::mutex> lock(configMutex_);
-
-    if (configuration_ != nullptr) {
-        // Return a copy of the configuration
+    if (configuration_.has_value()) {
         return *configuration_;
     } else {
-        // Return an empty configuration
         return Configuration();
     }
 }
 
 void ConfigurationStore::setConfiguration(const Configuration& config) {
-    // Create a new shared_ptr with a copy of the configuration
-    auto newConfig = std::make_shared<Configuration>(config);
+    // Make a copy of the configuration
+    Configuration newConfig = config;
 
     // Precompute any derived data in the configuration
-    newConfig->precompute();
+    newConfig.precompute();
 
-    // Lock and store the new configuration
-    std::lock_guard<std::mutex> lock(configMutex_);
+    // Store the configuration
     configuration_ = newConfig;
 }
 
