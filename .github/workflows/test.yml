@@ -118,3 +118,27 @@ jobs:
 
       - name: Run memory tests
         run: make test-memory
+
+  test-32bit-time-t:
+    runs-on: ubuntu-latest
+    name: Test with 32-bit time_t
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || 'Eppo-exp/cpp-sdk' }}
+          ref: ${{ env.SDK_BRANCH_NAME }}
+
+      - name: Set up QEMU for multi-arch
+        uses: docker/setup-qemu-action@v3
+
+      - name: Test with 32-bit time_t
+        run: |
+          docker run --rm --platform linux/386 -v $PWD:/workspace -w /workspace debian:bookworm bash -c "
+            apt-get update &&
+            apt-get install -y build-essential g++ git make &&
+            git clone -b ${{env.TEST_DATA_BRANCH_NAME}} --depth 1 --single-branch https://github.com/Eppo-exp/sdk-test-data.git test/data/ &&
+            make clean &&
+            make test
+          "

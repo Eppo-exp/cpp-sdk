@@ -5,7 +5,22 @@
 
 namespace eppoclient {
 
-std::chrono::system_clock::time_point parseISOTimestamp(const std::string& timestamp) {
+std::chrono::system_clock::time_point parseISOTimestampForConfigEndTime(
+    const std::string& timestamp) {
+    // Check for the sentinel value that represents "no end date"
+    if (timestamp == "9999-12-31T00:00:00.000Z") {
+        return std::chrono::system_clock::time_point::max();
+    }
+    return parseISOTimestamp(timestamp, std::chrono::system_clock::time_point::max());
+}
+
+std::chrono::system_clock::time_point parseISOTimestampForConfigStartTime(
+    const std::string& timestamp) {
+    return parseISOTimestamp(timestamp, std::chrono::system_clock::time_point());
+}
+
+std::chrono::system_clock::time_point parseISOTimestamp(
+    const std::string& timestamp, std::chrono::system_clock::time_point errorValue) {
     std::tm tm = {};
     char dot = '\0';
     int milliseconds = 0;
@@ -52,16 +67,33 @@ std::chrono::system_clock::time_point parseISOTimestamp(const std::string& times
 #endif
 
     if (time_c == -1) {
-        return std::chrono::system_clock::time_point();
+        // timegm failed - could be out of range for time_t
+        // Return the supplied error value
+        return errorValue;
     }
     auto tp = std::chrono::system_clock::from_time_t(time_c);
     tp += std::chrono::milliseconds(milliseconds);
     return tp;
 }
 
+std::string formatISOTimestampForConfigEndTime(const std::chrono::system_clock::time_point& tp) {
+    // Special handling for max time_point (year 9999 dates)
+    if (tp == std::chrono::system_clock::time_point::max()) {
+        return "9999-12-31T00:00:00.000Z";
+    }
+    return formatISOTimestamp(tp);
+}
+
 std::string formatISOTimestamp(const std::chrono::system_clock::time_point& tp) {
     auto tt = std::chrono::system_clock::to_time_t(tp);
-    std::tm tm = *std::gmtime(&tt);
+    std::tm* tm_ptr = std::gmtime(&tt);
+
+    // Handle gmtime failure (can happen on 32-bit systems with out-of-range dates)
+    if (!tm_ptr) {
+        return "1970-01-01T00:00:00.000Z";  // Return epoch as fallback
+    }
+
+    std::tm tm = *tm_ptr;
 
     // Add milliseconds
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch()) % 1000;

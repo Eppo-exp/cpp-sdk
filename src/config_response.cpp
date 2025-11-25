@@ -312,13 +312,12 @@ void to_json(nlohmann::json& j, const Allocation& a) {
     j = nlohmann::json{{"key", a.key}, {"rules", a.rules}, {"splits", a.splits}};
 
     if (a.startAt.has_value()) {
-        auto time = std::chrono::system_clock::to_time_t(a.startAt.value());
-        j["startAt"] = time;
+        j["startAt"] = formatISOTimestamp(a.startAt.value());
     }
 
     if (a.endAt.has_value()) {
-        auto time = std::chrono::system_clock::to_time_t(a.endAt.value());
-        j["endAt"] = time;
+        // Use special formatting for endAt to handle year 9999 sentinel value
+        j["endAt"] = formatISOTimestampForConfigEndTime(a.endAt.value());
     }
 
     if (a.doLog.has_value()) {
@@ -344,7 +343,7 @@ void from_json(const nlohmann::json& j, Allocation& a) {
 
     if (j.contains("endAt")) {
         auto timeStr = j.at("endAt").get<std::string>();
-        a.endAt = parseISOTimestamp(timeStr);
+        a.endAt = parseISOTimestampForConfigEndTime(timeStr);
     }
 
     if (j.contains("doLog")) {
