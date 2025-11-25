@@ -41,7 +41,7 @@ namespace {
     };
 } // anonymous namespace
 
-TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[graceful-failure]") {
+TEST_CASE("Error handling - returns default values and logs errors", "[error-handling]") {
     // Create a configuration store with empty config (no flags)
     ConfigurationStore configStore;
     Configuration emptyConfig(ConfigResponse{});
@@ -49,7 +49,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
 
-    // Create client (graceful mode is enabled by default)
+    // Create client
     EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
     Attributes attrs;
@@ -65,7 +65,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
         REQUIRE(mockLogger->errorMessages.size() >= 1);
         bool foundError = false;
         for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getBoolAssignment") != std::string::npos) {
+            if (msg.find("No subject key provided") != std::string::npos) {
                 foundError = true;
                 break;
             }
@@ -84,7 +84,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
         REQUIRE(mockLogger->errorMessages.size() >= 1);
         bool foundError = false;
         for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getNumericAssignment") != std::string::npos) {
+            if (msg.find("No subject key provided") != std::string::npos) {
                 foundError = true;
                 break;
             }
@@ -103,7 +103,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
         REQUIRE(mockLogger->errorMessages.size() >= 1);
         bool foundError = false;
         for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getIntegerAssignment") != std::string::npos) {
+            if (msg.find("No flag key provided") != std::string::npos) {
                 foundError = true;
                 break;
             }
@@ -122,7 +122,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
         REQUIRE(mockLogger->errorMessages.size() >= 1);
         bool foundError = false;
         for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getStringAssignment") != std::string::npos) {
+            if (msg.find("No flag key provided") != std::string::npos) {
                 foundError = true;
                 break;
             }
@@ -142,7 +142,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
         REQUIRE(mockLogger->errorMessages.size() >= 1);
         bool foundError = false;
         for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getJSONAssignment") != std::string::npos) {
+            if (msg.find("No subject key provided") != std::string::npos) {
                 foundError = true;
                 break;
             }
@@ -162,7 +162,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
         REQUIRE(mockLogger->errorMessages.size() >= 1);
         bool foundError = false;
         for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getSerializedJSONAssignment") != std::string::npos) {
+            if (msg.find("No subject key provided") != std::string::npos) {
                 foundError = true;
                 break;
             }
@@ -171,236 +171,7 @@ TEST_CASE("Graceful failure mode - Default behavior (graceful mode enabled)", "[
     }
 }
 
-TEST_CASE("Graceful failure mode - Non-graceful mode (exceptions rethrown)", "[graceful-failure]") {
-    // Create a configuration store with empty config
-    ConfigurationStore configStore;
-    Configuration emptyConfig(ConfigResponse{});
-    configStore.setConfiguration(emptyConfig);
-
-    auto mockLogger = std::make_shared<MockApplicationLogger>();
-
-    // Create client and disable graceful failure mode
-    EppoClient client(configStore, nullptr, nullptr, mockLogger);
-    client.setIsGracefulFailureMode(false);
-
-    Attributes attrs;
-    attrs["test"] = std::string("value");
-
-    SECTION("getBoolAssignment rethrows exception after logging") {
-        REQUIRE_THROWS_AS(
-            client.getBoolAssignment("test-flag", "", attrs, true),
-            std::invalid_argument
-        );
-
-        // Should have logged error before rethrowing
-        REQUIRE(mockLogger->errorMessages.size() >= 1);
-        bool foundError = false;
-        for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getBoolAssignment") != std::string::npos) {
-                foundError = true;
-                break;
-            }
-        }
-        CHECK(foundError);
-    }
-
-    SECTION("getNumericAssignment rethrows exception after logging") {
-        mockLogger->clear();
-        REQUIRE_THROWS_AS(
-            client.getNumericAssignment("test-flag", "", attrs, 42.5),
-            std::invalid_argument
-        );
-
-        // Should have logged error before rethrowing
-        REQUIRE(mockLogger->errorMessages.size() >= 1);
-        bool foundError = false;
-        for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getNumericAssignment") != std::string::npos) {
-                foundError = true;
-                break;
-            }
-        }
-        CHECK(foundError);
-    }
-
-    SECTION("getIntegerAssignment rethrows exception after logging") {
-        mockLogger->clear();
-        REQUIRE_THROWS_AS(
-            client.getIntegerAssignment("", "test-subject", attrs, 123),
-            std::invalid_argument
-        );
-
-        // Should have logged error before rethrowing
-        REQUIRE(mockLogger->errorMessages.size() >= 1);
-        bool foundError = false;
-        for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getIntegerAssignment") != std::string::npos) {
-                foundError = true;
-                break;
-            }
-        }
-        CHECK(foundError);
-    }
-
-    SECTION("getStringAssignment rethrows exception after logging") {
-        mockLogger->clear();
-        REQUIRE_THROWS_AS(
-            client.getStringAssignment("", "test-subject", attrs, "default"),
-            std::invalid_argument
-        );
-
-        // Should have logged error before rethrowing
-        REQUIRE(mockLogger->errorMessages.size() >= 1);
-        bool foundError = false;
-        for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getStringAssignment") != std::string::npos) {
-                foundError = true;
-                break;
-            }
-        }
-        CHECK(foundError);
-    }
-
-    SECTION("getJSONAssignment rethrows exception after logging") {
-        mockLogger->clear();
-        json defaultJson = {{"key", "value"}};
-        REQUIRE_THROWS_AS(
-            client.getJSONAssignment("test-flag", "", attrs, defaultJson),
-            std::invalid_argument
-        );
-
-        // Should have logged error before rethrowing
-        REQUIRE(mockLogger->errorMessages.size() >= 1);
-        bool foundError = false;
-        for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getJSONAssignment") != std::string::npos) {
-                foundError = true;
-                break;
-            }
-        }
-        CHECK(foundError);
-    }
-
-    SECTION("getSerializedJSONAssignment rethrows exception after logging") {
-        mockLogger->clear();
-        std::string defaultValue = R"({"default":"value"})";
-        REQUIRE_THROWS_AS(
-            client.getSerializedJSONAssignment("test-flag", "", attrs, defaultValue),
-            std::invalid_argument
-        );
-
-        // Should have logged error before rethrowing
-        REQUIRE(mockLogger->errorMessages.size() >= 1);
-        bool foundError = false;
-        for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("Error in getSerializedJSONAssignment") != std::string::npos) {
-                foundError = true;
-                break;
-            }
-        }
-        CHECK(foundError);
-    }
-}
-
-TEST_CASE("Graceful failure mode - Toggling behavior", "[graceful-failure]") {
-    // Create a configuration store with empty config
-    ConfigurationStore configStore;
-    Configuration emptyConfig(ConfigResponse{});
-    configStore.setConfiguration(emptyConfig);
-
-    auto mockLogger = std::make_shared<MockApplicationLogger>();
-
-    EppoClient client(configStore, nullptr, nullptr, mockLogger);
-
-    Attributes attrs;
-    attrs["test"] = std::string("value");
-
-    SECTION("Can toggle from graceful to non-graceful mode") {
-        // Start in graceful mode (default) - trigger error with empty subject key
-        bool result1 = client.getBoolAssignment("test-flag", "", attrs, false);
-        CHECK(result1 == false);  // Returns default
-
-        mockLogger->clear();
-
-        // Switch to non-graceful mode
-        client.setIsGracefulFailureMode(false);
-
-        // Now it should throw
-        REQUIRE_THROWS_AS(
-            client.getBoolAssignment("test-flag", "", attrs, false),
-            std::invalid_argument
-        );
-    }
-
-    SECTION("Can toggle from non-graceful to graceful mode") {
-        // Switch to non-graceful mode
-        client.setIsGracefulFailureMode(false);
-
-        // Should throw with empty subject key
-        REQUIRE_THROWS_AS(
-            client.getBoolAssignment("test-flag", "", attrs, false),
-            std::invalid_argument
-        );
-
-        mockLogger->clear();
-
-        // Switch back to graceful mode
-        client.setIsGracefulFailureMode(true);
-
-        // Should return default now
-        bool result = client.getBoolAssignment("test-flag", "", attrs, true);
-        CHECK(result == true);
-    }
-
-    SECTION("Can toggle multiple times") {
-        // Start graceful (default) - use empty subject key to trigger error
-        bool result1 = client.getBoolAssignment("test-flag", "", attrs, true);
-        CHECK(result1 == true);
-
-        // Toggle to non-graceful
-        client.setIsGracefulFailureMode(false);
-        REQUIRE_THROWS(client.getBoolAssignment("test-flag", "", attrs, true));
-
-        // Toggle back to graceful
-        client.setIsGracefulFailureMode(true);
-        bool result2 = client.getBoolAssignment("test-flag", "", attrs, false);
-        CHECK(result2 == false);
-
-        // Toggle to non-graceful again
-        client.setIsGracefulFailureMode(false);
-        REQUIRE_THROWS(client.getBoolAssignment("test-flag", "", attrs, true));
-    }
-}
-
-TEST_CASE("Graceful failure mode - Exception type preservation", "[graceful-failure]") {
-    // Test that bare throw preserves the original exception type (std::invalid_argument)
-    ConfigurationStore configStore;
-    Configuration emptyConfig(ConfigResponse{});
-    configStore.setConfiguration(emptyConfig);
-
-    auto mockLogger = std::make_shared<MockApplicationLogger>();
-
-    EppoClient client(configStore, nullptr, nullptr, mockLogger);
-    client.setIsGracefulFailureMode(false);
-
-    Attributes attrs;
-    attrs["test"] = std::string("value");
-
-    SECTION("Rethrown exception preserves original type (invalid_argument)") {
-        try {
-            // Empty subject key triggers std::invalid_argument
-            client.getBoolAssignment("test-flag", "", attrs, false);
-            FAIL("Should have thrown an exception");
-        } catch (const std::invalid_argument& e) {
-            // Successfully caught the specific exception type
-            CHECK(std::string(e.what()).find("no subject key provided") != std::string::npos);
-        } catch (const std::exception& e) {
-            FAIL("Exception was sliced - caught base type instead of derived type");
-        }
-    }
-}
-
-TEST_CASE("Graceful failure mode - Empty subject key errors", "[graceful-failure]") {
+TEST_CASE("Error handling - Empty subject key errors", "[error-handling]") {
     // Create a working configuration store with empty config
     ConfigurationStore configStore;
     Configuration emptyConfig(ConfigResponse{});
@@ -412,7 +183,7 @@ TEST_CASE("Graceful failure mode - Empty subject key errors", "[graceful-failure
     Attributes attrs;
     attrs["test"] = std::string("value");
 
-    SECTION("Empty subject key in graceful mode returns default") {
+    SECTION("Empty subject key returns default and logs error") {
         bool result = client.getBoolAssignment("test-flag", "", attrs, true);
         CHECK(result == true);
 
@@ -420,30 +191,16 @@ TEST_CASE("Graceful failure mode - Empty subject key errors", "[graceful-failure
         REQUIRE(mockLogger->errorMessages.size() >= 1);
         bool foundSubjectKeyError = false;
         for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("No subject key provided") != std::string::npos ||
-                msg.find("no subject key provided") != std::string::npos) {
+            if (msg.find("No subject key provided") != std::string::npos) {
                 foundSubjectKeyError = true;
                 break;
             }
         }
         CHECK(foundSubjectKeyError);
     }
-
-    SECTION("Empty subject key in non-graceful mode throws") {
-        mockLogger->clear();
-        client.setIsGracefulFailureMode(false);
-
-        REQUIRE_THROWS_AS(
-            client.getBoolAssignment("test-flag", "", attrs, true),
-            std::invalid_argument
-        );
-
-        // Should have logged error before throwing
-        REQUIRE(mockLogger->errorMessages.size() >= 1);
-    }
 }
 
-TEST_CASE("Graceful failure mode - Empty flag key errors", "[graceful-failure]") {
+TEST_CASE("Error handling - Empty flag key errors", "[error-handling]") {
     // Create a working configuration store with empty config
     ConfigurationStore configStore;
     Configuration emptyConfig(ConfigResponse{});
@@ -455,7 +212,7 @@ TEST_CASE("Graceful failure mode - Empty flag key errors", "[graceful-failure]")
     Attributes attrs;
     attrs["test"] = std::string("value");
 
-    SECTION("Empty flag key in graceful mode returns default") {
+    SECTION("Empty flag key returns default and logs error") {
         bool result = client.getBoolAssignment("", "test-subject", attrs, false);
         CHECK(result == false);
 
@@ -463,25 +220,40 @@ TEST_CASE("Graceful failure mode - Empty flag key errors", "[graceful-failure]")
         REQUIRE(mockLogger->errorMessages.size() >= 1);
         bool foundFlagKeyError = false;
         for (const auto& msg : mockLogger->errorMessages) {
-            if (msg.find("No flag key provided") != std::string::npos ||
-                msg.find("no flag key provided") != std::string::npos) {
+            if (msg.find("No flag key provided") != std::string::npos) {
                 foundFlagKeyError = true;
                 break;
             }
         }
         CHECK(foundFlagKeyError);
     }
+}
 
-    SECTION("Empty flag key in non-graceful mode throws") {
-        mockLogger->clear();
-        client.setIsGracefulFailureMode(false);
+TEST_CASE("Error handling - Missing flag configuration", "[error-handling]") {
+    // Create a configuration store with empty config
+    ConfigurationStore configStore;
+    Configuration emptyConfig(ConfigResponse{});
+    configStore.setConfiguration(emptyConfig);
 
-        REQUIRE_THROWS_AS(
-            client.getBoolAssignment("", "test-subject", attrs, false),
-            std::invalid_argument
-        );
+    auto mockLogger = std::make_shared<MockApplicationLogger>();
+    EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
-        // Should have logged error before throwing
-        REQUIRE(mockLogger->errorMessages.size() >= 1);
+    Attributes attrs;
+    attrs["test"] = std::string("value");
+
+    SECTION("Missing flag returns default and logs info") {
+        bool result = client.getBoolAssignment("nonexistent-flag", "test-subject", attrs, true);
+        CHECK(result == true);
+
+        // Should have logged info about missing flag
+        REQUIRE(mockLogger->infoMessages.size() >= 1);
+        bool foundMissingFlag = false;
+        for (const auto& msg : mockLogger->infoMessages) {
+            if (msg.find("Failed to get flag configuration") != std::string::npos) {
+                foundMissingFlag = true;
+                break;
+            }
+        }
+        CHECK(foundMissingFlag);
     }
 }

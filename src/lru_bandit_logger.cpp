@@ -1,4 +1,5 @@
 #include "lru_bandit_logger.hpp"
+#include <cassert>
 
 namespace eppoclient {
 
@@ -6,9 +7,7 @@ LruBanditLogger::LruBanditLogger(
     std::shared_ptr<BanditLogger> logger,
     size_t cacheSize)
     : cache_(cacheSize), inner_(logger) {
-    if (!logger) {
-        throw std::invalid_argument("Error initializing bandit logger: inner logger cannot be null");
-    }
+    assert(logger && "Error initializing bandit logger: inner logger cannot be null");
 }
 
 bool LruBanditLogger::shouldLog(const BanditCacheKey& key, const BanditCacheValue& value) {

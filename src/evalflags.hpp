@@ -6,7 +6,6 @@
 #include <optional>
 #include <variant>
 #include <chrono>
-#include <stdexcept>
 #include <nlohmann/json.hpp>
 #include "application_logger.hpp"
 #include "config_response.hpp"
@@ -16,17 +15,6 @@ namespace eppoclient {
 
 // SDK version constant
 extern const std::string SDK_VERSION;
-
-// Error types for flag evaluation
-class FlagNotEnabledException : public std::runtime_error {
-public:
-    FlagNotEnabledException() : std::runtime_error("the experiment or flag is not enabled") {}
-};
-
-class SubjectAllocationException : public std::runtime_error {
-public:
-    SubjectAllocationException() : std::runtime_error("subject is not part of any allocation") {}
-};
 
 // AssignmentEvent structure for logging
 struct AssignmentEvent {
@@ -146,10 +134,12 @@ Attributes augmentWithSubjectKey(const Attributes& subjectAttributes, const std:
 
 // FlagConfiguration member functions
 // Verify that the flag has the expected variation type
-void verifyType(const FlagConfiguration& flag, VariationType expectedType);
+// Returns true if types match, false otherwise
+bool verifyType(const FlagConfiguration& flag, VariationType expectedType);
 
 // Evaluate a flag for a given subject
-EvalResult evalFlag(const FlagConfiguration& flag,
+// Returns std::nullopt if evaluation fails
+std::optional<EvalResult> evalFlag(const FlagConfiguration& flag,
                    const std::string& subjectKey,
                    const Attributes& subjectAttributes,
                    ApplicationLogger* logger = nullptr);
