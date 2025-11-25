@@ -25,5 +25,3 @@ TEST_CASE("ConfigurationStore constructor with config", "[configuration_store]")
     Configuration retrievedConfig = store.getConfiguration();
 }
 
-// Thread safety test removed - ConfigurationStore is no longer thread-safe by design.
-// If thread-safety is required, the caller is responsible for providing synchronization.
