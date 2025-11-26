@@ -180,3 +180,42 @@ TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip preserves milli
         std::chrono::duration_cast<std::chrono::milliseconds>(parsed.time_since_epoch()) - seconds;
     REQUIRE(milliseconds.count() == 123);
 }
+
+TEST_CASE("parseISOTimestampForConfigEndTime - year 9999 sentinel returns max time_point",
+          "[time_utils]") {
+    std::string timestamp = "9999-12-31T00:00:00.000Z";
+    auto result = parseISOTimestampForConfigEndTime(timestamp);
+
+    // The exact sentinel value should be treated as "no end date" and return time_point::max()
+    REQUIRE(result == std::chrono::system_clock::time_point::max());
+
+    // Verify that current time is always less than max
+    auto now = std::chrono::system_clock::now();
+    REQUIRE(now < result);
+}
+
+TEST_CASE("formatISOTimestampForConfigEndTime - time_point::max() formats to year 9999",
+          "[time_utils]") {
+    auto maxTime = std::chrono::system_clock::time_point::max();
+    std::string result = formatISOTimestampForConfigEndTime(maxTime);
+
+    // time_point::max() should format to the sentinel year 9999 date
+    REQUIRE(result == "9999-12-31T00:00:00.000Z");
+}
+
+TEST_CASE(
+    "parseISOTimestampForConfigEndTime and formatISOTimestampForConfigEndTime - year 9999 "
+    "round trip",
+    "[time_utils]") {
+    std::string original = "9999-12-31T00:00:00.000Z";
+
+    // Parse year 9999 sentinel date
+    auto parsed = parseISOTimestampForConfigEndTime(original);
+    REQUIRE(parsed == std::chrono::system_clock::time_point::max());
+
+    // Format back to string
+    std::string formatted = formatISOTimestampForConfigEndTime(parsed);
+
+    // Should format to the exact same sentinel value
+    REQUIRE(formatted == "9999-12-31T00:00:00.000Z");
+}
