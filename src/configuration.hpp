@@ -14,8 +14,8 @@ namespace eppoclient {
 class Configuration {
 public:
     Configuration() = default;
-    explicit Configuration(const ConfigResponse& response);
-    Configuration(const ConfigResponse& flagsResponse, const BanditResponse& banditsResponse);
+    explicit Configuration(ConfigResponse response);
+    Configuration(ConfigResponse flagsResponse, BanditResponse banditsResponse);
     ~Configuration() = default;
 
     // Copy constructor and assignment operator
@@ -25,12 +25,6 @@ public:
     // Move constructor and assignment operator
     Configuration(Configuration&& other) = default;
     Configuration& operator=(Configuration&& other) = default;
-
-    /**
-     * Precompute derived data structures for faster access during evaluation.
-     * This method builds the banditFlagAssociations map for O(1) lookup.
-     */
-    void precompute();
 
     /**
      * Get bandit variation for a given flag key and variation value.

@@ -282,7 +282,6 @@ TEST_CASE("UFC Test Cases - Flag Evaluation Details", "[ufc][evaluation-details]
 
     // Create configuration
     Configuration config(configResponse);
-    config.precompute();
 
     // Create client with configuration
     ConfigurationStore configStore;
