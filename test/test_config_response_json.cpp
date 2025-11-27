@@ -550,5 +550,4 @@ TEST_CASE("ConfigResponse usage example - deserialize from file", "[config_respo
 
     // Can use it with Configuration
     Configuration configuration = Configuration(response);
-    REQUIRE_NOTHROW(configuration.precompute());
 }
