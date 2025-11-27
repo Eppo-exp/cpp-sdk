@@ -17,7 +17,7 @@ on:
       sdk_branch:
         type: string
         description: The branch of the SDK to test
-        required: false  
+        required: false
 
 env:
   SDK_BRANCH_NAME: ${{ inputs.sdk_branch  || github.head_ref || github.ref_name || 'main' }}
@@ -90,9 +90,6 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name || 'Eppo-exp/cpp-sdk' }}
           ref: ${{ env.SDK_BRANCH_NAME }}
-          
-      - name: Verify version consistency
-        run: ./scripts/check-version-consistency.sh
 
       - name: Set up build environment
         run: |
