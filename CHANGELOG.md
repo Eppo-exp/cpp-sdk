@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+**Note**: Semantic Versioning applies to source-level compatibility only. No guarantees are made regarding Application Binary Interface (ABI) stability. When upgrading versions, always recompile your application against the new SDK version. Avoid mixing object files or libraries compiled against different SDK versions.
+
 ## [Unreleased]
 
 ### Added
