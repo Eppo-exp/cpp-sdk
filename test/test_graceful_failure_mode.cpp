@@ -35,9 +35,9 @@ public:
 
 TEST_CASE("Error handling - returns default values and logs errors", "[error-handling]") {
     // Create a configuration store with empty config (no flags)
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     Configuration emptyConfig(ConfigResponse{});
-    configStore.setConfiguration(emptyConfig);
+    configStore->setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
 
@@ -166,9 +166,9 @@ TEST_CASE("Error handling - returns default values and logs errors", "[error-han
 
 TEST_CASE("Error handling - Empty subject key errors", "[error-handling]") {
     // Create a working configuration store with empty config
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     Configuration emptyConfig(ConfigResponse{});
-    configStore.setConfiguration(emptyConfig);
+    configStore->setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
     EppoClient client(configStore, nullptr, nullptr, mockLogger);
@@ -195,9 +195,9 @@ TEST_CASE("Error handling - Empty subject key errors", "[error-handling]") {
 
 TEST_CASE("Error handling - Empty flag key errors", "[error-handling]") {
     // Create a working configuration store with empty config
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     Configuration emptyConfig(ConfigResponse{});
-    configStore.setConfiguration(emptyConfig);
+    configStore->setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
     EppoClient client(configStore, nullptr, nullptr, mockLogger);
@@ -224,9 +224,9 @@ TEST_CASE("Error handling - Empty flag key errors", "[error-handling]") {
 
 TEST_CASE("Error handling - Missing flag configuration", "[error-handling]") {
     // Create a configuration store with empty config
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     Configuration emptyConfig(ConfigResponse{});
-    configStore.setConfiguration(emptyConfig);
+    configStore->setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
     EppoClient client(configStore, nullptr, nullptr, mockLogger);

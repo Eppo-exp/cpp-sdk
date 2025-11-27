@@ -90,8 +90,8 @@ int main() {
     }
 
     // Create configuration store and set the configuration
-    eppoclient::ConfigurationStore configStore;
-    configStore.setConfiguration(eppoclient::Configuration(ufc));
+    auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+    configStore->setConfiguration(eppoclient::Configuration(ufc));
 
     // Create assignment logger and application logger
     auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();
