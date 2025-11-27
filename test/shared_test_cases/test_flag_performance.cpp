@@ -195,14 +195,7 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
     // Create configuration
     std::cout << "Creating configuration...\n";
     Configuration config(configResponse);
-    std::cout << "Precomputing...\n";
-    try {
-        config.precompute();
-        std::cout << "Precompute complete\n";
-    } catch (const std::exception& e) {
-        std::cerr << "Precompute failed: " << e.what() << std::endl;
-        throw;
-    }
+
 
     // Create client with configuration
     std::cout << "Creating client...\n";

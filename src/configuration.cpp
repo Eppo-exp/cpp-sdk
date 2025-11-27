@@ -2,20 +2,11 @@
 
 namespace eppoclient {
 
-Configuration::Configuration(const ConfigResponse& response) : flags_(response) {
-    precompute();
-}
+Configuration::Configuration(ConfigResponse response)
+    : Configuration(std::move(response), BanditResponse{}) {}
 
-Configuration::Configuration(const ConfigResponse& flagsResponse,
-                             const BanditResponse& banditsResponse)
-    : flags_(flagsResponse), bandits_(banditsResponse) {
-    precompute();
-}
-
-void Configuration::precompute() {
-    // Clear existing associations
-    banditFlagAssociations_.clear();
-
+Configuration::Configuration(ConfigResponse flagsResponse, BanditResponse banditsResponse)
+    : flags_(std::move(flagsResponse)), bandits_(std::move(banditsResponse)) {
     // Precompute flag configurations
     flags_.precompute();
 
