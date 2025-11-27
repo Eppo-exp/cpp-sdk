@@ -78,7 +78,6 @@ TEST_CASE("getSerializedJSONAssignment - Basic functionality", "[serialized-json
 
     // Create configuration
     Configuration config(configResponse);
-    config.precompute();
 
     // Create client
     auto configStore = std::make_shared<ConfigurationStore>();
@@ -159,7 +158,6 @@ TEST_CASE("getSerializedJSONAssignment - Default value behavior", "[serialized-j
 
     // Create configuration
     Configuration config(configResponse);
-    config.precompute();
 
     // Create client
     auto configStore = std::make_shared<ConfigurationStore>();
@@ -206,7 +204,6 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
 
     // Create configuration
     Configuration config(configResponse);
-    config.precompute();
 
     // Create mock logger to capture error messages
     auto mockLogger = std::make_shared<MockApplicationLogger>();
@@ -351,7 +348,6 @@ TEST_CASE("getSerializedJSONAssignment - Complex JSON structures", "[serialized-
 
     // Create configuration
     Configuration config(configResponse);
-    config.precompute();
 
     // Create client
     auto configStore = std::make_shared<ConfigurationStore>();
@@ -416,7 +412,6 @@ TEST_CASE("getSerializedJSONAssignment - JSON formatting", "[serialized-json]") 
 
     // Create configuration
     Configuration config(configResponse);
-    config.precompute();
 
     // Create client
     auto configStore = std::make_shared<ConfigurationStore>();
@@ -466,7 +461,6 @@ TEST_CASE("getSerializedJSONAssignment - All test case subjects", "[serialized-j
 
     // Create configuration
     Configuration config(configResponse);
-    config.precompute();
 
     // Create client
     auto configStore = std::make_shared<ConfigurationStore>();
