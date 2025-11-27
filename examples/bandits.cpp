@@ -161,8 +161,8 @@ int main() {
     }
 
     // Create configuration store and set the configuration with both flags and bandits
-    eppoclient::ConfigurationStore configStore;
-    configStore.setConfiguration(eppoclient::Configuration(banditFlags, banditModels));
+    auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+    configStore->setConfiguration(eppoclient::Configuration(banditFlags, banditModels));
 
     // Create assignment logger, bandit logger, and application logger
     auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();

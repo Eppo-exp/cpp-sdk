@@ -49,8 +49,7 @@ public:
  *
  * Example usage:
  * @code
- * eppoclient::ConfigurationStore configStore;
- * configStore.setConfiguration(config);
+ * auto configStore = std::make_shared<eppoclient::ConfigurationStore>(config);
  *
  * auto logger = std::make_shared<MyApplicationLogger>();
  * eppoclient::EppoClient client(configStore, nullptr, nullptr, logger);
@@ -61,7 +60,7 @@ public:
  */
 class EppoClient {
 private:
-    ConfigurationStore& configurationStore_;
+    std::shared_ptr<ConfigurationStore> configurationStore_;
     std::shared_ptr<AssignmentLogger> assignmentLogger_;
     std::shared_ptr<BanditLogger> banditLogger_;
     std::shared_ptr<ApplicationLogger> applicationLogger_;
@@ -71,7 +70,7 @@ private:
 
 public:
     // Constructor
-    EppoClient(ConfigurationStore& configStore,
+    EppoClient(std::shared_ptr<ConfigurationStore> configStore,
                std::shared_ptr<AssignmentLogger> assignmentLogger = nullptr,
                std::shared_ptr<BanditLogger> banditLogger = nullptr,
                std::shared_ptr<ApplicationLogger> applicationLogger = nullptr);
@@ -163,7 +162,7 @@ public:
                                              const T& defaultValue);
 
     // Get configuration store
-    ConfigurationStore& getConfigurationStore() const { return configurationStore_; }
+    ConfigurationStore& getConfigurationStore() const { return *configurationStore_; }
 };
 
 // Template method implementation
@@ -173,7 +172,7 @@ EvaluationResult<T> EppoClient::getAssignmentDetails(VariationType variationType
                                                      const std::string& subjectKey,
                                                      const Attributes& subjectAttributes,
                                                      const T& defaultValue) {
-    auto config = configurationStore_.getConfiguration();
+    auto config = configurationStore_->getConfiguration();
     return evaluationClient(*config).getAssignmentDetails<T>(variationType, flagKey, subjectKey,
                                                              subjectAttributes, defaultValue);
 }
