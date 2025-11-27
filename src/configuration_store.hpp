@@ -7,17 +7,16 @@
 namespace eppoclient {
 
 /**
- * ConfigurationStore is an in-memory storage for the currently active configuration.
- * It provides access to readers (e.g., flag/bandit evaluation) and writers
- * (e.g., configuration requestor).
- *
- * Note: This class is not thread-safe. If you need to access it from multiple threads,
- * the caller is responsible for providing appropriate synchronization.
+ * ConfigurationStore is a thread-safe in-memory storage. It stores
+ * the currently active configuration and provides access to multiple
+ * readers (e.g., flag/bandit evaluation) and writers (e.g.,
+ * configuration requestor).
  */
 class ConfigurationStore {
 public:
     ConfigurationStore();
-    explicit ConfigurationStore(const Configuration& config);
+    explicit ConfigurationStore(std::shared_ptr<const Configuration> config);
+    explicit ConfigurationStore(Configuration config);
 
     ~ConfigurationStore() = default;
 
@@ -29,17 +28,26 @@ public:
      * Returns a shared pointer to the currently active configuration.
      * If no configuration has been set, returns an empty configuration.
      *
-     * The returned shared_ptr provides thread-safe reference counting
-     * and ensures the configuration remains valid for the lifetime of the pointer.
+     * Thread-safe.
      */
     std::shared_ptr<const Configuration> getConfiguration() const;
 
     /**
-     * Sets the configuration.
+     * Sets the configuration from a shared pointer.
+     *
+     * Thread-safe.
      */
-    void setConfiguration(const Configuration& config);
+    void setConfiguration(std::shared_ptr<const Configuration> config);
+
+    /**
+     * Sets the configuration from a Configuration object.
+     *
+     * Thread-safe.
+     */
+    void setConfiguration(Configuration config);
 
 private:
+    // Current configuration accessed atomically for thread safety
     std::shared_ptr<const Configuration> configuration_;
 };
 
