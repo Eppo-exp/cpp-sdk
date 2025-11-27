@@ -58,9 +58,9 @@ ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
 
 TEST_CASE("Bandit Action Details - getBanditActionDetails with actions",
           "[bandit-action-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
     auto mockBanditLogger = std::make_shared<MockBanditLogger>();
@@ -124,9 +124,9 @@ TEST_CASE("Bandit Action Details - getBanditActionDetails with actions",
 }
 
 TEST_CASE("Bandit Action Details - No actions supplied", "[bandit-action-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     auto mockBanditLogger = std::make_shared<MockBanditLogger>();
     EppoClient client(configStore, nullptr, mockBanditLogger, nullptr);
@@ -159,9 +159,9 @@ TEST_CASE("Bandit Action Details - No actions supplied", "[bandit-action-details
 }
 
 TEST_CASE("Bandit Action Details - Non-bandit variation", "[bandit-action-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -187,9 +187,9 @@ TEST_CASE("Bandit Action Details - Non-bandit variation", "[bandit-action-detail
 }
 
 TEST_CASE("Bandit Action Details - Non-existent flag", "[bandit-action-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -211,9 +211,9 @@ TEST_CASE("Bandit Action Details - Non-existent flag", "[bandit-action-details]"
 }
 
 TEST_CASE("Bandit Action Details - Bandit key in details", "[bandit-action-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -238,9 +238,9 @@ TEST_CASE("Bandit Action Details - Bandit key in details", "[bandit-action-detai
 }
 
 TEST_CASE("Bandit Action Details - Multiple calls preserve details", "[bandit-action-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -276,9 +276,9 @@ TEST_CASE("Bandit Action Details - Multiple calls preserve details", "[bandit-ac
 }
 
 TEST_CASE("Bandit Action Details - Empty subject key handling", "[bandit-action-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -300,9 +300,9 @@ TEST_CASE("Bandit Action Details - Empty subject key handling", "[bandit-action-
 }
 
 TEST_CASE("Bandit Action Details - Variation and action consistency", "[bandit-action-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -335,9 +335,9 @@ TEST_CASE("Bandit Action Details - Variation and action consistency", "[bandit-a
 }
 
 TEST_CASE("Bandit Action Details - Bandit logging still works", "[bandit-action-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/bandit-flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     auto mockBanditLogger = std::make_shared<MockBanditLogger>();
     EppoClient client(configStore, nullptr, mockBanditLogger, nullptr);

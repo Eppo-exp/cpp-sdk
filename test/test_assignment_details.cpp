@@ -57,9 +57,9 @@ ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
 }  // namespace
 
 TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
     auto mockAssignmentLogger = std::make_shared<MockAssignmentLogger>();
@@ -122,9 +122,9 @@ TEST_CASE("Assignment Details - getBooleanAssignmentDetails", "[assignment-detai
 }
 
 TEST_CASE("Assignment Details - getIntegerAssignmentDetails", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
     EppoClient client(configStore, nullptr, nullptr, mockAppLogger);
@@ -161,9 +161,9 @@ TEST_CASE("Assignment Details - getIntegerAssignmentDetails", "[assignment-detai
 }
 
 TEST_CASE("Assignment Details - getNumericAssignmentDetails", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
     EppoClient client(configStore, nullptr, nullptr, mockAppLogger);
@@ -186,9 +186,9 @@ TEST_CASE("Assignment Details - getNumericAssignmentDetails", "[assignment-detai
 }
 
 TEST_CASE("Assignment Details - getStringAssignmentDetails", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
     EppoClient client(configStore, nullptr, nullptr, mockAppLogger);
@@ -221,9 +221,9 @@ TEST_CASE("Assignment Details - getStringAssignmentDetails", "[assignment-detail
 }
 
 TEST_CASE("Assignment Details - getJsonAssignmentDetails", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
     EppoClient client(configStore, nullptr, nullptr, mockAppLogger);
@@ -261,9 +261,9 @@ TEST_CASE("Assignment Details - getJsonAssignmentDetails", "[assignment-details]
 }
 
 TEST_CASE("Assignment Details - getSerializedJsonAssignmentDetails", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     auto mockAppLogger = std::make_shared<MockApplicationLogger>();
     EppoClient client(configStore, nullptr, nullptr, mockAppLogger);
@@ -306,9 +306,9 @@ TEST_CASE("Assignment Details - getSerializedJsonAssignmentDetails", "[assignmen
 }
 
 TEST_CASE("Assignment Details - Evaluation details timestamp", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -326,9 +326,9 @@ TEST_CASE("Assignment Details - Evaluation details timestamp", "[assignment-deta
 }
 
 TEST_CASE("Assignment Details - Subject attributes preserved", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -357,9 +357,9 @@ TEST_CASE("Assignment Details - Subject attributes preserved", "[assignment-deta
 }
 
 TEST_CASE("Assignment Details - Error handling behavior", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     Configuration emptyConfig(ConfigResponse{});
-    configStore.setConfiguration(emptyConfig);
+    configStore->setConfiguration(emptyConfig);
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
     EppoClient client(configStore, nullptr, nullptr, mockLogger);
@@ -381,9 +381,9 @@ TEST_CASE("Assignment Details - Error handling behavior", "[assignment-details]"
 }
 
 TEST_CASE("Assignment Details - Variation value in details", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -427,9 +427,9 @@ TEST_CASE("Assignment Details - Variation value in details", "[assignment-detail
 }
 
 TEST_CASE("Assignment Details - Multiple flags in sequence", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -459,9 +459,9 @@ TEST_CASE("Assignment Details - Multiple flags in sequence", "[assignment-detail
 }
 
 TEST_CASE("Assignment Details - Empty flag key handling", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     auto mockLogger = std::make_shared<MockApplicationLogger>();
     EppoClient client(configStore, nullptr, nullptr, mockLogger);
@@ -480,9 +480,9 @@ TEST_CASE("Assignment Details - Empty flag key handling", "[assignment-details]"
 }
 
 TEST_CASE("Assignment Details - Assignment logging still works", "[assignment-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     auto mockAssignmentLogger = std::make_shared<MockAssignmentLogger>();
     EppoClient client(configStore, mockAssignmentLogger, nullptr, nullptr);

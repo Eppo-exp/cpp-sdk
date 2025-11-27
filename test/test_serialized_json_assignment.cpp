@@ -81,8 +81,8 @@ TEST_CASE("getSerializedJSONAssignment - Basic functionality", "[serialized-json
     config.precompute();
 
     // Create client
-    ConfigurationStore configStore;
-    configStore.setConfiguration(config);
+    auto configStore = std::make_shared<ConfigurationStore>();
+    configStore->setConfiguration(config);
     EppoClient client(configStore, nullptr, nullptr);
 
     SECTION("Returns stringified JSON for valid assignment") {
@@ -162,8 +162,8 @@ TEST_CASE("getSerializedJSONAssignment - Default value behavior", "[serialized-j
     config.precompute();
 
     // Create client
-    ConfigurationStore configStore;
-    configStore.setConfiguration(config);
+    auto configStore = std::make_shared<ConfigurationStore>();
+    configStore->setConfiguration(config);
     EppoClient client(configStore, nullptr, nullptr);
 
     SECTION("Returns default value for non-existent flag") {
@@ -212,8 +212,8 @@ TEST_CASE("getSerializedJSONAssignment - Type mismatch with application logger",
     auto mockLogger = std::make_shared<MockApplicationLogger>();
 
     // Create client with mock logger
-    ConfigurationStore configStore;
-    configStore.setConfiguration(config);
+    auto configStore = std::make_shared<ConfigurationStore>();
+    configStore->setConfiguration(config);
     EppoClient client(configStore, nullptr, nullptr, mockLogger);
 
     SECTION("Calling getSerializedJSONAssignment on an INTEGER flag logs type mismatch error") {
@@ -354,8 +354,8 @@ TEST_CASE("getSerializedJSONAssignment - Complex JSON structures", "[serialized-
     config.precompute();
 
     // Create client
-    ConfigurationStore configStore;
-    configStore.setConfiguration(config);
+    auto configStore = std::make_shared<ConfigurationStore>();
+    configStore->setConfiguration(config);
     EppoClient client(configStore, nullptr, nullptr);
 
     SECTION("Handles nested JSON structures") {
@@ -419,8 +419,8 @@ TEST_CASE("getSerializedJSONAssignment - JSON formatting", "[serialized-json]") 
     config.precompute();
 
     // Create client
-    ConfigurationStore configStore;
-    configStore.setConfiguration(config);
+    auto configStore = std::make_shared<ConfigurationStore>();
+    configStore->setConfiguration(config);
     EppoClient client(configStore, nullptr, nullptr);
 
     SECTION("Returns compact JSON (no pretty printing)") {
@@ -469,8 +469,8 @@ TEST_CASE("getSerializedJSONAssignment - All test case subjects", "[serialized-j
     config.precompute();
 
     // Create client
-    ConfigurationStore configStore;
-    configStore.setConfiguration(config);
+    auto configStore = std::make_shared<ConfigurationStore>();
+    configStore->setConfiguration(config);
     EppoClient client(configStore, nullptr, nullptr);
 
     // Load test case
