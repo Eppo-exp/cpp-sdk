@@ -21,7 +21,10 @@ TEST_CASE("BanditNumericAttributeCoefficient serialization", "[bandit_model]") {
     CHECK(j["missingValueCoefficient"] == 0.1);
 
     // Deserialize from JSON
-    BanditNumericAttributeCoefficient coeff2 = j;
+    std::string error;
+    auto maybeCoeff2 = internal::parseBanditNumericAttributeCoefficient(j, error);
+    REQUIRE(maybeCoeff2.has_value());
+    BanditNumericAttributeCoefficient coeff2 = *maybeCoeff2;
     CHECK(coeff2.attributeKey == "age");
     CHECK(coeff2.coefficient == 0.5);
     CHECK(coeff2.missingValueCoefficient == 0.1);
@@ -47,7 +50,10 @@ TEST_CASE("BanditCategoricalAttributeCoefficient serialization", "[bandit_model]
     CHECK(j["valueCoefficients"]["CA"] == 0.9);
 
     // Deserialize from JSON
-    BanditCategoricalAttributeCoefficient coeff2 = j;
+    std::string error;
+    auto maybeCoeff2 = internal::parseBanditCategoricalAttributeCoefficient(j, error);
+    REQUIRE(maybeCoeff2.has_value());
+    BanditCategoricalAttributeCoefficient coeff2 = *maybeCoeff2;
     CHECK(coeff2.attributeKey == "country");
     CHECK(coeff2.missingValueCoefficient == 0.0);
     CHECK(coeff2.valueCoefficients["US"] == 1.0);
@@ -83,7 +89,10 @@ TEST_CASE("BanditCoefficients serialization", "[bandit_model]") {
     CHECK(j["subjectCategoricalCoefficients"].size() == 1);
 
     // Deserialize from JSON
-    BanditCoefficients coeff2 = j;
+    std::string error;
+    auto maybeCoeff2 = internal::parseBanditCoefficients(j, error);
+    REQUIRE(maybeCoeff2.has_value());
+    BanditCoefficients coeff2 = *maybeCoeff2;
     CHECK(coeff2.actionKey == "action1");
     CHECK(coeff2.intercept == 1.5);
     CHECK(coeff2.subjectNumericCoefficients.size() == 1);
@@ -112,7 +121,10 @@ TEST_CASE("BanditModelData serialization", "[bandit_model]") {
     CHECK(j["coefficients"].size() == 1);
 
     // Deserialize from JSON
-    BanditModelData modelData2 = j;
+    std::string error;
+    auto maybeModelData2 = internal::parseBanditModelData(j, error);
+    REQUIRE(maybeModelData2.has_value());
+    BanditModelData modelData2 = *maybeModelData2;
     CHECK(modelData2.gamma == 0.9);
     CHECK(modelData2.defaultActionScore == 0.5);
     CHECK(modelData2.actionProbabilityFloor == 0.01);
@@ -136,7 +148,10 @@ TEST_CASE("BanditConfiguration serialization", "[bandit_model]") {
     CHECK(j["modelVersion"] == "v1");
 
     // Deserialize from JSON
-    BanditConfiguration config2 = j;
+    std::string error;
+    auto maybeConfig2 = internal::parseBanditConfiguration(j, error);
+    REQUIRE(maybeConfig2.has_value());
+    BanditConfiguration config2 = *maybeConfig2;
     CHECK(config2.banditKey == "my-bandit");
     CHECK(config2.modelName == "contextual");
     CHECK(config2.modelVersion == "v1");
@@ -161,7 +176,10 @@ TEST_CASE("BanditVariation serialization", "[bandit_model]") {
     CHECK(j["variationValue"] == "off");
 
     // Deserialize from JSON
-    BanditVariation variation2 = j;
+    std::string error;
+    auto maybeVariation2 = internal::parseBanditVariation(j, error);
+    REQUIRE(maybeVariation2.has_value());
+    BanditVariation variation2 = *maybeVariation2;
     CHECK(variation2.key == "var1");
     CHECK(variation2.flagKey == "my-flag");
     CHECK(variation2.variationKey == "control");
