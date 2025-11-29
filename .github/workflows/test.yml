@@ -17,7 +17,7 @@ on:
       sdk_branch:
         type: string
         description: The branch of the SDK to test
-        required: false  
+        required: false
 
 env:
   SDK_BRANCH_NAME: ${{ inputs.sdk_branch  || github.head_ref || github.ref_name || 'main' }}
@@ -78,7 +78,7 @@ jobs:
 
       - name: Build library
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DEPPOCLIENT_WARNINGS_AS_ERRORS=ON -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
           cmake --build build
 
   test:
@@ -90,17 +90,17 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name || 'Eppo-exp/cpp-sdk' }}
           ref: ${{ env.SDK_BRANCH_NAME }}
-          
+
       - name: Verify version consistency
         run: ./scripts/check-version-consistency.sh
 
       - name: Set up build environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential g++
+          sudo apt-get install -y build-essential g++ cmake
 
       - name: Run tests
-        run: make test branchName=${{env.TEST_DATA_BRANCH_NAME}}
+        run: make test TEST_DATA_BRANCH=${{env.TEST_DATA_BRANCH_NAME}}
 
   memory-test:
     runs-on: ubuntu-latest
@@ -114,7 +114,7 @@ jobs:
       - name: Set up build environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential g++
+          sudo apt-get install -y build-essential g++ cmake
 
       - name: Run memory tests
-        run: make test-memory
+        run: make test-memory TEST_DATA_BRANCH=${{env.TEST_DATA_BRANCH_NAME}}

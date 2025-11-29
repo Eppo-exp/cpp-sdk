@@ -38,12 +38,15 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Option to treat warnings as errors
+option(EPPOCLIENT_ERR_ON_WARNINGS "Treat compiler warnings as errors" OFF)
+
 # Set C standard for third party C files
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Collect source files
-file(GLOB EPPOCLIENT_SOURCES
+file(GLOB EPPOCLIENT_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
@@ -79,10 +82,16 @@ set_target_properties(eppoclient PROPERTIES
 # Compiler flags
 if(MSVC)
     target_compile_options(eppoclient PRIVATE /W4)
+    if(EPPOCLIENT_ERR_ON_WARNINGS)
+        target_compile_options(eppoclient PRIVATE /WX)
+    endif()
     # Disable exceptions on MSVC (PRIVATE so it doesn't affect library users)
     target_compile_options(eppoclient PRIVATE /EHs-c- /D_HAS_EXCEPTIONS=0)
 else()
     target_compile_options(eppoclient PRIVATE -Wall -Wextra)
+    if(EPPOCLIENT_ERR_ON_WARNINGS)
+        target_compile_options(eppoclient PRIVATE -Werror)
+    endif()
     # Clang-specific warnings
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         target_compile_options(eppoclient PRIVATE -Wexit-time-destructors)
@@ -112,12 +121,6 @@ install(DIRECTORY src/
 install(DIRECTORY third_party/nlohmann
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/eppoclient/third_party
     FILES_MATCHING PATTERN "*.hpp"
-)
-
-install(FILES
-    third_party/md5_wrapper.h
-    third_party/picohash.h
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/eppoclient/third_party
 )
 
 # Create and install CMake config files for find_package() support
@@ -164,10 +167,31 @@ endif()
 # Optional: Build tests
 option(EPPOCLIENT_BUILD_TESTS "Build tests" OFF)
 
+# Test data branch configuration
+# Override with: cmake -DTEST_DATA_BRANCH=my-branch
+# Or via Makefile: make test TEST_DATA_BRANCH=my-branch
+set(TEST_DATA_BRANCH "main" CACHE STRING "Branch of sdk-test-data repository to fetch")
+
 if(EPPOCLIENT_BUILD_TESTS)
     enable_testing()
 
-    file(GLOB TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/test/test_*.cpp")
+    include(FetchContent)
+
+    # Fetch test data
+    message(STATUS "Fetching SDK test data (branch: ${TEST_DATA_BRANCH})...")
+    FetchContent_Declare(
+        sdk_test_data
+        GIT_REPOSITORY https://github.com/Eppo-exp/sdk-test-data.git
+        GIT_TAG ${TEST_DATA_BRANCH}
+        GIT_SHALLOW ON
+        SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/test/data"
+    )
+    FetchContent_MakeAvailable(sdk_test_data)
+
+    file(GLOB TEST_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/test_*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/shared_test_cases/test_*.cpp"
+    )
 
     add_executable(test_runner
         ${TEST_SOURCES}
@@ -183,5 +207,5 @@ if(EPPOCLIENT_BUILD_TESTS)
         target_compile_options(test_runner PRIVATE -fexceptions)
     endif()
 
-    add_test(NAME EppoClientTests COMMAND test_runner)
+    add_test(NAME EppoClientTests COMMAND test_runner WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()

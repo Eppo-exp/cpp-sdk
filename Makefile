@@ -1,104 +1,93 @@
-# Compiler and flags
-CXX = g++
-CC = gcc
-
-# Detect if using clang++ and add clang-specific flags
-ifeq ($(CXX),clang++)
-  CLANG_WARNINGS = -Wexit-time-destructors
-else ifeq ($(shell $(CXX) --version 2>/dev/null | grep -q clang && echo clang),clang)
-  CLANG_WARNINGS = -Wexit-time-destructors
-else
-  CLANG_WARNINGS =
-endif
-
-CXXFLAGS = -std=c++17 -Wall -Wextra -Werror $(CLANG_WARNINGS) -I. -Ithird_party -MMD -MP -fno-exceptions -DJSON_NOEXCEPTION
-CFLAGS = -std=c99 -Wall -Wextra -Werror -I. -Ithird_party -MMD -MP
-LDFLAGS =
-
-# Directories
-SRC_DIR = src
-TEST_DIR = test
 BUILD_DIR = build
-EXAMPLES_DIR = examples
 
-# Source files
-LIB_SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
-LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(LIB_SOURCES))
+# Test data branch (override with: make test TEST_DATA_BRANCH=my-branch)
+TEST_DATA_BRANCH ?= main
 
-# Third party files (dynamically discovered)
-THIRD_PARTY_CPP_SOURCES = $(wildcard third_party/*.cpp)
-THIRD_PARTY_C_SOURCES = $(wildcard third_party/*.c)
-THIRD_PARTY_OBJECTS = $(patsubst third_party/%.cpp,$(BUILD_DIR)/%.o,$(THIRD_PARTY_CPP_SOURCES)) \
-                      $(patsubst third_party/%.c,$(BUILD_DIR)/%.o,$(THIRD_PARTY_C_SOURCES))
-
-# Auto-discover all test files
-TEST_SOURCES = $(wildcard $(TEST_DIR)/test_*.cpp) $(wildcard $(TEST_DIR)/shared_test_cases/test_*.cpp)
-TEST_EXECUTABLE = $(BUILD_DIR)/test_runner
-
-# Library output
-LIBRARY = $(BUILD_DIR)/libeppoclient.a
-
-# Dependency files
-DEPFILES = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.d,$(LIB_SOURCES)) \
-           $(patsubst third_party/%.cpp,$(BUILD_DIR)/%.d,$(THIRD_PARTY_CPP_SOURCES)) \
-           $(patsubst third_party/%.c,$(BUILD_DIR)/%.d,$(THIRD_PARTY_C_SOURCES))
-
-# Include dependency files if they exist
--include $(DEPFILES)
-
-# Build library object files
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
-	@mkdir -p $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# Pattern rule for third_party C++ files
-$(BUILD_DIR)/%.o: third_party/%.cpp
-	@mkdir -p $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# Pattern rule for third_party C files
-$(BUILD_DIR)/%.o: third_party/%.c
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Create static library
-$(LIBRARY): $(LIB_OBJECTS) $(THIRD_PARTY_OBJECTS)
-	ar rcs $@ $^
-	@echo "Library built: $(LIBRARY)"
-
-# Build test runner executable (re-enable exceptions for Catch2)
-$(TEST_EXECUTABLE): $(LIBRARY) $(TEST_SOURCES) $(THIRD_PARTY_OBJECTS) | $(BUILD_DIR)
-	$(CXX) $(filter-out -fno-exceptions,$(CXXFLAGS)) -fexceptions $(TEST_SOURCES) $(THIRD_PARTY_OBJECTS) $(LIBRARY) $(LDFLAGS) -o $@
-	@echo "Test runner built: $(TEST_EXECUTABLE)"
-
-# Default target
+# Default target - comprehensive development build (library + tests + examples)
 .PHONY: all
-all: $(LIBRARY)
-
-# Build/compile targets for checking compilation errors
-.PHONY: build compile
-build: 
-	@echo "Generating compile_commands.json for IDE support..."
-	rm -f compile_commands.json
-	./scripts/generate_compile_commands.sh
+all:
 	@mkdir -p $(BUILD_DIR)
-	@$(MAKE) all
+	@cd $(BUILD_DIR) && cmake .. \
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+		-DEPPOCLIENT_BUILD_TESTS=ON \
+		-DEPPOCLIENT_BUILD_EXAMPLES=ON \
+		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
+		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH)
+	@cd $(BUILD_DIR) && $(MAKE)
+	@# Copy compile_commands.json to root for IDE support
+	@if [ -f $(BUILD_DIR)/compile_commands.json ]; then \
+		cp $(BUILD_DIR)/compile_commands.json .; \
+		echo "Updated compile_commands.json for IDE support"; \
+	fi
+	@echo "Build complete: library, tests, and examples"
+	@echo "  Library: $(BUILD_DIR)/libeppoclient.a"
+	@echo "  Tests:   $(BUILD_DIR)/test_runner"
+	@echo "  Run tests with: make test"
 
-## test-data
-branchName := main
-.PHONY: test-data
-test-data:
-	rm -rf test/data
-	git clone -b ${branchName} --depth 1 --single-branch https://github.com/Eppo-exp/sdk-test-data.git test/data/
+# Build library only (production-friendly, no warnings-as-errors)
+.PHONY: build
+build:
+	@mkdir -p $(BUILD_DIR)
+	@cd $(BUILD_DIR) && cmake .. \
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+		-DEPPOCLIENT_BUILD_TESTS=OFF \
+		-DEPPOCLIENT_ERR_ON_WARNINGS=OFF
+	@cd $(BUILD_DIR) && $(MAKE)
+	@# Copy compile_commands.json to root for IDE support
+	@if [ -f $(BUILD_DIR)/compile_commands.json ]; then \
+		cp $(BUILD_DIR)/compile_commands.json .; \
+	fi
+	@echo "Library built: $(BUILD_DIR)/libeppoclient.a"
 
 # Run all tests (primary test target)
 .PHONY: test
-test: test-data
-	rm -f compile_commands.json
-	./scripts/generate_compile_commands.sh
-	@$(MAKE) $(TEST_EXECUTABLE)
-	@echo "Running all tests..."
-	@./$(TEST_EXECUTABLE)
+test:
+	@mkdir -p $(BUILD_DIR)
+	@cd $(BUILD_DIR) && cmake .. \
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+		-DEPPOCLIENT_BUILD_TESTS=ON \
+		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
+		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH)
+	@cd $(BUILD_DIR) && $(MAKE)
+	@# Copy compile_commands.json to root for IDE support
+	@if [ -f $(BUILD_DIR)/compile_commands.json ]; then \
+		cp $(BUILD_DIR)/compile_commands.json .; \
+		echo "Updated compile_commands.json for IDE support"; \
+	fi
+	@echo "Running tests..."
+	@cd $(BUILD_DIR) && ctest -V
+
+# Build all examples
+.PHONY: examples
+examples:
+	@mkdir -p $(BUILD_DIR)
+	@cd $(BUILD_DIR) && cmake .. \
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+		-DEPPOCLIENT_BUILD_EXAMPLES=ON \
+		-DEPPOCLIENT_ERR_ON_WARNINGS=OFF
+	@cd $(BUILD_DIR) && $(MAKE)
+	@echo "Examples built in $(BUILD_DIR)/"
+	@echo ""
+	@echo "Run examples with:"
+	@echo "  make run-bandits"
+	@echo "  make run-flags"
+	@echo "  make run-assignment-details"
+
+# Run example binaries
+.PHONY: run-bandits
+run-bandits: examples
+	@echo "Running bandits example..."
+	@$(BUILD_DIR)/bandits
+
+.PHONY: run-flags
+run-flags: examples
+	@echo "Running flag_assignments example..."
+	@$(BUILD_DIR)/flag_assignments
+
+.PHONY: run-assignment-details
+run-assignment-details: examples
+	@echo "Running assignment_details example..."
+	@$(BUILD_DIR)/assignment_details
 
 # Clean build artifacts
 .PHONY: clean
@@ -107,104 +96,36 @@ clean:
 	rm -f compile_commands.json
 	@echo "Build directory cleaned"
 
-# Example executables
-EXAMPLE_BANDITS = $(BUILD_DIR)/bandits
-EXAMPLE_FLAGS = $(BUILD_DIR)/flag_assignments
-EXAMPLE_ASSIGNMENT_DETAILS = $(BUILD_DIR)/assignment_details
-
-# Build example executables
-$(EXAMPLE_BANDITS): $(LIBRARY) $(EXAMPLES_DIR)/bandits.cpp | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $(EXAMPLES_DIR)/bandits.cpp $(LIBRARY) $(LDFLAGS) -o $@
-	@echo "Example built: $(EXAMPLE_BANDITS)"
-
-$(EXAMPLE_FLAGS): $(LIBRARY) $(EXAMPLES_DIR)/flag_assignments.cpp | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $(EXAMPLES_DIR)/flag_assignments.cpp $(LIBRARY) $(LDFLAGS) -o $@
-	@echo "Example built: $(EXAMPLE_FLAGS)"
-
-$(EXAMPLE_ASSIGNMENT_DETAILS): $(LIBRARY) $(EXAMPLES_DIR)/assignment_details.cpp | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $(EXAMPLES_DIR)/assignment_details.cpp $(LIBRARY) $(LDFLAGS) -o $@
-	@echo "Example built: $(EXAMPLE_ASSIGNMENT_DETAILS)"
-
-# Build all examples
-.PHONY: examples
-examples: $(EXAMPLE_BANDITS) $(EXAMPLE_FLAGS)
-	@echo "All examples built successfully"
-
-# Run specific examples (must be run from examples directory for config paths)
-.PHONY: run-bandits
-run-bandits: $(EXAMPLE_BANDITS)
-	@echo "Running bandits example..."
-	@cd $(EXAMPLES_DIR) && ../$(EXAMPLE_BANDITS)
-
-.PHONY: run-flags
-run-flags: $(EXAMPLE_FLAGS)
-	@echo "Running flag_assignments example..."
-	@cd $(EXAMPLES_DIR) && ../$(EXAMPLE_FLAGS)
-
-.PHONY: run-assignment-details
-run-assignment-details: $(EXAMPLE_ASSIGNMENT_DETAILS)
-	@echo "Running assignment_details example..."
-	@cd $(EXAMPLES_DIR) && ../$(EXAMPLE_ASSIGNMENT_DETAILS)
-
-# Interactive example runner
-.PHONY: run-example
-run-example:
-	@echo "Available examples:"
-	@echo "  1) bandits            - Demonstrates bandit functionality"
-	@echo "  2) flag_assignments   - Demonstrates flag assignment functionality"
-	@echo "  3) assignment_details - Demonstrates evaluations with details"
-	@echo ""
-	@echo "Usage:"
-	@echo "  make run-bandits            - Run the bandits example"
-	@echo "  make run-flags              - Run the flag assignments example"
-	@echo "  make run-assignment-details - Run the assignment details example"
-	@echo ""
-	@echo "Or specify EXAMPLE variable:"
-	@echo "  make run-example EXAMPLE=bandits"
-	@echo "  make run-example EXAMPLE=flags"
-	@echo "  make run-example EXAMPLE=assignment-details"
-	@if [ -n "$(EXAMPLE)" ]; then \
-		if [ "$(EXAMPLE)" = "bandits" ]; then \
-			$(MAKE) run-bandits; \
-		elif [ "$(EXAMPLE)" = "flags" ]; then \
-			$(MAKE) run-flags; \
-		elif [ "$(EXAMPLE)" = "assignment-details" ]; then \
-			$(MAKE) run-assignment-details; \
-		else \
-			echo "Error: Unknown example '$(EXAMPLE)'"; \
-			echo "Valid options: bandits, flags, assignment-details"; \
-			exit 1; \
-		fi \
-	fi
-
-# ============================================================================
-# Memory and Performance Testing
-# ============================================================================
-
-# Combined AddressSanitizer + UndefinedBehaviorSanitizer (memory errors, leaks, undefined behavior)
+# Memory testing with sanitizers
 .PHONY: test-memory
-test-memory: clean test-data
-	@echo "Building with AddressSanitizer and UndefinedBehaviorSanitizer..."
-	@$(MAKE) $(TEST_EXECUTABLE) \
-		CXXFLAGS="$$(echo '$(CXXFLAGS)' | sed 's|-Ithird_party|-isystem third_party|g') -fsanitize=address,undefined -fno-omit-frame-pointer -g -O0 -Werror" \
-		CFLAGS="$$(echo '$(CFLAGS)' | sed 's|-Ithird_party|-isystem third_party|g') -fsanitize=address,undefined -fno-omit-frame-pointer -g -O0 -Werror" \
-		LDFLAGS="$(LDFLAGS) -fsanitize=address,undefined"
+test-memory:
+	@mkdir -p $(BUILD_DIR)
+	@cd $(BUILD_DIR) && cmake .. \
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+		-DEPPOCLIENT_BUILD_TESTS=ON \
+		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
+		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH) \
+		-DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O0" \
+		-DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O0"
+	@cd $(BUILD_DIR) && $(MAKE)
 	@echo "Running tests with AddressSanitizer and UndefinedBehaviorSanitizer..."
-	@ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:print_stats=1 \
-	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
-		./$(TEST_EXECUTABLE) "[ufc]"
+	@env ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:print_stats=1 \
+		UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+		./build/test_runner "[ufc]"
 
-# Profile-ready build with timing
+# Performance testing
 .PHONY: test-eval-performance
-test-eval-performance: clean test-data
-	@echo "Building with profiling symbols..."
-	@$(MAKE) $(TEST_EXECUTABLE) CXXFLAGS="$(CXXFLAGS) -g -O2"
+test-eval-performance:
+	@mkdir -p $(BUILD_DIR)
+	@cd $(BUILD_DIR) && cmake .. \
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+		-DEPPOCLIENT_BUILD_TESTS=ON \
+		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
+		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH) \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo
+	@cd $(BUILD_DIR) && $(MAKE)
 	@echo "Running performance tests..."
-	@./$(TEST_EXECUTABLE) "[performance]"
-
-# ============================================================================
-# Code Formatting
-# ============================================================================
+	@./build/test_runner "[performance]"
 
 # Format all source files with clang-format
 .PHONY: format
@@ -219,22 +140,25 @@ format-check:
 	@echo "Checking C++ source formatting..."
 	@find src test examples -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) -exec clang-format --dry-run -Werror {} + && echo "All files are properly formatted!" || (echo "ERROR: Some files need formatting. Run 'make format' to fix."; exit 1)
 
-# Help target
+# Help
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  all                    - Build the library (default)"
-	@echo "  build                  - Build and configure IDE support"
-	@echo "  test                   - Build and run all tests"
+	@echo "  all (default)          - Build everything: library + tests + examples (with -Werror)"
+	@echo "  build                  - Build library only (production-friendly, no -Werror)"
+	@echo "  test                   - Build and run all tests (with -Werror)"
 	@echo "  test-memory            - Run tests with AddressSanitizer and UndefinedBehaviorSanitizer"
 	@echo "  test-eval-performance  - Run flag evaluation performance tests (min/max/avg μs)"
 	@echo "  examples               - Build all examples"
-	@echo "  run-example            - Show available examples and usage"
-	@echo "  run-bandits            - Run the bandits example"
-	@echo "  run-flags              - Run the flag assignments example"
-	@echo "  run-assignment-details - Run the assignment details example"
+	@echo "  run-bandits            - Build and run the bandits example"
+	@echo "  run-flag-assignments   - Build and run the flag_assignments example"
+	@echo "  run-assignment-details - Build and run the assignment_details example"
 	@echo "  format                 - Format all C++ source files with clang-format"
 	@echo "  format-check           - Check if files are properly formatted (CI-friendly)"
 	@echo "  clean                  - Remove build artifacts"
 	@echo "  help                   - Show this help message"
 	@echo ""
+	@echo "Options:"
+	@echo "  TEST_DATA_BRANCH       - Branch of sdk-test-data to fetch (default: main)"
+	@echo "                           Example: make test TEST_DATA_BRANCH=feature-branch"
+
