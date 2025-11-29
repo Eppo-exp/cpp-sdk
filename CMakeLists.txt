@@ -45,6 +45,15 @@ option(EPPOCLIENT_ERR_ON_WARNINGS "Treat compiler warnings as errors" OFF)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# Find RE2 library (required for safe regex handling without exceptions)
+# Try CONFIG mode first (for modern RE2 installations)
+find_package(re2 CONFIG)
+if(NOT re2_FOUND)
+    # Fall back to PkgConfig for system installations
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(RE2 REQUIRED re2)
+endif()
+
 # Collect source files
 file(GLOB EPPOCLIENT_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
@@ -60,6 +69,17 @@ add_library(eppoclient STATIC
     ${EPPOCLIENT_SOURCES}
     ${THIRD_PARTY_SOURCES}
 )
+
+# Link RE2 library
+# PUBLIC because re2/re2.h is included in our public headers (config_response.hpp, rules.hpp)
+if(TARGET re2::re2)
+    # Modern RE2 with CMake config
+    target_link_libraries(eppoclient PUBLIC re2::re2)
+else()
+    # System RE2 via PkgConfig
+    target_include_directories(eppoclient PUBLIC ${RE2_INCLUDE_DIRS})
+    target_link_libraries(eppoclient PUBLIC ${RE2_LIBRARIES})
+endif()
 
 # Set include directories
 target_include_directories(eppoclient

@@ -84,8 +84,35 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture support and cro
 - C++17 compatible compiler (g++, clang++, or MSVC)
 - CMake 3.14+ (if using CMake)
 - Make (if using Make)
+- RE2 - Google's safe regex library
 
-No external dependencies required - all necessary libraries are vendored.
+#### Installing RE2
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install libre2-dev
+```
+
+**macOS (Homebrew):**
+```bash
+brew install re2
+```
+
+**Fedora/RHEL:**
+```bash
+sudo dnf install re2-devel
+```
+
+**From source:**
+```bash
+git clone https://github.com/google/re2.git
+cd re2
+mkdir build && cd build
+cmake .. && make
+sudo make install
+```
+
+Other dependencies (nlohmann/json, semver, etc.) are vendored and require no installation.
 
 ## Quick Start
 

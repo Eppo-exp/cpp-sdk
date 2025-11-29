@@ -1,6 +1,8 @@
 #ifndef RULES_HPP
 #define RULES_HPP
 
+#include <re2/re2.h>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
@@ -38,7 +40,7 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
 // Helper functions for condition evaluation
 std::vector<std::string> convertToStringArray(const nlohmann::json& conditionValue);
 
-bool matches(const AttributeValue& subjectValue, const std::string& conditionValue);
+bool matches(const AttributeValue& subjectValue, const std::shared_ptr<re2::RE2>& pattern);
 
 bool isOneOf(const AttributeValue& attributeValue, const std::vector<std::string>& conditionValue);
 
