@@ -120,7 +120,7 @@ AllocationEvaluationDetails evaluateAllocationWithDetails(
     bool matchesRule = false;
     if (!allocation.rules.empty()) {
         for (const auto& rule : allocation.rules) {
-            if (ruleMatches(rule, augmentedSubjectAttributes, logger)) {
+            if (internal::ruleMatches(rule, augmentedSubjectAttributes, logger)) {
                 matchesRule = true;
                 break;
             }
@@ -296,7 +296,7 @@ const Split* findMatchingSplit(const Allocation& allocation, const std::string& 
     // Check if any rule matches
     bool matchesRule = false;
     for (const auto& rule : allocation.rules) {
-        if (ruleMatches(rule, augmentedSubjectAttributes, logger)) {
+        if (internal::ruleMatches(rule, augmentedSubjectAttributes, logger)) {
             matchesRule = true;
             break;
         }

@@ -3,6 +3,7 @@
 #include "../src/rules.hpp"
 
 using namespace eppoclient;
+using namespace eppoclient::internal;
 
 TEST_CASE("SemVer: Version 2.0.0 > 1.5.0", "[semver]") {
     Condition condition;

@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cerrno>
+#include <cmath>
+#include <cstdlib>
+#include <limits>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
@@ -112,6 +116,69 @@ std::optional<T> getRequiredField(const nlohmann::json& j, std::string_view fiel
         (error) = (error_prefix) + var##_error;             \
         return std::nullopt;                                \
     }
+
+// Safe string-to-number conversion functions
+// These functions safely parse numeric values from strings with comprehensive error checking:
+// - Validates entire string is consumed (no trailing characters)
+// - Detects overflow/underflow via errno
+// - Returns std::nullopt on any parse failure
+
+// Helper function to safely parse double from string
+// Returns std::nullopt if parsing fails, including on overflow/underflow or trailing characters
+inline std::optional<double> safeStrtod(const std::string& str) {
+    char* endptr = nullptr;
+    errno = 0;
+    double result = std::strtod(str.c_str(), &endptr);
+
+    // Check for conversion errors
+    if (endptr == str.c_str()) {
+        return std::nullopt;  // No conversion performed
+    }
+
+    // Check for trailing characters - entire string must be consumed
+    if (*endptr != '\0') {
+        return std::nullopt;  // Trailing garbage
+    }
+
+    // Check for overflow/underflow
+    if (errno == ERANGE) {
+        return std::nullopt;
+    }
+
+    return result;
+}
+
+// Helper function to safely parse int64_t from string
+// Returns std::nullopt if parsing fails, including on overflow/underflow or trailing characters
+inline std::optional<int64_t> safeStrtoll(const std::string& str, int base = 10) {
+    char* endptr = nullptr;
+    errno = 0;
+    long long result = std::strtoll(str.c_str(), &endptr, base);
+
+    // Check for conversion errors
+    if (endptr == str.c_str()) {
+        return std::nullopt;  // No conversion performed
+    }
+
+    // Check for trailing characters - entire string must be consumed
+    if (*endptr != '\0') {
+        return std::nullopt;  // Trailing garbage
+    }
+
+    // Check for overflow/underflow
+    if (errno == ERANGE) {
+        return std::nullopt;
+    }
+
+    // Additional check: ensure the value fits in int64_t
+    // (On most platforms long long == int64_t, but not guaranteed)
+    if (result > std::numeric_limits<int64_t>::max() ||
+        result < std::numeric_limits<int64_t>::min()) {
+        return std::nullopt;
+    }
+
+    return static_cast<int64_t>(result);
+}
 
 }  // namespace internal
 }  // namespace eppoclient

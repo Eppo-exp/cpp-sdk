@@ -23,6 +23,9 @@ using AttributeValue = std::variant<std::monostate,  // Represents null/nil
 
 using Attributes = std::unordered_map<std::string, AttributeValue>;
 
+// Internal implementation details (not part of public API)
+namespace internal {
+
 // Rule matching functions
 // Check if a rule matches the given subject attributes
 bool ruleMatches(const Rule& rule, const Attributes& subjectAttributes,
@@ -60,6 +63,7 @@ std::optional<double> tryToDouble(const nlohmann::json& val);
 // Helper to convert AttributeValue to string representation
 std::string attributeValueToString(const AttributeValue& value);
 
+}  // namespace internal
 }  // namespace eppoclient
 
 #endif  // RULES_H
