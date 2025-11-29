@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <semver/semver.hpp>
 #include <sstream>
+#include <unordered_set>
+#include "json_utils.hpp"
 #include "rules.hpp"
 #include "time_utils.hpp"
 
@@ -26,28 +28,6 @@ void to_json(nlohmann::json& j, const VariationType& vt) {
         case VariationType::JSON:
             j = "JSON";
             break;
-    }
-}
-
-void from_json(const nlohmann::json& j, VariationType& vt) {
-    if (!j.is_string()) {
-        vt = VariationType::STRING;  // Default
-        return;
-    }
-    std::string typeStr = j.get<std::string>();
-    if (typeStr == "STRING") {
-        vt = VariationType::STRING;
-    } else if (typeStr == "INTEGER") {
-        vt = VariationType::INTEGER;
-    } else if (typeStr == "NUMERIC") {
-        vt = VariationType::NUMERIC;
-    } else if (typeStr == "BOOLEAN") {
-        vt = VariationType::BOOLEAN;
-    } else if (typeStr == "JSON") {
-        vt = VariationType::JSON;
-    } else {
-        // Unknown type, default to STRING
-        vt = VariationType::STRING;
     }
 }
 
@@ -115,36 +95,6 @@ void to_json(nlohmann::json& j, const Operator& op) {
         case Operator::LT:
             j = "LT";
             break;
-    }
-}
-
-void from_json(const nlohmann::json& j, Operator& op) {
-    if (!j.is_string()) {
-        op = Operator::ONE_OF;  // Default
-        return;
-    }
-    std::string opStr = j.get<std::string>();
-    if (opStr == "IS_NULL") {
-        op = Operator::IS_NULL;
-    } else if (opStr == "MATCHES") {
-        op = Operator::MATCHES;
-    } else if (opStr == "NOT_MATCHES") {
-        op = Operator::NOT_MATCHES;
-    } else if (opStr == "ONE_OF") {
-        op = Operator::ONE_OF;
-    } else if (opStr == "NOT_ONE_OF") {
-        op = Operator::NOT_ONE_OF;
-    } else if (opStr == "GTE") {
-        op = Operator::GTE;
-    } else if (opStr == "GT") {
-        op = Operator::GT;
-    } else if (opStr == "LTE") {
-        op = Operator::LTE;
-    } else if (opStr == "LT") {
-        op = Operator::LT;
-    } else {
-        // Unknown operator, default to ONE_OF
-        op = Operator::ONE_OF;
     }
 }
 
@@ -226,14 +176,309 @@ std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>> 
     return std::nullopt;
 }
 
+// Internal namespace for implementation details not covered by semver
+namespace internal {
+
+// Custom parsing functions that handle errors gracefully
+
+// Parse Operator enum with validation
+std::optional<Operator> parseOperator(const nlohmann::json& j, std::string& error) {
+    if (!j.is_string()) {
+        error = "Operator must be a string";
+        return std::nullopt;
+    }
+
+    const std::string& opStr = j.get_ref<const std::string&>();
+
+    if (opStr == "IS_NULL")
+        return Operator::IS_NULL;
+    else if (opStr == "MATCHES")
+        return Operator::MATCHES;
+    else if (opStr == "NOT_MATCHES")
+        return Operator::NOT_MATCHES;
+    else if (opStr == "ONE_OF")
+        return Operator::ONE_OF;
+    else if (opStr == "NOT_ONE_OF")
+        return Operator::NOT_ONE_OF;
+    else if (opStr == "GTE")
+        return Operator::GTE;
+    else if (opStr == "GT")
+        return Operator::GT;
+    else if (opStr == "LTE")
+        return Operator::LTE;
+    else if (opStr == "LT")
+        return Operator::LT;
+    else {
+        error = "Unknown operator: " + opStr;
+        return std::nullopt;
+    }
+}
+
+// Parse VariationType enum with validation
+std::optional<VariationType> parseVariationType(const nlohmann::json& j, std::string& error) {
+    if (!j.is_string()) {
+        error = "VariationType must be a string";
+        return std::nullopt;
+    }
+
+    const std::string& typeStr = j.get_ref<const std::string&>();
+
+    if (typeStr == "STRING")
+        return VariationType::STRING;
+    else if (typeStr == "INTEGER")
+        return VariationType::INTEGER;
+    else if (typeStr == "NUMERIC")
+        return VariationType::NUMERIC;
+    else if (typeStr == "BOOLEAN")
+        return VariationType::BOOLEAN;
+    else if (typeStr == "JSON")
+        return VariationType::JSON;
+    else {
+        error = "Unknown variationType: " + typeStr;
+        return std::nullopt;
+    }
+}
+
+std::optional<ShardRange> parseShardRange(const nlohmann::json& j, std::string& error) {
+    TRY_GET_REQUIRED(start, int, j, "start", "ShardRange", error);
+    TRY_GET_REQUIRED(end, int, j, "end", "ShardRange", error);
+
+    ShardRange sr;
+    sr.start = *start;
+    sr.end = *end;
+    return sr;
+}
+
+std::optional<Shard> parseShard(const nlohmann::json& j, std::string& error) {
+    TRY_GET_REQUIRED(salt, std::string, j, "salt", "Shard", error);
+
+    auto rangesIt = j.find("ranges");
+    if (rangesIt == j.end()) {
+        error = "Shard: Missing required field: ranges";
+        return std::nullopt;
+    }
+    if (!rangesIt->is_array()) {
+        error = "Shard: Field 'ranges' must be an array";
+        return std::nullopt;
+    }
+
+    Shard s;
+    s.salt = *salt;
+
+    for (const auto& rangeJson : *rangesIt) {
+        TRY_PARSE(range, parseShardRange, rangeJson, "Shard: Invalid range: ", error);
+        s.ranges.push_back(*range);
+    }
+
+    return s;
+}
+
+std::optional<Split> parseSplit(const nlohmann::json& j, std::string& error) {
+    auto shardsIt = j.find("shards");
+    if (shardsIt == j.end()) {
+        error = "Split: Missing required field: shards";
+        return std::nullopt;
+    }
+    if (!shardsIt->is_array()) {
+        error = "Split: Field 'shards' must be an array";
+        return std::nullopt;
+    }
+
+    TRY_GET_REQUIRED(variationKey, std::string, j, "variationKey", "Split", error);
+
+    Split s;
+    s.variationKey = *variationKey;
+
+    for (const auto& shardJson : *shardsIt) {
+        TRY_PARSE(shard, parseShard, shardJson, "Split: Invalid shard: ", error);
+        s.shards.push_back(*shard);
+    }
+
+    s.extraLogging = j.value("extraLogging", nlohmann::json::object());
+    return s;
+}
+
+std::optional<Condition> parseCondition(const nlohmann::json& j, std::string& error) {
+    auto opIt = j.find("operator");
+    if (opIt == j.end()) {
+        error = "Condition: Missing required field: operator";
+        return std::nullopt;
+    }
+
+    TRY_PARSE(op, parseOperator, *opIt, "Condition: ", error);
+    TRY_GET_REQUIRED(attribute, std::string, j, "attribute", "Condition", error);
+
+    auto valueIt = j.find("value");
+    if (valueIt == j.end()) {
+        error = "Condition: Missing required field: value";
+        return std::nullopt;
+    }
+
+    Condition c;
+    c.op = *op;
+    c.attribute = *attribute;
+    c.value = *valueIt;  // value can be any JSON type
+    return c;
+}
+
+std::optional<Rule> parseRule(const nlohmann::json& j, std::string& error) {
+    auto conditionsIt = j.find("conditions");
+    if (conditionsIt == j.end()) {
+        error = "Rule: Missing required field: conditions";
+        return std::nullopt;
+    }
+    if (!conditionsIt->is_array()) {
+        error = "Rule: Field 'conditions' must be an array";
+        return std::nullopt;
+    }
+
+    Rule r;
+    for (const auto& condJson : *conditionsIt) {
+        TRY_PARSE(condition, parseCondition, condJson, "Rule: Invalid condition: ", error);
+        r.conditions.push_back(*condition);
+    }
+
+    return r;
+}
+
+std::optional<Allocation> parseAllocation(const nlohmann::json& j, std::string& error) {
+    TRY_GET_REQUIRED(key, std::string, j, "key", "Allocation", error);
+
+    auto splitsIt = j.find("splits");
+    if (splitsIt == j.end()) {
+        error = "Allocation: Missing required field: splits";
+        return std::nullopt;
+    }
+    if (!splitsIt->is_array()) {
+        error = "Allocation: Field 'splits' must be an array";
+        return std::nullopt;
+    }
+
+    Allocation a;
+    a.key = *key;
+
+    // Parse optional rules
+    auto rulesIt = j.find("rules");
+    if (rulesIt != j.end()) {
+        if (!rulesIt->is_array()) {
+            error = "Allocation: Field 'rules' must be an array";
+            return std::nullopt;
+        }
+        for (const auto& ruleJson : *rulesIt) {
+            TRY_PARSE(rule, parseRule, ruleJson, "Allocation: Invalid rule: ", error);
+            a.rules.push_back(*rule);
+        }
+    }
+
+    // Parse required splits
+    for (const auto& splitJson : *splitsIt) {
+        TRY_PARSE(split, parseSplit, splitJson, "Allocation: Invalid split: ", error);
+        a.splits.push_back(*split);
+    }
+
+    // Parse optional timestamp fields using getOptionalField
+    auto startAt = getOptionalField<std::string>(j, "startAt");
+    if (startAt) {
+        a.startAt = parseISOTimestamp(*startAt);
+    }
+
+    auto endAt = getOptionalField<std::string>(j, "endAt");
+    if (endAt) {
+        a.endAt = parseISOTimestamp(*endAt);
+    }
+
+    auto doLog = getOptionalField<bool>(j, "doLog");
+    if (doLog) {
+        a.doLog = *doLog;
+    }
+
+    return a;
+}
+
+std::optional<Variation> parseVariation(const nlohmann::json& j, std::string& error) {
+    TRY_GET_REQUIRED(key, std::string, j, "key", "Variation", error);
+
+    auto valueIt = j.find("value");
+    if (valueIt == j.end()) {
+        error = "Variation: Missing required field: value";
+        return std::nullopt;
+    }
+
+    Variation v;
+    v.key = *key;
+    v.value = *valueIt;  // value can be any JSON type
+    return v;
+}
+
+std::optional<FlagConfiguration> parseFlagConfiguration(const nlohmann::json& j,
+                                                        std::string& error) {
+    TRY_GET_REQUIRED(key, std::string, j, "key", "FlagConfiguration", error);
+    TRY_GET_REQUIRED(enabled, bool, j, "enabled", "FlagConfiguration", error);
+
+    auto varTypeIt = j.find("variationType");
+    if (varTypeIt == j.end()) {
+        error = "FlagConfiguration: Missing required field: variationType";
+        return std::nullopt;
+    }
+
+    TRY_PARSE(variationType, parseVariationType, *varTypeIt, "FlagConfiguration: ", error);
+
+    auto variationsIt = j.find("variations");
+    if (variationsIt == j.end()) {
+        error = "FlagConfiguration: Missing required field: variations";
+        return std::nullopt;
+    }
+    if (!variationsIt->is_object()) {
+        error = "FlagConfiguration: Field 'variations' must be an object";
+        return std::nullopt;
+    }
+
+    auto allocationsIt = j.find("allocations");
+    if (allocationsIt == j.end()) {
+        error = "FlagConfiguration: Missing required field: allocations";
+        return std::nullopt;
+    }
+    if (!allocationsIt->is_array()) {
+        error = "FlagConfiguration: Field 'allocations' must be an array";
+        return std::nullopt;
+    }
+
+    // totalShards is optional, defaults to 10000
+    int totalShards = getOptionalField<int>(j, "totalShards").value_or(10000);
+
+    if (totalShards <= 0) {
+        error = "FlagConfiguration: totalShards must be > 0, got " + std::to_string(totalShards);
+        return std::nullopt;
+    }
+
+    FlagConfiguration fc;
+    fc.key = *key;
+    fc.enabled = *enabled;
+    fc.variationType = *variationType;
+    fc.totalShards = totalShards;
+
+    // Parse variations
+    for (auto& [varKey, varJson] : variationsIt->items()) {
+        TRY_PARSE(variation, parseVariation, varJson,
+                  "FlagConfiguration: Invalid variation '" + varKey + "': ", error);
+        fc.variations[varKey] = *variation;
+    }
+
+    // Parse allocations
+    for (const auto& allocJson : *allocationsIt) {
+        TRY_PARSE(allocation, parseAllocation, allocJson,
+                  "FlagConfiguration: Invalid allocation: ", error);
+        fc.allocations.push_back(*allocation);
+    }
+
+    return fc;
+}
+
+}  // namespace internal
+
 // ShardRange JSON conversion
 void to_json(nlohmann::json& j, const ShardRange& sr) {
     j = nlohmann::json{{"start", sr.start}, {"end", sr.end}};
-}
-
-void from_json(const nlohmann::json& j, ShardRange& sr) {
-    j.at("start").get_to(sr.start);
-    j.at("end").get_to(sr.end);
 }
 
 // Shard JSON conversion
@@ -241,23 +486,10 @@ void to_json(nlohmann::json& j, const Shard& s) {
     j = nlohmann::json{{"salt", s.salt}, {"ranges", s.ranges}};
 }
 
-void from_json(const nlohmann::json& j, Shard& s) {
-    j.at("salt").get_to(s.salt);
-    j.at("ranges").get_to(s.ranges);
-}
-
 // Split JSON conversion
 void to_json(nlohmann::json& j, const Split& s) {
     j = nlohmann::json{
         {"shards", s.shards}, {"variationKey", s.variationKey}, {"extraLogging", s.extraLogging}};
-}
-
-void from_json(const nlohmann::json& j, Split& s) {
-    j.at("shards").get_to(s.shards);
-    j.at("variationKey").get_to(s.variationKey);
-    if (j.contains("extraLogging")) {
-        s.extraLogging = j.at("extraLogging");
-    }
 }
 
 // Condition implementation
@@ -292,19 +524,9 @@ void to_json(nlohmann::json& j, const Condition& c) {
     j = nlohmann::json{{"operator", c.op}, {"attribute", c.attribute}, {"value", c.value}};
 }
 
-void from_json(const nlohmann::json& j, Condition& c) {
-    j.at("operator").get_to(c.op);
-    j.at("attribute").get_to(c.attribute);
-    j.at("value").get_to(c.value);
-}
-
 // Rule JSON conversion
 void to_json(nlohmann::json& j, const Rule& r) {
     j = nlohmann::json{{"conditions", r.conditions}};
-}
-
-void from_json(const nlohmann::json& j, Rule& r) {
-    j.at("conditions").get_to(r.conditions);
 }
 
 // Allocation JSON conversion
@@ -326,32 +548,6 @@ void to_json(nlohmann::json& j, const Allocation& a) {
     }
 }
 
-void from_json(const nlohmann::json& j, Allocation& a) {
-    j.at("key").get_to(a.key);
-
-    if (j.contains("rules")) {
-        j.at("rules").get_to(a.rules);
-    } else {
-        a.rules.clear();
-    }
-
-    j.at("splits").get_to(a.splits);
-
-    if (j.contains("startAt")) {
-        auto timeStr = j.at("startAt").get<std::string>();
-        a.startAt = parseISOTimestamp(timeStr);
-    }
-
-    if (j.contains("endAt")) {
-        auto timeStr = j.at("endAt").get<std::string>();
-        a.endAt = parseISOTimestamp(timeStr);
-    }
-
-    if (j.contains("doLog")) {
-        a.doLog = j.at("doLog").get<bool>();
-    }
-}
-
 // JsonVariationValue JSON conversion
 void to_json(nlohmann::json& j, const JsonVariationValue& jvv) {
     j = jvv.value;
@@ -366,13 +562,9 @@ void to_json(nlohmann::json& j, const Variation& v) {
     j = nlohmann::json{{"key", v.key}, {"value", v.value}};
 }
 
-void from_json(const nlohmann::json& j, Variation& v) {
-    j.at("key").get_to(v.key);
-    j.at("value").get_to(v.value);
-}
-
 // FlagConfiguration implementation
-FlagConfiguration::FlagConfiguration() : enabled(false), variationType(), totalShards() {}
+FlagConfiguration::FlagConfiguration()
+    : enabled(false), variationType(VariationType::STRING), totalShards(10000) {}
 
 void FlagConfiguration::precompute() {
     // Parse and cache all variations for performance
@@ -405,15 +597,6 @@ void to_json(nlohmann::json& j, const FlagConfiguration& fc) {
                        {"totalShards", fc.totalShards}};
 }
 
-void from_json(const nlohmann::json& j, FlagConfiguration& fc) {
-    j.at("key").get_to(fc.key);
-    j.at("enabled").get_to(fc.enabled);
-    j.at("variationType").get_to(fc.variationType);
-    j.at("variations").get_to(fc.variations);
-    j.at("allocations").get_to(fc.allocations);
-    j.at("totalShards").get_to(fc.totalShards);
-}
-
 // ConfigResponse implementation
 void ConfigResponse::precompute() {
     // Precompute all flag configurations
@@ -429,12 +612,41 @@ void to_json(nlohmann::json& j, const ConfigResponse& cr) {
 }
 
 void from_json(const nlohmann::json& j, ConfigResponse& cr) {
-    if (j.contains("flags")) {
-        j.at("flags").get_to(cr.flags);
+    cr.flags.clear();
+    cr.bandits.clear();
+
+    // Parse flags - each flag independently, skip invalid ones
+    if (j.contains("flags") && j["flags"].is_object()) {
+        for (auto& [flagKey, flagJson] : j["flags"].items()) {
+            std::string parseError;
+            auto flag = internal::parseFlagConfiguration(flagJson, parseError);
+
+            if (flag) {
+                cr.flags[flagKey] = *flag;
+            }
+            // If parsing failed, flag is simply not included in the map
+        }
     }
 
-    if (j.contains("bandits")) {
-        j.at("bandits").get_to(cr.bandits);
+    // Parse bandits - similar pattern
+    if (j.contains("bandits") && j["bandits"].is_object()) {
+        for (auto& [banditKey, banditJsonArray] : j["bandits"].items()) {
+            // Each bandit entry is an array of BanditVariation
+            if (banditJsonArray.is_array()) {
+                std::vector<BanditVariation> variations;
+                for (const auto& varJson : banditJsonArray) {
+                    std::string parseError;
+                    auto banditVar = internal::parseBanditVariation(varJson, parseError);
+                    if (banditVar) {
+                        variations.push_back(*banditVar);
+                    }
+                    // If parsing failed, variation is simply not included
+                }
+                if (!variations.empty()) {
+                    cr.bandits[banditKey] = variations;
+                }
+            }
+        }
     }
 }
 

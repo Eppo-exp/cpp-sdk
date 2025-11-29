@@ -16,9 +16,8 @@ namespace eppoclient {
 // Enum for variation types
 enum class VariationType { STRING, INTEGER, NUMERIC, BOOLEAN, JSON };
 
-// serialization/deserialization for the nlohmann::json library
+// serialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const VariationType& vt);
-void from_json(const nlohmann::json& j, VariationType& vt);
 
 // Helper functions for VariationType
 std::string variationTypeToString(VariationType type);
@@ -36,16 +35,14 @@ struct ShardRange {
     int end;
 };
 
-// serialization/deserialization for the nlohmann::json library
+// serialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const ShardRange& sr);
-void from_json(const nlohmann::json& j, ShardRange& sr);
 
 // Operator enum
 enum class Operator { IS_NULL, MATCHES, NOT_MATCHES, ONE_OF, NOT_ONE_OF, GTE, GT, LTE, LT };
 
-// serialization/deserialization for the nlohmann::json library
+// serialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Operator& op);
-void from_json(const nlohmann::json& j, Operator& op);
 
 // Shard structure
 struct Shard {
@@ -53,9 +50,8 @@ struct Shard {
     std::vector<ShardRange> ranges;
 };
 
-// serialization/deserialization for the nlohmann::json library
+// serialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Shard& s);
-void from_json(const nlohmann::json& j, Shard& s);
 
 // Split structure
 struct Split {
@@ -64,9 +60,8 @@ struct Split {
     nlohmann::json extraLogging;
 };
 
-// serialization/deserialization for the nlohmann::json library
+// serialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Split& s);
-void from_json(const nlohmann::json& j, Split& s);
 
 // Condition structure
 struct Condition {
@@ -84,18 +79,16 @@ struct Condition {
     void precompute();
 };
 
-// serialization/deserialization for the nlohmann::json library
+// serialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Condition& c);
-void from_json(const nlohmann::json& j, Condition& c);
 
 // Rule structure - contains multiple conditions (AND logic)
 struct Rule {
     std::vector<Condition> conditions;
 };
 
-// serialization/deserialization for the nlohmann::json library
+// serialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Rule& r);
-void from_json(const nlohmann::json& j, Rule& r);
 
 // Allocation structure
 struct Allocation {
@@ -107,9 +100,8 @@ struct Allocation {
     std::optional<bool> doLog;
 };
 
-// serialization/deserialization for the nlohmann::json library
+// serialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Allocation& a);
-void from_json(const nlohmann::json& j, Allocation& a);
 
 // JSON variation value structure
 struct JsonVariationValue {
@@ -126,9 +118,8 @@ struct Variation {
     nlohmann::json value;
 };
 
-// serialization/deserialization for the nlohmann::json library
+// serialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const Variation& v);
-void from_json(const nlohmann::json& j, Variation& v);
 
 // Flag configuration structure
 struct FlagConfiguration {
@@ -148,9 +139,8 @@ struct FlagConfiguration {
     void precompute();
 };
 
-// serialization/deserialization for the nlohmann::json library
+// serialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const FlagConfiguration& fc);
-void from_json(const nlohmann::json& j, FlagConfiguration& fc);
 
 // Top-level config response structure
 struct ConfigResponse {
@@ -163,6 +153,25 @@ struct ConfigResponse {
 // serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const ConfigResponse& cr);
 void from_json(const nlohmann::json& j, ConfigResponse& cr);
+
+// Internal namespace for implementation details not covered by semver
+namespace internal {
+
+// Custom parsing functions that handle errors gracefully.
+// These are INTERNAL APIs and may change without notice.
+std::optional<ShardRange> parseShardRange(const nlohmann::json& j, std::string& error);
+std::optional<Shard> parseShard(const nlohmann::json& j, std::string& error);
+std::optional<Split> parseSplit(const nlohmann::json& j, std::string& error);
+std::optional<Condition> parseCondition(const nlohmann::json& j, std::string& error);
+std::optional<Rule> parseRule(const nlohmann::json& j, std::string& error);
+std::optional<Allocation> parseAllocation(const nlohmann::json& j, std::string& error);
+std::optional<Variation> parseVariation(const nlohmann::json& j, std::string& error);
+std::optional<FlagConfiguration> parseFlagConfiguration(const nlohmann::json& j,
+                                                        std::string& error);
+std::optional<Operator> parseOperator(const nlohmann::json& j, std::string& error);
+std::optional<VariationType> parseVariationType(const nlohmann::json& j, std::string& error);
+
+}  // namespace internal
 
 }  // namespace eppoclient
 

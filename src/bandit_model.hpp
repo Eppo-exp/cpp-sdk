@@ -3,9 +3,11 @@
 
 #include <chrono>
 #include <map>
-#include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
 #include <vector>
+
+#include <nlohmann/json.hpp>
 
 namespace eppoclient {
 
@@ -22,7 +24,6 @@ struct BanditNumericAttributeCoefficient {
 };
 
 void to_json(nlohmann::json& j, const BanditNumericAttributeCoefficient& bnac);
-void from_json(const nlohmann::json& j, BanditNumericAttributeCoefficient& bnac);
 
 /**
  * Coefficient for a categorical attribute in the bandit model.
@@ -37,7 +38,6 @@ struct BanditCategoricalAttributeCoefficient {
 };
 
 void to_json(nlohmann::json& j, const BanditCategoricalAttributeCoefficient& bcac);
-void from_json(const nlohmann::json& j, BanditCategoricalAttributeCoefficient& bcac);
 
 /**
  * Coefficients for a single action in the bandit model.
@@ -55,7 +55,6 @@ struct BanditCoefficients {
 };
 
 void to_json(nlohmann::json& j, const BanditCoefficients& bc);
-void from_json(const nlohmann::json& j, BanditCoefficients& bc);
 
 /**
  * Model data for the bandit algorithm.
@@ -71,7 +70,6 @@ struct BanditModelData {
 };
 
 void to_json(nlohmann::json& j, const BanditModelData& bmd);
-void from_json(const nlohmann::json& j, BanditModelData& bmd);
 
 /**
  * Configuration for a single bandit.
@@ -88,7 +86,6 @@ struct BanditConfiguration {
 };
 
 void to_json(nlohmann::json& j, const BanditConfiguration& bc);
-void from_json(const nlohmann::json& j, BanditConfiguration& bc);
 
 /**
  * Response containing all bandit configurations.
@@ -118,7 +115,24 @@ struct BanditVariation {
 };
 
 void to_json(nlohmann::json& j, const BanditVariation& bv);
-void from_json(const nlohmann::json& j, BanditVariation& bv);
+
+// Internal namespace for implementation details not covered by semver
+namespace internal {
+
+// Custom parsing functions that handle errors gracefully.
+// These are INTERNAL APIs and may change without notice.
+std::optional<BanditNumericAttributeCoefficient> parseBanditNumericAttributeCoefficient(
+    const nlohmann::json& j, std::string& error);
+std::optional<BanditCategoricalAttributeCoefficient> parseBanditCategoricalAttributeCoefficient(
+    const nlohmann::json& j, std::string& error);
+std::optional<BanditCoefficients> parseBanditCoefficients(const nlohmann::json& j,
+                                                          std::string& error);
+std::optional<BanditModelData> parseBanditModelData(const nlohmann::json& j, std::string& error);
+std::optional<BanditConfiguration> parseBanditConfiguration(const nlohmann::json& j,
+                                                            std::string& error);
+std::optional<BanditVariation> parseBanditVariation(const nlohmann::json& j, std::string& error);
+
+}  // namespace internal
 
 }  // namespace eppoclient
 

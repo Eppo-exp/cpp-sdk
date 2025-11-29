@@ -1,7 +1,204 @@
 #include "bandit_model.hpp"
 #include <chrono>
+#include "json_utils.hpp"
 #include "time_utils.hpp"
+
 namespace eppoclient {
+
+// Internal namespace for implementation details not covered by semver
+namespace internal {
+
+// Custom parsing functions that handle errors gracefully
+std::optional<BanditNumericAttributeCoefficient> parseBanditNumericAttributeCoefficient(
+    const nlohmann::json& j, std::string& error) {
+    TRY_GET_REQUIRED(attributeKey, std::string, j, "attributeKey",
+                     "BanditNumericAttributeCoefficient", error);
+    TRY_GET_REQUIRED(coefficient, double, j, "coefficient", "BanditNumericAttributeCoefficient",
+                     error);
+    TRY_GET_REQUIRED(missingValueCoefficient, double, j, "missingValueCoefficient",
+                     "BanditNumericAttributeCoefficient", error);
+
+    BanditNumericAttributeCoefficient bnac;
+    bnac.attributeKey = *attributeKey;
+    bnac.coefficient = *coefficient;
+    bnac.missingValueCoefficient = *missingValueCoefficient;
+    return bnac;
+}
+
+std::optional<BanditCategoricalAttributeCoefficient> parseBanditCategoricalAttributeCoefficient(
+    const nlohmann::json& j, std::string& error) {
+    TRY_GET_REQUIRED(attributeKey, std::string, j, "attributeKey",
+                     "BanditCategoricalAttributeCoefficient", error);
+    TRY_GET_REQUIRED(missingValueCoefficient, double, j, "missingValueCoefficient",
+                     "BanditCategoricalAttributeCoefficient", error);
+
+    // valueCoefficients is an object map - check manually since we can't use getRequiredField for
+    // maps
+    if (!j.contains("valueCoefficients")) {
+        error = "BanditCategoricalAttributeCoefficient: Missing required field: valueCoefficients";
+        return std::nullopt;
+    }
+    if (!j["valueCoefficients"].is_object()) {
+        error =
+            "BanditCategoricalAttributeCoefficient: Field 'valueCoefficients' must be an object";
+        return std::nullopt;
+    }
+
+    BanditCategoricalAttributeCoefficient bcac;
+    bcac.attributeKey = *attributeKey;
+    bcac.missingValueCoefficient = *missingValueCoefficient;
+
+    // Safely parse the map manually
+    for (auto& [key, value] : j["valueCoefficients"].items()) {
+        if (!value.is_number()) {
+            error =
+                "BanditCategoricalAttributeCoefficient: valueCoefficients values must be numbers";
+            return std::nullopt;
+        }
+        bcac.valueCoefficients[key] =
+            value.is_number_float()
+                ? value.get_ref<const nlohmann::json::number_float_t&>()
+                : static_cast<double>(value.get_ref<const nlohmann::json::number_integer_t&>());
+    }
+
+    return bcac;
+}
+
+std::optional<BanditCoefficients> parseBanditCoefficients(const nlohmann::json& j,
+                                                          std::string& error) {
+    TRY_GET_REQUIRED(actionKey, std::string, j, "actionKey", "BanditCoefficients", error);
+    TRY_GET_REQUIRED(intercept, double, j, "intercept", "BanditCoefficients", error);
+
+    // Check required array fields
+    auto checkArrayField = [&](std::string_view fieldName) -> bool {
+        if (!j.contains(fieldName)) {
+            error = std::string("BanditCoefficients: Missing required field: ") +
+                    std::string(fieldName);
+            return false;
+        }
+        if (!j[fieldName].is_array()) {
+            error = std::string("BanditCoefficients: Field '") + std::string(fieldName) +
+                    "' must be an array";
+            return false;
+        }
+        return true;
+    };
+
+    if (!checkArrayField("subjectNumericCoefficients"))
+        return std::nullopt;
+    if (!checkArrayField("subjectCategoricalCoefficients"))
+        return std::nullopt;
+    if (!checkArrayField("actionNumericCoefficients"))
+        return std::nullopt;
+    if (!checkArrayField("actionCategoricalCoefficients"))
+        return std::nullopt;
+
+    BanditCoefficients bc;
+    bc.actionKey = *actionKey;
+    bc.intercept = *intercept;
+
+    // Parse numeric coefficients arrays
+    for (const auto& coeffJson : j["subjectNumericCoefficients"]) {
+        TRY_PARSE(coeff, parseBanditNumericAttributeCoefficient, coeffJson,
+                  "BanditCoefficients: Invalid subjectNumericCoefficient: ", error);
+        bc.subjectNumericCoefficients.push_back(*coeff);
+    }
+
+    // Parse categorical coefficients arrays
+    for (const auto& coeffJson : j["subjectCategoricalCoefficients"]) {
+        TRY_PARSE(coeff, parseBanditCategoricalAttributeCoefficient, coeffJson,
+                  "BanditCoefficients: Invalid subjectCategoricalCoefficient: ", error);
+        bc.subjectCategoricalCoefficients.push_back(*coeff);
+    }
+
+    for (const auto& coeffJson : j["actionNumericCoefficients"]) {
+        TRY_PARSE(coeff, parseBanditNumericAttributeCoefficient, coeffJson,
+                  "BanditCoefficients: Invalid actionNumericCoefficient: ", error);
+        bc.actionNumericCoefficients.push_back(*coeff);
+    }
+
+    for (const auto& coeffJson : j["actionCategoricalCoefficients"]) {
+        TRY_PARSE(coeff, parseBanditCategoricalAttributeCoefficient, coeffJson,
+                  "BanditCoefficients: Invalid actionCategoricalCoefficient: ", error);
+        bc.actionCategoricalCoefficients.push_back(*coeff);
+    }
+
+    return bc;
+}
+
+std::optional<BanditModelData> parseBanditModelData(const nlohmann::json& j, std::string& error) {
+    TRY_GET_REQUIRED(gamma, double, j, "gamma", "BanditModelData", error);
+    TRY_GET_REQUIRED(defaultActionScore, double, j, "defaultActionScore", "BanditModelData", error);
+    TRY_GET_REQUIRED(actionProbabilityFloor, double, j, "actionProbabilityFloor", "BanditModelData",
+                     error);
+
+    // coefficients is an object map - check manually
+    if (!j.contains("coefficients")) {
+        error = "BanditModelData: Missing required field: coefficients";
+        return std::nullopt;
+    }
+    if (!j["coefficients"].is_object()) {
+        error = "BanditModelData: Field 'coefficients' must be an object";
+        return std::nullopt;
+    }
+
+    BanditModelData bmd;
+    bmd.gamma = *gamma;
+    bmd.defaultActionScore = *defaultActionScore;
+    bmd.actionProbabilityFloor = *actionProbabilityFloor;
+
+    for (auto& [actionKey, coeffJson] : j["coefficients"].items()) {
+        TRY_PARSE(coefficients, parseBanditCoefficients, coeffJson,
+                  "BanditModelData: Invalid coefficients for action '" + actionKey + "': ", error);
+        bmd.coefficients[actionKey] = *coefficients;
+    }
+
+    return bmd;
+}
+
+std::optional<BanditConfiguration> parseBanditConfiguration(const nlohmann::json& j,
+                                                            std::string& error) {
+    TRY_GET_REQUIRED(banditKey, std::string, j, "banditKey", "BanditConfiguration", error);
+    TRY_GET_REQUIRED(modelName, std::string, j, "modelName", "BanditConfiguration", error);
+    TRY_GET_REQUIRED(modelVersion, std::string, j, "modelVersion", "BanditConfiguration", error);
+
+    // Check modelData exists before parsing
+    if (!j.contains("modelData")) {
+        error = "BanditConfiguration: Missing required field: modelData";
+        return std::nullopt;
+    }
+
+    TRY_PARSE(modelData, parseBanditModelData, j["modelData"],
+              "BanditConfiguration: Invalid modelData: ", error);
+
+    BanditConfiguration bc;
+    bc.banditKey = *banditKey;
+    bc.modelName = *modelName;
+    bc.modelVersion = *modelVersion;
+    bc.modelData = *modelData;
+
+    if (j.contains("updatedAt") && j["updatedAt"].is_string()) {
+        bc.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>());
+    }
+
+    return bc;
+}
+
+std::optional<BanditVariation> parseBanditVariation(const nlohmann::json& j, std::string& error) {
+    TRY_GET_REQUIRED(key, std::string, j, "key", "BanditVariation", error);
+    TRY_GET_REQUIRED(flagKey, std::string, j, "flagKey", "BanditVariation", error);
+    TRY_GET_REQUIRED(variationKey, std::string, j, "variationKey", "BanditVariation", error);
+    TRY_GET_REQUIRED(variationValue, std::string, j, "variationValue", "BanditVariation", error);
+
+    BanditVariation bv;
+    bv.key = *key;
+    bv.flagKey = *flagKey;
+    bv.variationKey = *variationKey;
+    bv.variationValue = *variationValue;
+    return bv;
+}
+
+}  // namespace internal
 
 // BanditNumericAttributeCoefficient serialization
 void to_json(nlohmann::json& j, const BanditNumericAttributeCoefficient& bnac) {
@@ -10,23 +207,11 @@ void to_json(nlohmann::json& j, const BanditNumericAttributeCoefficient& bnac) {
                        {"missingValueCoefficient", bnac.missingValueCoefficient}};
 }
 
-void from_json(const nlohmann::json& j, BanditNumericAttributeCoefficient& bnac) {
-    j.at("attributeKey").get_to(bnac.attributeKey);
-    j.at("coefficient").get_to(bnac.coefficient);
-    j.at("missingValueCoefficient").get_to(bnac.missingValueCoefficient);
-}
-
 // BanditCategoricalAttributeCoefficient serialization
 void to_json(nlohmann::json& j, const BanditCategoricalAttributeCoefficient& bcac) {
     j = nlohmann::json{{"attributeKey", bcac.attributeKey},
                        {"missingValueCoefficient", bcac.missingValueCoefficient},
                        {"valueCoefficients", bcac.valueCoefficients}};
-}
-
-void from_json(const nlohmann::json& j, BanditCategoricalAttributeCoefficient& bcac) {
-    j.at("attributeKey").get_to(bcac.attributeKey);
-    j.at("missingValueCoefficient").get_to(bcac.missingValueCoefficient);
-    j.at("valueCoefficients").get_to(bcac.valueCoefficients);
 }
 
 // BanditCoefficients serialization
@@ -39,28 +224,12 @@ void to_json(nlohmann::json& j, const BanditCoefficients& bc) {
                        {"actionCategoricalCoefficients", bc.actionCategoricalCoefficients}};
 }
 
-void from_json(const nlohmann::json& j, BanditCoefficients& bc) {
-    j.at("actionKey").get_to(bc.actionKey);
-    j.at("intercept").get_to(bc.intercept);
-    j.at("subjectNumericCoefficients").get_to(bc.subjectNumericCoefficients);
-    j.at("subjectCategoricalCoefficients").get_to(bc.subjectCategoricalCoefficients);
-    j.at("actionNumericCoefficients").get_to(bc.actionNumericCoefficients);
-    j.at("actionCategoricalCoefficients").get_to(bc.actionCategoricalCoefficients);
-}
-
 // BanditModelData serialization
 void to_json(nlohmann::json& j, const BanditModelData& bmd) {
     j = nlohmann::json{{"gamma", bmd.gamma},
                        {"defaultActionScore", bmd.defaultActionScore},
                        {"actionProbabilityFloor", bmd.actionProbabilityFloor},
                        {"coefficients", bmd.coefficients}};
-}
-
-void from_json(const nlohmann::json& j, BanditModelData& bmd) {
-    j.at("gamma").get_to(bmd.gamma);
-    j.at("defaultActionScore").get_to(bmd.defaultActionScore);
-    j.at("actionProbabilityFloor").get_to(bmd.actionProbabilityFloor);
-    j.at("coefficients").get_to(bmd.coefficients);
 }
 
 // BanditConfiguration serialization
@@ -72,27 +241,29 @@ void to_json(nlohmann::json& j, const BanditConfiguration& bc) {
                        {"updatedAt", formatISOTimestamp(bc.updatedAt)}};
 }
 
-void from_json(const nlohmann::json& j, BanditConfiguration& bc) {
-    j.at("banditKey").get_to(bc.banditKey);
-    j.at("modelName").get_to(bc.modelName);
-    j.at("modelVersion").get_to(bc.modelVersion);
-    j.at("modelData").get_to(bc.modelData);
-
-    if (j.contains("updatedAt") && j["updatedAt"].is_string()) {
-        bc.updatedAt = parseISOTimestamp(j["updatedAt"].get<std::string>());
-    }
-}
-
 // BanditResponse serialization
 void to_json(nlohmann::json& j, const BanditResponse& br) {
     j = nlohmann::json{{"bandits", br.bandits}, {"updatedAt", formatISOTimestamp(br.updatedAt)}};
 }
 
 void from_json(const nlohmann::json& j, BanditResponse& br) {
-    j.at("bandits").get_to(br.bandits);
+    br.bandits.clear();
+
+    // Parse bandits - each bandit independently, skip invalid ones
+    if (j.contains("bandits") && j["bandits"].is_object()) {
+        for (auto& [banditKey, banditJson] : j["bandits"].items()) {
+            std::string parseError;
+            auto bandit = internal::parseBanditConfiguration(banditJson, parseError);
+
+            if (bandit) {
+                br.bandits[banditKey] = *bandit;
+            }
+            // If parsing failed, bandit is simply not included in the map
+        }
+    }
 
     if (j.contains("updatedAt") && j["updatedAt"].is_string()) {
-        br.updatedAt = parseISOTimestamp(j["updatedAt"].get<std::string>());
+        br.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>());
     }
 }
 
@@ -102,13 +273,6 @@ void to_json(nlohmann::json& j, const BanditVariation& bv) {
                        {"flagKey", bv.flagKey},
                        {"variationKey", bv.variationKey},
                        {"variationValue", bv.variationValue}};
-}
-
-void from_json(const nlohmann::json& j, BanditVariation& bv) {
-    j.at("key").get_to(bv.key);
-    j.at("flagKey").get_to(bv.flagKey);
-    j.at("variationKey").get_to(bv.variationKey);
-    j.at("variationValue").get_to(bv.variationValue);
 }
 
 }  // namespace eppoclient

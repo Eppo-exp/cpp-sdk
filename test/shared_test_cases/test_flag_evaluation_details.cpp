@@ -90,15 +90,23 @@ static EvaluationDetailsTestCase loadTestCase(const std::string& filepath) {
     file >> j;
 
     EvaluationDetailsTestCase testCase;
-    testCase.flag = j["flag"].get<std::string>();
-    testCase.variationType = j["variationType"].get<VariationType>();
+    testCase.flag = j["flag"].get_ref<const std::string&>();
+
+    // Parse variationType safely
+    std::string parseError;
+    auto varType = internal::parseVariationType(j["variationType"], parseError);
+    if (!varType) {
+        throw std::runtime_error("Invalid variationType in test case: " + parseError);
+    }
+    testCase.variationType = *varType;
+
     testCase.defaultValue = j["defaultValue"];
     testCase.filename = fs::path(filepath).filename().string();
 
     // Parse subjects
     for (const auto& subjectJson : j["subjects"]) {
         EvaluationDetailsTestSubject subject;
-        subject.subjectKey = subjectJson["subjectKey"].get<std::string>();
+        subject.subjectKey = subjectJson["subjectKey"].get_ref<const std::string&>();
         subject.subjectAttributes = parseAttributes(subjectJson["subjectAttributes"]);
         subject.expectedAssignment = subjectJson["assignment"];
 
@@ -106,7 +114,8 @@ static EvaluationDetailsTestCase loadTestCase(const std::string& filepath) {
         if (subjectJson.contains("evaluationDetails") &&
             subjectJson["evaluationDetails"].contains("flagEvaluationCode")) {
             subject.expectedFlagEvaluationCode =
-                subjectJson["evaluationDetails"]["flagEvaluationCode"].get<std::string>();
+                subjectJson["evaluationDetails"]["flagEvaluationCode"]
+                    .get_ref<const std::string&>();
         } else {
             // If no evaluation details, skip this subject
             continue;
