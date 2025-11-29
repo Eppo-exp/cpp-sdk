@@ -10,6 +10,7 @@
 #include <variant>
 #include <vector>
 #include "bandit_model.hpp"
+#include "re2/re2.h"
 
 namespace eppoclient {
 
@@ -74,6 +75,8 @@ struct Condition {
     bool numericValueValid;
     std::shared_ptr<void> semVerValue;
     bool semVerValueValid;
+    std::shared_ptr<re2::RE2> regexValue;  // Precompiled RE2 pattern
+    bool regexValueValid;
 
     Condition();
     void precompute();

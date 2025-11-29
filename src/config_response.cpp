@@ -481,7 +481,12 @@ void to_json(nlohmann::json& j, const Split& s) {
 
 // Condition implementation
 Condition::Condition()
-    : numericValue(0.0), numericValueValid(false), semVerValue(nullptr), semVerValueValid(false) {}
+    : numericValue(0.0),
+      numericValueValid(false),
+      semVerValue(nullptr),
+      semVerValueValid(false),
+      regexValue(nullptr),
+      regexValueValid(false) {}
 
 void Condition::precompute() {
     // Try to parse as numeric value for performance
@@ -503,6 +508,23 @@ void Condition::precompute() {
                 semVerValue = version;
                 semVerValueValid = true;
             }
+        }
+    }
+
+    // Precompile regex pattern for MATCHES/NOT_MATCHES operators using RE2
+    // RE2 doesn't use exceptions - invalid patterns are detected via ok() method
+    regexValueValid = false;
+    if (op == Operator::MATCHES || op == Operator::NOT_MATCHES) {
+        if (value.is_string()) {
+            // Compile the RE2 pattern during precomputation
+            // RE2 is exception-safe and will return ok() = false for invalid patterns
+            auto pattern = std::make_shared<re2::RE2>(value.get<std::string>());
+            if (pattern->ok()) {
+                regexValue = pattern;
+                regexValueValid = true;
+            }
+            // If !pattern->ok(), regexValueValid remains false
+            // The condition will fail to match during evaluation, which is the correct behavior
         }
     }
 }
