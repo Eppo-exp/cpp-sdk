@@ -5,7 +5,8 @@
 
 namespace eppoclient {
 
-std::chrono::system_clock::time_point parseISOTimestamp(const std::string& timestamp) {
+std::chrono::system_clock::time_point parseISOTimestamp(
+    const std::string& timestamp, std::chrono::system_clock::time_point fallbackTime) {
     std::tm tm = {};
     char dot = '\0';
     int milliseconds = 0;
@@ -17,7 +18,7 @@ std::chrono::system_clock::time_point parseISOTimestamp(const std::string& times
     ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
 
     if (ss.fail()) {
-        return std::chrono::system_clock::time_point();
+        return fallbackTime;
     }
 
     // Check if the next character is '.'
@@ -52,7 +53,7 @@ std::chrono::system_clock::time_point parseISOTimestamp(const std::string& times
 #endif
 
     if (time_c == -1) {
-        return std::chrono::system_clock::time_point();
+        return fallbackTime;
     }
     auto tp = std::chrono::system_clock::from_time_t(time_c);
     tp += std::chrono::milliseconds(milliseconds);
