@@ -64,10 +64,22 @@ set(THIRD_PARTY_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/md5_wrapper.c"
 )
 
+# Create a separate library for third-party code to avoid applying our warning flags
+add_library(eppoclient_third_party OBJECT ${THIRD_PARTY_SOURCES})
+target_include_directories(eppoclient_third_party PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party>
+)
+# Disable warnings for third-party code
+if(MSVC)
+    target_compile_options(eppoclient_third_party PRIVATE /W0)
+else()
+    target_compile_options(eppoclient_third_party PRIVATE -w)
+endif()
+
 # Create the library
 add_library(eppoclient STATIC
     ${EPPOCLIENT_SOURCES}
-    ${THIRD_PARTY_SOURCES}
+    $<TARGET_OBJECTS:eppoclient_third_party>
 )
 
 # Link RE2 library
