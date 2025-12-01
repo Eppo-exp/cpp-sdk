@@ -105,8 +105,8 @@ test-memory:
 		-DEPPOCLIENT_BUILD_TESTS=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
 		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH) \
-		-DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O0" \
-		-DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O0"
+		-DCMAKE_BUILD_TYPE=Debug \
+		-DEPPOCLIENT_SANITIZE=ON
 	@cd $(BUILD_DIR) && $(MAKE)
 	@echo "Running tests with AddressSanitizer and UndefinedBehaviorSanitizer..."
 	@env ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:print_stats=1 \

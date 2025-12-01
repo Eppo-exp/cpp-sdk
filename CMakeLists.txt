@@ -41,18 +41,49 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Option to treat warnings as errors
 option(EPPOCLIENT_ERR_ON_WARNINGS "Treat compiler warnings as errors" OFF)
 
+# Option to enable sanitizers
+option(EPPOCLIENT_SANITIZE "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+
 # Set C standard for third party C files
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Find RE2 library (required for safe regex handling without exceptions)
-# Try CONFIG mode first (for modern RE2 installations)
-find_package(re2 CONFIG)
-if(NOT re2_FOUND)
-    # Fall back to PkgConfig for system installations
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(RE2 REQUIRED re2)
-endif()
+# Vendor RE2 library and its dependency Abseil using FetchContent
+include(FetchContent)
+
+# Configure Abseil (required by RE2)
+set(ABSL_PROPAGATE_CXX_STD ON CACHE BOOL "Propagate C++ standard to targets" FORCE)
+set(ABSL_BUILD_TESTING OFF CACHE BOOL "Disable Abseil tests" FORCE)
+set(ABSL_ENABLE_INSTALL OFF CACHE BOOL "Disable Abseil install" FORCE)
+
+message(STATUS "Fetching Abseil library...")
+FetchContent_Declare(
+    abseil-cpp
+    GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+    GIT_TAG 20240722.0  # Use a stable release
+    GIT_SHALLOW ON
+)
+
+# Configure RE2 to build as a static library without installing
+set(RE2_BUILD_TESTING OFF CACHE BOOL "Disable RE2 tests" FORCE)
+
+message(STATUS "Fetching RE2 library...")
+FetchContent_Declare(
+    re2
+    GIT_REPOSITORY https://github.com/google/re2.git
+    GIT_TAG 2024-07-02  # Use a stable release tag
+    GIT_SHALLOW ON
+)
+
+# Temporarily disable install rules for vendored dependencies to avoid export conflicts
+set(_ORIGINAL_SKIP_INSTALL ${CMAKE_SKIP_INSTALL_RULES})
+set(CMAKE_SKIP_INSTALL_RULES ON)
+
+# Make both available
+FetchContent_MakeAvailable(abseil-cpp re2)
+
+# Restore install rules for our own project
+set(CMAKE_SKIP_INSTALL_RULES ${_ORIGINAL_SKIP_INSTALL})
 
 # Collect source files
 file(GLOB EPPOCLIENT_SOURCES CONFIGURE_DEPENDS
@@ -70,16 +101,9 @@ add_library(eppoclient STATIC
     ${THIRD_PARTY_SOURCES}
 )
 
-# Link RE2 library
+# Link vendored RE2 library
 # PUBLIC because re2/re2.h is included in our public headers (config_response.hpp, rules.hpp)
-if(TARGET re2::re2)
-    # Modern RE2 with CMake config
-    target_link_libraries(eppoclient PUBLIC re2::re2)
-else()
-    # System RE2 via PkgConfig
-    target_include_directories(eppoclient PUBLIC ${RE2_INCLUDE_DIRS})
-    target_link_libraries(eppoclient PUBLIC ${RE2_LIBRARIES})
-endif()
+target_link_libraries(eppoclient PUBLIC re2::re2)
 
 # Set include directories
 target_include_directories(eppoclient
@@ -118,6 +142,11 @@ else()
     endif()
     # Disable exceptions on GCC/Clang (PRIVATE so it doesn't affect library users)
     target_compile_options(eppoclient PRIVATE -fno-exceptions)
+    # Enable sanitizers if requested
+    if(EPPOCLIENT_SANITIZE)
+        target_compile_options(eppoclient PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer -g)
+        target_link_options(eppoclient PRIVATE -fsanitize=address,undefined)
+    endif()
 endif()
 
 # Installation
@@ -225,6 +254,11 @@ if(EPPOCLIENT_BUILD_TESTS)
         target_compile_options(test_runner PRIVATE /EHsc /U_HAS_EXCEPTIONS)
     else()
         target_compile_options(test_runner PRIVATE -fexceptions)
+        # Enable sanitizers if requested
+        if(EPPOCLIENT_SANITIZE)
+            target_compile_options(test_runner PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer -g)
+            target_link_options(test_runner PRIVATE -fsanitize=address,undefined)
+        endif()
     endif()
 
     add_test(NAME EppoClientTests COMMAND test_runner WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

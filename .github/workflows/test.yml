@@ -74,7 +74,7 @@ jobs:
       - name: Set up build environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake pkg-config ${{ matrix.compiler.package }} libre2-dev
+          sudo apt-get install -y build-essential cmake pkg-config ${{ matrix.compiler.package }}
 
       - name: Build library
         run: |
@@ -97,7 +97,7 @@ jobs:
       - name: Set up build environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential g++ cmake pkg-config libre2-dev
+          sudo apt-get install -y build-essential g++ cmake pkg-config
 
       - name: Run tests
         run: make test TEST_DATA_BRANCH=${{env.TEST_DATA_BRANCH_NAME}}
@@ -114,7 +114,7 @@ jobs:
       - name: Set up build environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential g++ cmake pkg-config libre2-dev
+          sudo apt-get install -y build-essential g++ cmake pkg-config
 
       - name: Run memory tests
         run: make test-memory TEST_DATA_BRANCH=${{env.TEST_DATA_BRANCH_NAME}}
