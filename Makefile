@@ -13,7 +13,7 @@ all:
 		-DEPPOCLIENT_BUILD_EXAMPLES=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
 		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH)
-	@cmake --build $(BUILD_DIR)
+	@cmake --build $(BUILD_DIR) --config Debug
 	@# Copy compile_commands.json to root for IDE support
 	@if [ -f $(BUILD_DIR)/compile_commands.json ]; then \
 		cp $(BUILD_DIR)/compile_commands.json .; \
@@ -32,7 +32,7 @@ build:
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_TESTS=OFF \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=OFF
-	@cmake --build $(BUILD_DIR)
+	@cmake --build $(BUILD_DIR) --config Release
 	@# Copy compile_commands.json to root for IDE support
 	@if [ -f $(BUILD_DIR)/compile_commands.json ]; then \
 		cp $(BUILD_DIR)/compile_commands.json .; \
@@ -48,14 +48,14 @@ test:
 		-DEPPOCLIENT_BUILD_TESTS=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
 		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH)
-	@cmake --build $(BUILD_DIR)
+	@cmake --build $(BUILD_DIR) --config Debug
 	@# Copy compile_commands.json to root for IDE support
 	@if [ -f $(BUILD_DIR)/compile_commands.json ]; then \
 		cp $(BUILD_DIR)/compile_commands.json .; \
 		echo "Updated compile_commands.json for IDE support"; \
 	fi
 	@echo "Running tests..."
-	@cd $(BUILD_DIR) && ctest -V
+	@cd $(BUILD_DIR) && ctest -V -C Debug
 
 # Build all examples
 .PHONY: examples
@@ -65,7 +65,7 @@ examples:
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_EXAMPLES=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=OFF
-	@cmake --build $(BUILD_DIR)
+	@cmake --build $(BUILD_DIR) --config Release
 	@echo "Examples built in $(BUILD_DIR)/"
 	@echo ""
 	@echo "Run examples with:"
@@ -107,7 +107,7 @@ test-memory:
 		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH) \
 		-DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O0" \
 		-DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O0"
-	@cmake --build $(BUILD_DIR)
+	@cmake --build $(BUILD_DIR) --config Debug
 	@echo "Running tests with AddressSanitizer and UndefinedBehaviorSanitizer..."
 	@env ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:print_stats=1 \
 		UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
@@ -123,7 +123,7 @@ test-eval-performance:
 		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
 		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH) \
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo
-	@cmake --build $(BUILD_DIR)
+	@cmake --build $(BUILD_DIR) --config RelWithDebInfo
 	@echo "Running performance tests..."
 	@./build/test_runner "[performance]"
 
