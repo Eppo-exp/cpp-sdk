@@ -114,15 +114,19 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Install re2 (Windows)
+      - name: Install re2 via vcpkg (Windows)
         if: runner.os == 'Windows'
         run: |
-          vcpkg install re2:x64-windows
+          # Use the standalone C:/vcpkg (bash on Windows accepts forward slashes)
+          /c/vcpkg/vcpkg install re2:x64-windows
           echo "CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+        shell: bash
 
       - name: Run tests
         shell: bash
-        run: make test TEST_DATA_BRANCH=${{env.TEST_DATA_BRANCH_NAME}}
+        run: |
+          echo "CMAKE_TOOLCHAIN_FILE is: $CMAKE_TOOLCHAIN_FILE"
+          make test TEST_DATA_BRANCH=${{env.TEST_DATA_BRANCH_NAME}}
 
   memory-test:
     runs-on: ubuntu-latest
