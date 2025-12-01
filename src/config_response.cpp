@@ -1,5 +1,4 @@
 #include "config_response.hpp"
-#include <cstdlib>
 #include <iomanip>
 #include <semver/semver.hpp>
 #include <sstream>
@@ -122,13 +121,7 @@ std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>> 
                 }
                 return i;
             } else if (value.is_string()) {
-                const std::string& str = value.get<std::string>();
-                char* end = nullptr;
-                long long result = std::strtoll(str.c_str(), &end, 10);
-                if (end == str.c_str() || *end != '\0') {
-                    return std::nullopt;
-                }
-                return static_cast<int64_t>(result);
+                return internal::safeStrtoll(value.get<std::string>());
             }
             return std::nullopt;
 
@@ -136,13 +129,7 @@ std::optional<std::variant<std::string, int64_t, double, bool, nlohmann::json>> 
             if (value.is_number()) {
                 return value.get<double>();
             } else if (value.is_string()) {
-                const std::string& str = value.get<std::string>();
-                char* end = nullptr;
-                double result = std::strtod(str.c_str(), &end);
-                if (end == str.c_str() || *end != '\0') {
-                    return std::nullopt;
-                }
-                return result;
+                return internal::safeStrtod(value.get<std::string>());
             }
             return std::nullopt;
 
@@ -499,7 +486,7 @@ Condition::Condition()
 void Condition::precompute() {
     // Try to parse as numeric value for performance
     numericValueValid = false;
-    auto numericResult = tryToDouble(value);
+    auto numericResult = internal::tryToDouble(value);
     if (numericResult.has_value()) {
         numericValue = *numericResult;
         numericValueValid = true;

@@ -1,11 +1,12 @@
 #include "rules.hpp"
-#include <cstdlib>
 #include <memory>
 #include <regex>
 #include <semver/semver.hpp>
 #include "config_response.hpp"
+#include "json_utils.hpp"
 
 namespace eppoclient {
+namespace internal {
 
 // Rule matches if all conditions match
 bool ruleMatches(const Rule& rule, const Attributes& subjectAttributes, ApplicationLogger* logger) {
@@ -155,21 +156,19 @@ bool isOne(const AttributeValue& attributeValue, const std::string& s) {
 
     } else if (std::holds_alternative<double>(attributeValue)) {
         // Try to parse string as double
-        char* end = nullptr;
-        double value = std::strtod(s.c_str(), &end);
-        if (end == s.c_str() || *end != '\0') {
+        auto value = safeStrtod(s);
+        if (!value.has_value()) {
             return false;  // Parse failed
         }
-        return std::get<double>(attributeValue) == value;
+        return std::get<double>(attributeValue) == *value;
 
     } else if (std::holds_alternative<int64_t>(attributeValue)) {
         // Try to parse string as int64_t
-        char* end = nullptr;
-        long long value = std::strtoll(s.c_str(), &end, 10);
-        if (end == s.c_str() || *end != '\0') {
+        auto value = safeStrtoll(s);
+        if (!value.has_value()) {
             return false;  // Parse failed
         }
-        return std::get<int64_t>(attributeValue) == value;
+        return std::get<int64_t>(attributeValue) == *value;
 
     } else if (std::holds_alternative<bool>(attributeValue)) {
         // Parse boolean from string
@@ -233,13 +232,7 @@ std::optional<double> tryToDouble(const AttributeValue& val) {
         return static_cast<double>(std::get<int64_t>(val));
 
     } else if (std::holds_alternative<std::string>(val)) {
-        const std::string& str = std::get<std::string>(val);
-        char* end = nullptr;
-        double result = std::strtod(str.c_str(), &end);
-        if (end == str.c_str() || *end != '\0') {
-            return std::nullopt;  // Parse failed
-        }
-        return result;
+        return safeStrtod(std::get<std::string>(val));
 
     } else if (std::holds_alternative<bool>(val)) {
         return std::get<bool>(val) ? 1.0 : 0.0;
@@ -253,13 +246,7 @@ std::optional<double> tryToDouble(const nlohmann::json& val) {
     if (val.is_number()) {
         return val.get<double>();
     } else if (val.is_string()) {
-        std::string str = val.get<std::string>();
-        char* end = nullptr;
-        double result = std::strtod(str.c_str(), &end);
-        if (end == str.c_str() || *end != '\0') {
-            return std::nullopt;  // Parse failed
-        }
-        return result;
+        return safeStrtod(val.get<std::string>());
     } else if (val.is_boolean()) {
         return val.get<bool>() ? 1.0 : 0.0;
     }
@@ -282,4 +269,5 @@ std::string attributeValueToString(const AttributeValue& value) {
     return "";
 }
 
+}  // namespace internal
 }  // namespace eppoclient
