@@ -7,14 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ConfigurationStore` convenience API for setting configuration by value:
+  - `ConfigurationStore(Configuration config)` - constructor accepting Configuration by value
+  - `setConfiguration(Configuration config)` - setter accepting Configuration by value
+- Move constructor and move assignment operator for `Configuration` class
+
 ### Changed
 
 - **BREAKING**: `ConfigurationStore::getConfiguration()` now returns `std::shared_ptr<const Configuration>` instead of `Configuration` by value
-  - Returns an empty configuration when no configuration is set (graceful behavior, no null checks required)
   - Eliminates expensive configuration copies on every flag evaluation
-  - Provides thread-safe reference counting via `std::shared_ptr`
-  - Configuration is immutable (`const`) once retrieved
-  - Update your code: use `->` instead of `.` to access configuration methods (no null checks needed)
+- `ConfigurationStore` now uses atomic operations instead of mutex internally for better performance
+
+
 
 ## [1.0.0] - 2025-11-14
 

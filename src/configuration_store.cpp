@@ -5,24 +5,26 @@ namespace eppoclient {
 ConfigurationStore::ConfigurationStore()
     : configuration_(std::make_shared<const Configuration>()) {}
 
-ConfigurationStore::ConfigurationStore(const Configuration& config)
-    : configuration_(std::make_shared<const Configuration>()) {
-    setConfiguration(config);
-}
+ConfigurationStore::ConfigurationStore(std::shared_ptr<const Configuration> config)
+    : configuration_(config ? std::move(config) : std::make_shared<const Configuration>()) {}
+
+ConfigurationStore::ConfigurationStore(Configuration config)
+    : configuration_(std::make_shared<const Configuration>(std::move(config))) {}
 
 std::shared_ptr<const Configuration> ConfigurationStore::getConfiguration() const {
-    return configuration_;
+    return std::atomic_load(&configuration_);
 }
 
-void ConfigurationStore::setConfiguration(const Configuration& config) {
-    // Make a copy of the configuration
-    Configuration newConfig = config;
+void ConfigurationStore::setConfiguration(std::shared_ptr<const Configuration> config) {
+    if (!config) {
+        config = std::make_shared<const Configuration>();
+    }
 
-    // Precompute any derived data in the configuration
-    newConfig.precompute();
+    std::atomic_store(&configuration_, std::move(config));
+}
 
-    // Store the configuration as a shared_ptr
-    configuration_ = std::make_shared<const Configuration>(std::move(newConfig));
+void ConfigurationStore::setConfiguration(Configuration config) {
+    setConfiguration(std::make_shared<const Configuration>(std::move(config)));
 }
 
 }  // namespace eppoclient

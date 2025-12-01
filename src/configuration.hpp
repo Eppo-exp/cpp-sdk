@@ -22,6 +22,10 @@ public:
     Configuration(const Configuration& other) = default;
     Configuration& operator=(const Configuration& other) = default;
 
+    // Move constructor and assignment operator
+    Configuration(Configuration&& other) = default;
+    Configuration& operator=(Configuration&& other) = default;
+
     /**
      * Precompute derived data structures for faster access during evaluation.
      * This method builds the banditFlagAssociations map for O(1) lookup.
