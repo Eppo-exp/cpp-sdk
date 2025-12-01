@@ -371,7 +371,7 @@ std::optional<Allocation> parseAllocation(const nlohmann::json& j, std::string& 
 
     auto endAt = getOptionalField<std::string>(j, "endAt");
     if (endAt) {
-        a.endAt = parseISOTimestamp(*endAt);
+        a.endAt = parseISOTimestamp(*endAt, std::chrono::system_clock::time_point::max());
     }
 
     auto doLog = getOptionalField<bool>(j, "doLog");

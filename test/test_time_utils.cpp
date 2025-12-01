@@ -180,3 +180,77 @@ TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip preserves milli
         std::chrono::duration_cast<std::chrono::milliseconds>(parsed.time_since_epoch()) - seconds;
     REQUIRE(milliseconds.count() == 123);
 }
+
+TEST_CASE("parseISOTimestamp - custom fallback time on invalid input", "[time_utils]") {
+    // Create a custom fallback time: 2025-12-25 10:30:00 UTC
+    std::tm tm = {};
+    tm.tm_year = 2025 - 1900;
+    tm.tm_mon = 12 - 1;
+    tm.tm_mday = 25;
+    tm.tm_hour = 10;
+    tm.tm_min = 30;
+    tm.tm_sec = 0;
+
+    auto customFallback = std::chrono::system_clock::from_time_t(std::mktime(&tm));
+
+    // Parse invalid timestamp with custom fallback
+    std::string invalidTimestamp = "not-a-valid-timestamp";
+    auto result = parseISOTimestamp(invalidTimestamp, customFallback);
+
+    // Should return the custom fallback time
+    REQUIRE(result == customFallback);
+
+    // Verify it's NOT the default time_point
+    REQUIRE(result != std::chrono::system_clock::time_point());
+}
+
+TEST_CASE("parseISOTimestamp - custom fallback time max for endAt", "[time_utils]") {
+    // This tests the actual use case from config_response.cpp where endAt uses max() as fallback
+    auto maxTime = std::chrono::system_clock::time_point::max();
+
+    // Parse invalid timestamp with max as fallback
+    std::string invalidTimestamp = "invalid-date";
+    auto result = parseISOTimestamp(invalidTimestamp, maxTime);
+
+    // Should return max time
+    REQUIRE(result == maxTime);
+}
+
+TEST_CASE("parseISOTimestamp - valid timestamp ignores fallback parameter", "[time_utils]") {
+    // Create a custom fallback time
+    auto customFallback = std::chrono::system_clock::now();
+
+    // Parse valid timestamp with custom fallback
+    std::string validTimestamp = "2024-06-09T14:23:11.123";
+    auto result = parseISOTimestamp(validTimestamp, customFallback);
+
+    // Should return the parsed time, NOT the fallback
+    auto time_t_result = std::chrono::system_clock::to_time_t(result);
+    std::tm* tm = std::gmtime(&time_t_result);
+
+    REQUIRE(tm->tm_year + 1900 == 2024);
+    REQUIRE(tm->tm_mon + 1 == 6);
+    REQUIRE(tm->tm_mday == 9);
+
+    // Verify it's NOT the fallback time
+    REQUIRE(result != customFallback);
+}
+
+TEST_CASE("parseISOTimestamp - default parameter uses default time_point", "[time_utils]") {
+    // Parse invalid timestamp without providing fallback (uses default parameter)
+    std::string invalidTimestamp = "invalid";
+    auto result = parseISOTimestamp(invalidTimestamp);
+
+    // Should return default-constructed time_point (preserves backward compatibility)
+    REQUIRE(result == std::chrono::system_clock::time_point());
+}
+
+TEST_CASE("parseISOTimestamp - empty string with custom fallback", "[time_utils]") {
+    auto customFallback = std::chrono::system_clock::now();
+
+    std::string emptyTimestamp = "";
+    auto result = parseISOTimestamp(emptyTimestamp, customFallback);
+
+    // Should return the custom fallback
+    REQUIRE(result == customFallback);
+}
