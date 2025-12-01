@@ -206,8 +206,7 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
 
     // Create client with configuration
     std::cout << "Creating client...\n";
-    ConfigurationStore configStore;
-    configStore.setConfiguration(config);
+    auto configStore = std::make_shared<ConfigurationStore>(config);
     EppoClient client(configStore, nullptr, nullptr);
     std::cout << "Client created\n";
 

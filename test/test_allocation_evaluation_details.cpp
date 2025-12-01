@@ -23,9 +23,9 @@ ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
 }  // namespace
 
 TEST_CASE("Allocation Evaluation Details - BEFORE_START_TIME", "[allocation-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -57,9 +57,9 @@ TEST_CASE("Allocation Evaluation Details - BEFORE_START_TIME", "[allocation-deta
 }
 
 TEST_CASE("Allocation Evaluation Details - AFTER_END_TIME", "[allocation-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -90,9 +90,9 @@ TEST_CASE("Allocation Evaluation Details - AFTER_END_TIME", "[allocation-details
 }
 
 TEST_CASE("Allocation Evaluation Details - FAILING_RULE", "[allocation-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -146,9 +146,9 @@ TEST_CASE("Allocation Evaluation Details - FAILING_RULE", "[allocation-details]"
 }
 
 TEST_CASE("Allocation Evaluation Details - TRAFFIC_EXPOSURE_MISS", "[allocation-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -176,9 +176,9 @@ TEST_CASE("Allocation Evaluation Details - TRAFFIC_EXPOSURE_MISS", "[allocation-
 }
 
 TEST_CASE("Allocation Evaluation Details - Multiple allocations tracked", "[allocation-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -232,9 +232,9 @@ TEST_CASE("Allocation Evaluation Details - Multiple allocations tracked", "[allo
 
 TEST_CASE("Allocation Evaluation Details - First matching allocation wins",
           "[allocation-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -262,9 +262,9 @@ TEST_CASE("Allocation Evaluation Details - First matching allocation wins",
 }
 
 TEST_CASE("Allocation Evaluation Details - No allocations case", "[allocation-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -285,9 +285,9 @@ TEST_CASE("Allocation Evaluation Details - No allocations case", "[allocation-de
 }
 
 TEST_CASE("Allocation Evaluation Details - Integer flag allocations", "[allocation-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -315,9 +315,9 @@ TEST_CASE("Allocation Evaluation Details - Integer flag allocations", "[allocati
 }
 
 TEST_CASE("Allocation Evaluation Details - JSON flag allocations", "[allocation-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
@@ -338,9 +338,9 @@ TEST_CASE("Allocation Evaluation Details - JSON flag allocations", "[allocation-
 }
 
 TEST_CASE("Allocation Evaluation Details - Allocation key preserved", "[allocation-details]") {
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     ConfigResponse ufc = loadFlagsConfiguration("test/data/ufc/flags-v1.json");
-    configStore.setConfiguration(Configuration(ufc));
+    configStore->setConfiguration(Configuration(ufc));
 
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 

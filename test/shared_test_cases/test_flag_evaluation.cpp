@@ -186,8 +186,8 @@ TEST_CASE("UFC Test Cases - Flag Assignments", "[ufc][flags]") {
     config.precompute();
 
     // Create client with configuration
-    ConfigurationStore configStore;
-    configStore.setConfiguration(config);
+    auto configStore = std::make_shared<ConfigurationStore>();
+    configStore->setConfiguration(config);
 
     EppoClient client(configStore, nullptr, nullptr);
 

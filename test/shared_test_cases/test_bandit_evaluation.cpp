@@ -231,8 +231,8 @@ TEST_CASE("UFC Bandit Test Cases - Bandit Action Selection", "[ufc][bandits]") {
     Configuration combinedConfig(configResponse, banditResponse);
 
     // Create client with configuration
-    ConfigurationStore configStore;
-    configStore.setConfiguration(combinedConfig);
+    auto configStore = std::make_shared<ConfigurationStore>();
+    configStore->setConfiguration(combinedConfig);
 
     // Mock bandit logger to verify logging
     class MockBanditLogger : public BanditLogger {
@@ -443,7 +443,7 @@ TEST_CASE("ContextAttributes conversion functions", "[bandits][helpers]") {
 // Test edge cases
 TEST_CASE("Bandit edge cases", "[bandits][edge-cases]") {
     // Create a simple configuration
-    ConfigurationStore configStore;
+    auto configStore = std::make_shared<ConfigurationStore>();
     EppoClient client(configStore, nullptr, nullptr, nullptr);
 
     SECTION("getBanditAction with empty actions returns variation without action") {
