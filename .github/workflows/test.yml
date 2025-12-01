@@ -107,11 +107,18 @@ jobs:
       - name: Set up build environment (macOS)
         if: runner.os == 'macOS'
         run: |
+          brew install re2
           brew install cmake
 
       - name: Set up MSVC (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install re2 (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          vcpkg install re2:x64-windows
+          echo "CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
 
       - name: Run tests
         shell: bash
