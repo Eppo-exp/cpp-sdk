@@ -62,7 +62,12 @@ std::chrono::system_clock::time_point parseISOTimestamp(
 
 std::string formatISOTimestamp(const std::chrono::system_clock::time_point& tp) {
     auto tt = std::chrono::system_clock::to_time_t(tp);
-    std::tm tm = *std::gmtime(&tt);
+    std::tm tm = {};
+#ifdef _WIN32
+    gmtime_s(&tm, &tt);
+#else
+    tm = *std::gmtime(&tt);
+#endif
 
     // Add milliseconds
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch()) % 1000;
