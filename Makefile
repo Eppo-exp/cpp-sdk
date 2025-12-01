@@ -3,11 +3,22 @@ BUILD_DIR = build
 # Test data branch (override with: make test TEST_DATA_BRANCH=my-branch)
 TEST_DATA_BRANCH ?= main
 
+# CMake toolchain file (for vcpkg on Windows, set via environment variable)
+CMAKE_TOOLCHAIN_FILE ?=
+
+# If CMAKE_TOOLCHAIN_FILE is set, add it to cmake args with proper quoting
+ifneq ($(CMAKE_TOOLCHAIN_FILE),)
+    CMAKE_TOOLCHAIN_ARG := -DCMAKE_TOOLCHAIN_FILE="$(CMAKE_TOOLCHAIN_FILE)"
+else
+    CMAKE_TOOLCHAIN_ARG :=
+endif
+
 # Default target - comprehensive development build (library + tests + examples)
 .PHONY: all
 all:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_TESTS=ON \
 		-DEPPOCLIENT_BUILD_EXAMPLES=ON \
@@ -29,6 +40,7 @@ all:
 build:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_TESTS=OFF \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=OFF
@@ -44,6 +56,7 @@ build:
 test:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_TESTS=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
@@ -62,6 +75,7 @@ test:
 examples:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_EXAMPLES=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=OFF
@@ -101,6 +115,7 @@ clean:
 test-memory:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_TESTS=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
@@ -118,6 +133,7 @@ test-memory:
 test-eval-performance:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_TESTS=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \

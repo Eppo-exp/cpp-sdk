@@ -46,12 +46,20 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Find RE2 library (required for safe regex handling without exceptions)
-# Try CONFIG mode first (for modern RE2 installations)
+# Try CONFIG mode first (for modern RE2 installations with CMake support)
 find_package(re2 CONFIG)
 if(NOT re2_FOUND)
-    # Fall back to PkgConfig for system installations
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(RE2 REQUIRED re2)
+    # Fall back to PkgConfig for system installations (Linux/macOS)
+    find_package(PkgConfig)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(RE2 REQUIRED re2)
+    else()
+        message(FATAL_ERROR "RE2 library not found. Please install RE2:\n"
+            "  - On Windows: Use vcpkg and set CMAKE_TOOLCHAIN_FILE environment variable\n"
+            "    vcpkg install re2:x64-windows\n"
+            "  - On Ubuntu/Debian: sudo apt-get install libre2-dev\n"
+            "  - On macOS: brew install re2")
+    endif()
 endif()
 
 # Collect source files
