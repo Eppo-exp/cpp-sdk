@@ -20,9 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BREAKING**: `ConfigurationStore::getConfiguration()` now returns `std::shared_ptr<const Configuration>` instead of `Configuration` by value
   - Eliminates expensive configuration copies on every flag evaluation
+- **BREAKING**: `Configuration` constructors now take parameters by value for better performance
 - `ConfigurationStore` now uses atomic operations instead of mutex internally for better performance
 
+### Removed
 
+- **BREAKING**: `Configuration::precompute()` removed from public API
+  - It is now called automatically in constructors, so manual invocation is no longer needed
 
 ## [1.0.0] - 2025-11-14
 

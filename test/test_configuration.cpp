@@ -33,12 +33,6 @@ TEST_CASE("Configuration getBanditVariant", "[configuration]") {
     CHECK(!found);
 }
 
-TEST_CASE("Configuration precompute", "[configuration]") {
-    Configuration config;
-
-    // Should not crash when called on empty configuration
-    config.precompute();
-}
 
 TEST_CASE("ConfigResponse with bandits", "[configuration]") {
     // Create a complete config response with both flags and bandits

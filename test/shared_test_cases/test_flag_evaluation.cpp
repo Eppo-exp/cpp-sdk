@@ -183,7 +183,6 @@ TEST_CASE("UFC Test Cases - Flag Assignments", "[ufc][flags]") {
 
     // Create configuration
     Configuration config(configResponse);
-    config.precompute();
 
     // Create client with configuration
     auto configStore = std::make_shared<ConfigurationStore>();
