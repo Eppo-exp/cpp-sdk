@@ -1,5 +1,6 @@
 #include "bandit_model.hpp"
 #include <chrono>
+#include "application_logger.hpp"
 #include "json_utils.hpp"
 #include "time_utils.hpp"
 
@@ -248,6 +249,7 @@ void to_json(nlohmann::json& j, const BanditResponse& br) {
 
 void from_json(const nlohmann::json& j, BanditResponse& br) {
     br.bandits.clear();
+    br.parseStats.clear();
 
     // Parse bandits - each bandit independently, skip invalid ones
     if (j.contains("bandits") && j["bandits"].is_object()) {
@@ -257,13 +259,41 @@ void from_json(const nlohmann::json& j, BanditResponse& br) {
 
             if (bandit) {
                 br.bandits[banditKey] = *bandit;
+            } else {
+                // Track parsing failure
+                br.parseStats.failedBandits++;
+                br.parseStats.errors.push_back("Bandit '" + banditKey + "': " + parseError);
             }
-            // If parsing failed, bandit is simply not included in the map
         }
     }
 
     if (j.contains("updatedAt") && j["updatedAt"].is_string()) {
         br.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>());
+    }
+}
+
+void logParseErrors(const BanditResponse& br, ApplicationLogger* logger) {
+    if (!logger || br.parseStats.errors.empty()) {
+        return;
+    }
+
+    // Log summary
+    if (br.parseStats.failedBandits > 0) {
+        std::string summary = "Bandit configuration parsing encountered errors: " +
+                              std::to_string(br.parseStats.failedBandits) + " bandit(s) failed";
+        logger->warn(summary);
+
+        // Log individual errors (limit to first 10 to avoid spam)
+        int errorCount = 0;
+        for (const auto& error : br.parseStats.errors) {
+            if (errorCount >= 10) {
+                logger->warn("... and " + std::to_string(br.parseStats.errors.size() - errorCount) +
+                             " more error(s). Check parseStats for full details.");
+                break;
+            }
+            logger->warn("  - " + error);
+            errorCount++;
+        }
     }
 }
 

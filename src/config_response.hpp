@@ -14,6 +14,9 @@
 
 namespace eppoclient {
 
+// Forward declaration
+class ApplicationLogger;
+
 // Enum for variation types
 enum class VariationType { STRING, INTEGER, NUMERIC, BOOLEAN, JSON };
 
@@ -151,11 +154,28 @@ struct ConfigResponse {
     std::unordered_map<std::string, std::vector<BanditVariation>> bandits;
 
     void precompute();
+
+    // Parse statistics (populated during deserialization)
+    struct ParseStats {
+        int failedFlags = 0;
+        int failedBanditVariations = 0;
+        std::vector<std::string> errors;
+
+        void clear() {
+            failedFlags = 0;
+            failedBanditVariations = 0;
+            errors.clear();
+        }
+    };
+    ParseStats parseStats;
 };
 
 // serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const ConfigResponse& cr);
 void from_json(const nlohmann::json& j, ConfigResponse& cr);
+
+// Helper function to log parse errors to an ApplicationLogger
+void logParseErrors(const ConfigResponse& cr, ApplicationLogger* logger);
 
 // Internal namespace for implementation details not covered by semver
 namespace internal {

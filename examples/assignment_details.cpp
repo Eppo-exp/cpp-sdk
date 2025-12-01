@@ -69,7 +69,8 @@ public:
 };
 
 // Helper function to load flags configuration from JSON file
-bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigResponse& response) {
+bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigResponse& response,
+                            eppoclient::ApplicationLogger* logger = nullptr) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
         std::cerr << "Failed to open flags configuration file: " << filepath << std::endl;
@@ -80,24 +81,37 @@ bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigRespo
     file >> j;
 
     response = j;
+
+    // Log any parse errors that occurred during deserialization
+    logParseErrors(response, logger);
+
     return true;
 }
 
 int main() {
+    // Create loggers first so we can use them during configuration loading
+    auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();
+    auto applicationLogger = std::make_shared<ConsoleApplicationLogger>();
+
     // Load the flags configuration
     std::cout << "Loading flags configuration..." << std::endl;
     eppoclient::ConfigResponse ufc;
-    if (!loadFlagsConfiguration("config/flags-v1.json", ufc)) {
+    if (!loadFlagsConfiguration("config/flags-v1.json", ufc, applicationLogger.get())) {
         return 1;
+    }
+
+    // Report parse statistics
+    if (ufc.parseStats.failedFlags > 0 || ufc.parseStats.failedBanditVariations > 0) {
+        std::cout << "Note: Configuration loaded with " << ufc.parseStats.failedFlags
+                  << " failed flag(s) and " << ufc.parseStats.failedBanditVariations
+                  << " failed bandit variation(s). See warnings above for details." << std::endl;
+    } else {
+        std::cout << "Configuration loaded successfully with no parse errors." << std::endl;
     }
 
     // Create configuration store and set the configuration
     auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
     configStore->setConfiguration(eppoclient::Configuration(ufc));
-
-    // Create assignment logger and application logger
-    auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();
-    auto applicationLogger = std::make_shared<ConsoleApplicationLogger>();
 
     // Create EppoClient
     eppoclient::EppoClient client(configStore, assignmentLogger, nullptr, applicationLogger);

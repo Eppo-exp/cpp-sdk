@@ -11,6 +11,9 @@
 
 namespace eppoclient {
 
+// Forward declaration
+class ApplicationLogger;
+
 /**
  * Coefficient for a numeric attribute in the bandit model.
  * Represents linear coefficients for continuous/numeric features.
@@ -96,10 +99,25 @@ struct BanditResponse {
     std::chrono::system_clock::time_point updatedAt;
 
     BanditResponse() = default;
+
+    // Parse statistics (populated during deserialization)
+    struct ParseStats {
+        int failedBandits = 0;
+        std::vector<std::string> errors;
+
+        void clear() {
+            failedBandits = 0;
+            errors.clear();
+        }
+    };
+    ParseStats parseStats;
 };
 
 void to_json(nlohmann::json& j, const BanditResponse& br);
 void from_json(const nlohmann::json& j, BanditResponse& br);
+
+// Helper function to log parse errors to an ApplicationLogger
+void logParseErrors(const BanditResponse& br, ApplicationLogger* logger);
 
 /**
  * Associates a bandit with a specific flag variation.

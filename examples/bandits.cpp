@@ -119,7 +119,8 @@ public:
 };
 
 // Helper function to load flags configuration from JSON file
-bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigResponse& response) {
+bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigResponse& response,
+                            eppoclient::ApplicationLogger* logger = nullptr) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
         std::cerr << "Failed to open flags configuration file: " << filepath << std::endl;
@@ -130,11 +131,16 @@ bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigRespo
     file >> j;
 
     response = j;
+
+    // Log any parse errors that occurred during deserialization
+    logParseErrors(response, logger);
+
     return true;
 }
 
 // Helper function to load bandit models from JSON file
-bool loadBanditModels(const std::string& filepath, eppoclient::BanditResponse& response) {
+bool loadBanditModels(const std::string& filepath, eppoclient::BanditResponse& response,
+                      eppoclient::ApplicationLogger* logger = nullptr) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
         std::cerr << "Failed to open bandit models file: " << filepath << std::endl;
@@ -145,29 +151,45 @@ bool loadBanditModels(const std::string& filepath, eppoclient::BanditResponse& r
     file >> j;
 
     response = j;
+
+    // Log any parse errors that occurred during deserialization
+    logParseErrors(response, logger);
+
     return true;
 }
 
 int main() {
+    // Create loggers first so we can use them during configuration loading
+    auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();
+    auto banditLogger = std::make_shared<ConsoleBanditLogger>();
+    auto applicationLogger = std::make_shared<ConsoleApplicationLogger>();
+
     // Load the bandit flags and models configuration
     std::cout << "Loading bandit flags and models configuration..." << std::endl;
     eppoclient::ConfigResponse banditFlags;
     eppoclient::BanditResponse banditModels;
-    if (!loadFlagsConfiguration("config/bandit-flags-v1.json", banditFlags)) {
+    if (!loadFlagsConfiguration("config/bandit-flags-v1.json", banditFlags,
+                                applicationLogger.get())) {
         return 1;
     }
-    if (!loadBanditModels("config/bandit-models-v1.json", banditModels)) {
+    if (!loadBanditModels("config/bandit-models-v1.json", banditModels, applicationLogger.get())) {
         return 1;
+    }
+
+    // Report parse statistics
+    int totalErrors = banditFlags.parseStats.failedFlags +
+                      banditFlags.parseStats.failedBanditVariations +
+                      banditModels.parseStats.failedBandits;
+    if (totalErrors > 0) {
+        std::cout << "Note: Configuration loaded with parse errors. See warnings above for details."
+                  << std::endl;
+    } else {
+        std::cout << "Configuration loaded successfully with no parse errors." << std::endl;
     }
 
     // Create configuration store and set the configuration with both flags and bandits
     auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
     configStore->setConfiguration(eppoclient::Configuration(banditFlags, banditModels));
-
-    // Create assignment logger, bandit logger, and application logger
-    auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();
-    auto banditLogger = std::make_shared<ConsoleBanditLogger>();
-    auto applicationLogger = std::make_shared<ConsoleApplicationLogger>();
 
     // Create EppoClient with all parameters including bandit logger
     eppoclient::EppoClient client(configStore, assignmentLogger, banditLogger, applicationLogger);

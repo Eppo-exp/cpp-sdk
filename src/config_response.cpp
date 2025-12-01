@@ -3,6 +3,7 @@
 #include <semver/semver.hpp>
 #include <sstream>
 #include <unordered_set>
+#include "application_logger.hpp"
 #include "json_utils.hpp"
 #include "rules.hpp"
 #include "time_utils.hpp"
@@ -623,6 +624,7 @@ void to_json(nlohmann::json& j, const ConfigResponse& cr) {
 void from_json(const nlohmann::json& j, ConfigResponse& cr) {
     cr.flags.clear();
     cr.bandits.clear();
+    cr.parseStats.clear();
 
     // Parse flags - each flag independently, skip invalid ones
     if (j.contains("flags") && j["flags"].is_object()) {
@@ -632,8 +634,11 @@ void from_json(const nlohmann::json& j, ConfigResponse& cr) {
 
             if (flag) {
                 cr.flags[flagKey] = *flag;
+            } else {
+                // Track parsing failure
+                cr.parseStats.failedFlags++;
+                cr.parseStats.errors.push_back("Flag '" + flagKey + "': " + parseError);
             }
-            // If parsing failed, flag is simply not included in the map
         }
     }
 
@@ -643,18 +648,59 @@ void from_json(const nlohmann::json& j, ConfigResponse& cr) {
             // Each bandit entry is an array of BanditVariation
             if (banditJsonArray.is_array()) {
                 std::vector<BanditVariation> variations;
+                int variationIndex = 0;
                 for (const auto& varJson : banditJsonArray) {
                     std::string parseError;
                     auto banditVar = internal::parseBanditVariation(varJson, parseError);
                     if (banditVar) {
                         variations.push_back(*banditVar);
+                    } else {
+                        // Track parsing failure
+                        cr.parseStats.failedBanditVariations++;
+                        cr.parseStats.errors.push_back("Bandit variation '" + banditKey + "[" +
+                                                       std::to_string(variationIndex) +
+                                                       "]': " + parseError);
                     }
-                    // If parsing failed, variation is simply not included
+                    variationIndex++;
                 }
                 if (!variations.empty()) {
                     cr.bandits[banditKey] = variations;
                 }
             }
+        }
+    }
+}
+
+void logParseErrors(const ConfigResponse& cr, ApplicationLogger* logger) {
+    if (!logger || cr.parseStats.errors.empty()) {
+        return;
+    }
+
+    // Log summary
+    if (cr.parseStats.failedFlags > 0 || cr.parseStats.failedBanditVariations > 0) {
+        std::string summary = "Configuration parsing encountered errors: ";
+        if (cr.parseStats.failedFlags > 0) {
+            summary += std::to_string(cr.parseStats.failedFlags) + " flag(s) failed";
+        }
+        if (cr.parseStats.failedFlags > 0 && cr.parseStats.failedBanditVariations > 0) {
+            summary += ", ";
+        }
+        if (cr.parseStats.failedBanditVariations > 0) {
+            summary += std::to_string(cr.parseStats.failedBanditVariations) +
+                       " bandit variation(s) failed";
+        }
+        logger->warn(summary);
+
+        // Log individual errors (limit to first 10 to avoid spam)
+        int errorCount = 0;
+        for (const auto& error : cr.parseStats.errors) {
+            if (errorCount >= 10) {
+                logger->warn("... and " + std::to_string(cr.parseStats.errors.size() - errorCount) +
+                             " more error(s). Check parseStats for full details.");
+                break;
+            }
+            logger->warn("  - " + error);
+            errorCount++;
         }
     }
 }
