@@ -227,5 +227,6 @@ if(EPPOCLIENT_BUILD_TESTS)
         target_compile_options(test_runner PRIVATE -fexceptions)
     endif()
 
-    add_test(NAME EppoClientTests COMMAND test_runner WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    # Exclude [performance] tests from default test run (use make test-eval-performance for those)
+    add_test(NAME EppoClientTests COMMAND test_runner "~[performance]" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
