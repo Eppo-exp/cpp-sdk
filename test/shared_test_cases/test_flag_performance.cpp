@@ -95,8 +95,16 @@ static PerformanceTestCase loadTestCase(const std::string& filepath) {
     file >> j;
 
     PerformanceTestCase testCase;
-    testCase.flag = j["flag"].get<std::string>();
-    testCase.variationType = j["variationType"].get<VariationType>();
+    testCase.flag = j["flag"].get_ref<const std::string&>();
+
+    // Parse variationType safely
+    std::string parseError;
+    auto varType = internal::parseVariationType(j["variationType"], parseError);
+    if (!varType) {
+        throw std::runtime_error("Invalid variationType in test case: " + parseError);
+    }
+    testCase.variationType = *varType;
+
     testCase.defaultValue = j["defaultValue"];
     testCase.filename = fs::path(filepath).filename().string();
 
@@ -107,7 +115,7 @@ static PerformanceTestCase loadTestCase(const std::string& filepath) {
                 continue;
             }
 
-            std::string subjectKey = subjectJson["subjectKey"].get<std::string>();
+            std::string subjectKey = subjectJson["subjectKey"].get_ref<const std::string&>();
 
             if (subjectKey.empty()) {
                 continue;

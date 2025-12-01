@@ -79,15 +79,23 @@ TestCase loadTestCase(const std::string& filepath) {
     file >> j;
 
     TestCase testCase;
-    testCase.flag = j["flag"].get<std::string>();
-    testCase.variationType = j["variationType"].get<VariationType>();
+    testCase.flag = j["flag"].get_ref<const std::string&>();
+
+    // Parse variationType safely
+    std::string parseError;
+    auto varType = internal::parseVariationType(j["variationType"], parseError);
+    if (!varType) {
+        throw std::runtime_error("Invalid variationType in test case: " + parseError);
+    }
+    testCase.variationType = *varType;
+
     testCase.defaultValue = j["defaultValue"];
     testCase.filename = fs::path(filepath).filename().string();
 
     // Parse subjects
     for (const auto& subjectJson : j["subjects"]) {
         TestSubject subject;
-        subject.subjectKey = subjectJson["subjectKey"].get<std::string>();
+        subject.subjectKey = subjectJson["subjectKey"].get_ref<const std::string&>();
         subject.subjectAttributes = parseAttributes(subjectJson["subjectAttributes"]);
         subject.expectedAssignment = subjectJson["assignment"];
         testCase.subjects.push_back(subject);
@@ -130,19 +138,20 @@ bool compareValues(
     switch (type) {
         case VariationType::BOOLEAN:
             if (expected.is_boolean() && std::holds_alternative<bool>(*actual)) {
-                return expected.get<bool>() == std::get<bool>(*actual);
+                return expected.get_ref<const json::boolean_t&>() == std::get<bool>(*actual);
             }
             break;
 
         case VariationType::STRING:
             if (expected.is_string() && std::holds_alternative<std::string>(*actual)) {
-                return expected.get<std::string>() == std::get<std::string>(*actual);
+                return expected.get_ref<const std::string&>() == std::get<std::string>(*actual);
             }
             break;
 
         case VariationType::INTEGER:
             if (expected.is_number_integer() && std::holds_alternative<int64_t>(*actual)) {
-                return expected.get<int64_t>() == std::get<int64_t>(*actual);
+                return expected.get_ref<const json::number_integer_t&>() ==
+                       std::get<int64_t>(*actual);
             }
             break;
 
