@@ -1,6 +1,5 @@
 #include "rules.hpp"
 #include <memory>
-#include <regex>
 #include <semver/semver.hpp>
 #include "config_response.hpp"
 #include "json_utils.hpp"
@@ -46,18 +45,28 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
 
     // Handle different operators
     if (condition.op == Operator::MATCHES) {
-        if (!condition.value.is_string()) {
+        // Use precomputed RE2 pattern if available, otherwise pattern is invalid
+        if (!condition.regexValueValid || !condition.regexValue) {
+            // Invalid regex pattern - fail the condition match
+            if (logger != nullptr) {
+                logger->error("Invalid regex pattern in MATCHES condition for attribute: " +
+                              condition.attribute);
+            }
             return false;
         }
-        std::string conditionValueStr = condition.value.get<std::string>();
-        return matches(subjectValue, conditionValueStr);
+        return matches(subjectValue, condition.regexValue);
 
     } else if (condition.op == Operator::NOT_MATCHES) {
-        if (!condition.value.is_string()) {
+        // Use precomputed RE2 pattern if available, otherwise pattern is invalid
+        if (!condition.regexValueValid || !condition.regexValue) {
+            // Invalid regex pattern - fail the condition match
+            if (logger != nullptr) {
+                logger->error("Invalid regex pattern in NOT_MATCHES condition for attribute: " +
+                              condition.attribute);
+            }
             return false;
         }
-        std::string conditionValueStr = condition.value.get<std::string>();
-        return !matches(subjectValue, conditionValueStr);
+        return !matches(subjectValue, condition.regexValue);
 
     } else if (condition.op == Operator::ONE_OF) {
         std::vector<std::string> conditionArray = convertToStringArray(condition.value);
@@ -119,8 +128,12 @@ std::vector<std::string> convertToStringArray(const nlohmann::json& conditionVal
     return result;
 }
 
-// Regex matching function
-bool matches(const AttributeValue& subjectValue, const std::string& conditionValue) {
+// Regex matching function using precompiled RE2 pattern
+bool matches(const AttributeValue& subjectValue, const std::shared_ptr<re2::RE2>& pattern) {
+    if (!pattern) {
+        return false;
+    }
+
     std::string v;
 
     if (std::holds_alternative<std::string>(subjectValue)) {
@@ -133,10 +146,8 @@ bool matches(const AttributeValue& subjectValue, const std::string& conditionVal
         return false;
     }
 
-    // Note: With -fno-exceptions, regex construction will not throw
-    // If the pattern is invalid, the behavior is implementation-defined
-    std::regex pattern(conditionValue);
-    return std::regex_search(v, pattern);
+    // Use RE2::PartialMatch (equivalent to std::regex_search)
+    return re2::RE2::PartialMatch(v, *pattern);
 }
 
 // Check if value is in array
