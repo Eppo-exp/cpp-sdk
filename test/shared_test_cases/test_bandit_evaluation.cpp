@@ -7,7 +7,6 @@
 #include <vector>
 #include "../src/bandit_model.hpp"
 #include "../src/client.hpp"
-#include "../src/config_response.hpp"
 
 using namespace eppoclient;
 using json = nlohmann::json;

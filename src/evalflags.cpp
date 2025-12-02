@@ -1,5 +1,4 @@
 #include "evalflags.hpp"
-#include <cstring>
 #include "third_party/md5_wrapper.h"
 #include "time_utils.hpp"
 #include "version.hpp"

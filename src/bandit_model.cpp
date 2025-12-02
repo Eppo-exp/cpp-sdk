@@ -1,5 +1,4 @@
 #include "bandit_model.hpp"
-#include <chrono>
 #include "json_utils.hpp"
 #include "time_utils.hpp"
 
