@@ -249,6 +249,8 @@ void to_json(nlohmann::json& j, const BanditResponse& br) {
     j = nlohmann::json{{"bandits", br.bandits}, {"updatedAt", formatISOTimestamp(br.updatedAt)}};
 }
 
+namespace internal {
+
 BanditResponse parseBanditResponse(const std::string& banditJson, std::string& error) {
     error.clear();
     BanditResponse response;
@@ -280,7 +282,8 @@ BanditResponse parseBanditResponse(const std::string& banditJson, std::string& e
     // Parse updatedAt field
     if (j.contains("updatedAt") && j["updatedAt"].is_string()) {
         std::string parseError;
-        response.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>(), parseError);
+        response.updatedAt =
+            parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>(), parseError);
         if (!parseError.empty()) {
             allErrors.push_back("Invalid updatedAt: " + parseError);
         }
@@ -296,6 +299,8 @@ BanditResponse parseBanditResponse(const std::string& banditJson, std::string& e
 
     return response;
 }
+
+}  // namespace internal
 
 // BanditVariation serialization
 void to_json(nlohmann::json& j, const BanditVariation& bv) {

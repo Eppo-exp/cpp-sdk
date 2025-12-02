@@ -42,7 +42,7 @@ struct TimingResult {
 };
 
 // Helper function to load flags configuration from JSON file
-static ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
+static Configuration loadFlagsConfiguration(const std::string& filepath) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open flags configuration file: " + filepath);
@@ -52,15 +52,15 @@ static ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
     std::string configJson((std::istreambuf_iterator<char>(file)),
                            std::istreambuf_iterator<char>());
 
-    // Parse configuration using parseConfigResponse
+    // Parse configuration using parseConfiguration
     std::string error;
-    ConfigResponse response = parseConfigResponse(configJson, error);
+    Configuration config = parseConfiguration(configJson, error);
 
     if (!error.empty()) {
         throw std::runtime_error("Failed to parse configuration: " + error);
     }
 
-    return response;
+    return config;
 }
 
 // Helper function to parse attributes from JSON
@@ -191,18 +191,14 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
     // Load flags configuration
     std::string flagsPath = "test/data/ufc/flags-v1.json";
     std::cout << "Loading flags configuration...\n";
-    ConfigResponse configResponse;
+    Configuration config;
     try {
-        configResponse = loadFlagsConfiguration(flagsPath);
+        config = loadFlagsConfiguration(flagsPath);
         std::cout << "Configuration loaded successfully\n";
     } catch (const std::exception& e) {
         std::cerr << "Failed to load configuration: " << e.what() << std::endl;
         throw;
     }
-
-    // Create configuration
-    std::cout << "Creating configuration...\n";
-    Configuration config(configResponse);
 
 
     // Create client with configuration

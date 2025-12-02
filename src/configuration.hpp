@@ -54,6 +54,16 @@ private:
     std::map<std::string, std::map<std::string, BanditVariation>> banditFlagAssociations_;
 };
 
+// Parse complete configuration from JSON strings
+// Returns a Configuration object. If parsing fails, error will contain the error message.
+// banditModelsJson is optional - pass an empty string to parse only flags.
+Configuration parseConfiguration(const std::string& flagConfigJson,
+                                 const std::string& banditModelsJson, std::string& error);
+
+// Parse flag configuration only (without bandit models)
+// Returns a Configuration object. If parsing fails, error will contain the error message.
+Configuration parseConfiguration(const std::string& flagConfigJson, std::string& error);
+
 }  // namespace eppoclient
 
 #endif  // CONFIGURATION_H

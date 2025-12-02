@@ -29,7 +29,7 @@ struct TestCase {
 };
 
 // Helper function to load flags configuration from JSON file
-ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
+Configuration loadFlagsConfiguration(const std::string& filepath) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open flags configuration file: " + filepath);
@@ -39,15 +39,15 @@ ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
     std::string configJson((std::istreambuf_iterator<char>(file)),
                            std::istreambuf_iterator<char>());
 
-    // Parse configuration using parseConfigResponse
+    // Parse configuration using parseConfiguration
     std::string error;
-    ConfigResponse response = parseConfigResponse(configJson, error);
+    Configuration config = parseConfiguration(configJson, error);
 
     if (!error.empty()) {
         throw std::runtime_error("Failed to parse configuration: " + error);
     }
 
-    return response;
+    return config;
 }
 
 // Helper function to parse attributes from JSON
@@ -185,12 +185,9 @@ bool compareValues(
 TEST_CASE("UFC Test Cases - Flag Assignments", "[ufc][flags]") {
     // Load flags configuration
     std::string flagsPath = "test/data/ufc/flags-v1.json";
-    ConfigResponse configResponse;
+    Configuration config;
 
-    REQUIRE_NOTHROW(configResponse = loadFlagsConfiguration(flagsPath));
-
-    // Create configuration
-    Configuration config(configResponse);
+    REQUIRE_NOTHROW(config = loadFlagsConfiguration(flagsPath));
 
     // Create client with configuration
     auto configStore = std::make_shared<ConfigurationStore>();
@@ -308,16 +305,17 @@ TEST_CASE("Load flags configuration", "[ufc][config]") {
     std::string flagsPath = "test/data/ufc/flags-v1.json";
 
     SECTION("Flags file exists and can be parsed") {
-        ConfigResponse response;
-        REQUIRE_NOTHROW(response = loadFlagsConfiguration(flagsPath));
+        Configuration config;
+        REQUIRE_NOTHROW(config = loadFlagsConfiguration(flagsPath));
 
-        // Verify we have some flags
-        REQUIRE(response.flags.size() > 0);
+        // Verify we have some flags (check via getFlagConfiguration)
+        // We know from the test data that "kill-switch" flag exists
+        REQUIRE(config.getFlagConfiguration("kill-switch") != nullptr);
 
         // Check for specific known flags
-        CHECK(response.flags.count("kill-switch") > 0);
-        CHECK(response.flags.count("numeric_flag") > 0);
-        CHECK(response.flags.count("boolean-false-assignment") > 0);
+        CHECK(config.getFlagConfiguration("kill-switch") != nullptr);
+        CHECK(config.getFlagConfiguration("numeric_flag") != nullptr);
+        CHECK(config.getFlagConfiguration("boolean-false-assignment") != nullptr);
     }
 }
 

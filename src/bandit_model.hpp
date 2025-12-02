@@ -100,10 +100,6 @@ struct BanditResponse {
 
 void to_json(nlohmann::json& j, const BanditResponse& br);
 
-// Parse bandit response from a JSON string
-// Returns a BanditResponse. If parsing fails, error will contain the error message.
-BanditResponse parseBanditResponse(const std::string& banditJson, std::string& error);
-
 /**
  * Associates a bandit with a specific flag variation.
  * Used to link feature flag variations to bandit experiments.
@@ -121,6 +117,11 @@ void to_json(nlohmann::json& j, const BanditVariation& bv);
 
 // Internal namespace for implementation details not covered by semver
 namespace internal {
+
+// Parse bandit response from a JSON string
+// Returns a BanditResponse. If parsing fails, error will contain the error message.
+// INTERNAL API: Use parseConfiguration() in the parent namespace instead.
+BanditResponse parseBanditResponse(const std::string& banditJson, std::string& error);
 
 // Custom parsing functions that handle errors gracefully.
 // These are INTERNAL APIs and may change without notice.

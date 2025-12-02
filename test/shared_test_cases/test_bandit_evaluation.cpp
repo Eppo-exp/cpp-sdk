@@ -79,43 +79,36 @@ ContextAttributes parseContextAttributes(const json& attrJson) {
     return attributes;
 }
 
-// Helper function to load bandit flags configuration from JSON file
-ConfigResponse loadBanditFlagsConfiguration(const std::string& filepath) {
-    std::ifstream file(filepath);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open bandit flags configuration file: " + filepath);
+// Helper function to load complete configuration (flags + bandits) from JSON files
+Configuration loadBanditConfiguration(const std::string& flagsFilepath,
+                                      const std::string& banditsFilepath) {
+    // Read flags configuration file
+    std::ifstream flagsFile(flagsFilepath);
+    if (!flagsFile.is_open()) {
+        throw std::runtime_error("Failed to open bandit flags configuration file: " +
+                                 flagsFilepath);
     }
+    std::string flagsJson((std::istreambuf_iterator<char>(flagsFile)),
+                          std::istreambuf_iterator<char>());
 
-    // Read entire file content into a string
-    std::string configJson((std::istreambuf_iterator<char>(file)),
-                           std::istreambuf_iterator<char>());
+    // Read bandit models file
+    std::ifstream banditsFile(banditsFilepath);
+    if (!banditsFile.is_open()) {
+        throw std::runtime_error("Failed to open bandit models configuration file: " +
+                                 banditsFilepath);
+    }
+    std::string banditsJson((std::istreambuf_iterator<char>(banditsFile)),
+                            std::istreambuf_iterator<char>());
 
-    // Parse configuration using parseConfigResponse
+    // Parse both configurations at once
     std::string error;
-    ConfigResponse response = parseConfigResponse(configJson, error);
+    Configuration config = parseConfiguration(flagsJson, banditsJson, error);
 
     if (!error.empty()) {
         throw std::runtime_error("Failed to parse configuration: " + error);
     }
 
-    return response;
-}
-
-// Helper function to load bandit models configuration from JSON file
-BanditResponse loadBanditModelsConfiguration(const std::string& filepath) {
-    std::ifstream file(filepath);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open bandit models configuration file: " + filepath);
-    }
-
-    std::string jsonStr((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-    std::string error;
-    BanditResponse response = parseBanditResponse(jsonStr, error);
-    if (!error.empty()) {
-        throw std::runtime_error("Failed to parse bandit models configuration: " + error);
-    }
-    return response;
+    return config;
 }
 
 // Helper function to load a single bandit test case from JSON file
@@ -208,46 +201,8 @@ TEST_CASE("UFC Bandit Test Cases - Bandit Action Selection", "[ufc][bandits]") {
     std::string flagsPath = "test/data/ufc/bandit-flags-v1.json";
     std::string modelsPath = "test/data/ufc/bandit-models-v1.json";
 
-    // Read flags JSON
-    std::ifstream flagsFile(flagsPath);
-    REQUIRE(flagsFile.is_open());
-    json flagsJson;
-    flagsFile >> flagsJson;
-    flagsFile.close();
-
-    // Read models JSON
-    std::ifstream modelsFile(modelsPath);
-    REQUIRE(modelsFile.is_open());
-    json modelsJson;
-    modelsFile >> modelsJson;
-    modelsFile.close();
-
-    // Create a JSON for ConfigResponse with flags and flattened bandits
-    json configJson;
-    configJson["flags"] = flagsJson["flags"];
-
-    // Parse the bandits array structure - ConfigResponse expects arrays
-    // The bandit-flags-v1.json has bandits as arrays which matches our structure
-    if (flagsJson.contains("bandits")) {
-        configJson["bandits"] = flagsJson["bandits"];
-    }
-
-    // Create ConfigResponse from the flags JSON
-    std::string error;
-    ConfigResponse configResponse = parseConfigResponse(configJson.dump(), error);
-    if (!error.empty()) {
-        throw std::runtime_error("Failed to parse configuration: " + error);
-    }
-
-    // Create BanditResponse from the models JSON
-    std::string banditError;
-    BanditResponse banditResponse = parseBanditResponse(modelsJson.dump(), banditError);
-    if (!banditError.empty()) {
-        throw std::runtime_error("Failed to parse bandit response: " + banditError);
-    }
-
-    // Create configuration with both flags and bandit models
-    Configuration combinedConfig(configResponse, banditResponse);
+    // Load configuration using the combined helper function
+    Configuration combinedConfig = loadBanditConfiguration(flagsPath, modelsPath);
 
     // Create client with configuration
     auto configStore = std::make_shared<ConfigurationStore>();
@@ -359,8 +314,16 @@ TEST_CASE("Load bandit models configuration", "[ufc][bandit-config]") {
     std::string modelsPath = "test/data/ufc/bandit-models-v1.json";
 
     SECTION("Bandit models file exists and can be parsed") {
-        BanditResponse response;
-        REQUIRE_NOTHROW(response = loadBanditModelsConfiguration(modelsPath));
+        // Read the file
+        std::ifstream file(modelsPath);
+        REQUIRE(file.is_open());
+        std::string jsonStr((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
+
+        // Parse using parseBanditResponse
+        std::string error;
+        BanditResponse response = internal::parseBanditResponse(jsonStr, error);
+        REQUIRE(error.empty());
 
         // Verify we have some bandits
         REQUIRE(response.bandits.size() > 0);

@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ConfigurationStore(Configuration config)` - constructor accepting Configuration by value
   - `setConfiguration(Configuration config)` - setter accepting Configuration by value
 - Move constructor and move assignment operator for `Configuration` class
+- `parseConfiguration()` convenience function for parsing both flag configuration and bandit models in a single call
+  - Takes flag config JSON, bandit models JSON, and error reference parameter
+  - Returns a fully constructed `Configuration` object with both parsed configurations
+  - Simplifies setup for applications using contextual bandits
 
 ### Changed
 
@@ -22,10 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Eliminates expensive configuration copies on every flag evaluation
 - **BREAKING**: `Configuration` constructors now take parameters by value for better performance
 - `ConfigurationStore` now uses atomic operations instead of mutex internally for better performance
-- **BREAKING**: Replaced `from_json(const nlohmann::json&, BanditResponse&)` with `parseBanditResponse(const std::string&, std::string&)`
-  - New function takes JSON string and error reference parameter for consistent error tracking
-  - Returns parsed `BanditResponse` with errors reported via the error parameter
-  - Matches the same pattern as `parseConfigResponse()` for configuration parsing
 
 ### Removed
 

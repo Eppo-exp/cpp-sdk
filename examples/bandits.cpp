@@ -118,21 +118,30 @@ public:
     }
 };
 
-// Helper function to load flags configuration from JSON file
-bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigResponse& response) {
-    std::ifstream file(filepath);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open flags configuration file: " << filepath << std::endl;
+// Helper function to load complete configuration (flags + bandits) from JSON files
+bool loadConfiguration(const std::string& flagsFilepath, const std::string& banditsFilepath,
+                       eppoclient::Configuration& config) {
+    // Read flags configuration file
+    std::ifstream flagsFile(flagsFilepath);
+    if (!flagsFile.is_open()) {
+        std::cerr << "Failed to open flags configuration file: " << flagsFilepath << std::endl;
         return false;
     }
+    std::string flagsJson((std::istreambuf_iterator<char>(flagsFile)),
+                          std::istreambuf_iterator<char>());
 
-    // Read entire file content into a string
-    std::string configJson((std::istreambuf_iterator<char>(file)),
-                           std::istreambuf_iterator<char>());
+    // Read bandit models file
+    std::ifstream banditsFile(banditsFilepath);
+    if (!banditsFile.is_open()) {
+        std::cerr << "Failed to open bandit models file: " << banditsFilepath << std::endl;
+        return false;
+    }
+    std::string banditsJson((std::istreambuf_iterator<char>(banditsFile)),
+                            std::istreambuf_iterator<char>());
 
-    // Parse configuration using parseConfigResponse
+    // Parse both configurations at once
     std::string error;
-    response = eppoclient::parseConfigResponse(configJson, error);
+    config = eppoclient::parseConfiguration(flagsJson, banditsJson, error);
 
     if (!error.empty()) {
         std::cerr << "Failed to parse configuration: " << error << std::endl;
@@ -142,42 +151,17 @@ bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigRespo
     return true;
 }
 
-// Helper function to load bandit models from JSON file
-bool loadBanditModels(const std::string& filepath, eppoclient::BanditResponse& response) {
-    std::ifstream file(filepath);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open bandit models file: " << filepath << std::endl;
-        return false;
-    }
-
-    std::string jsonStr((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-    std::string error;
-    response = eppoclient::parseBanditResponse(jsonStr, error);
-
-    if (!error.empty()) {
-        std::cerr << "Error parsing bandit models: " << error << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
 int main() {
     // Load the bandit flags and models configuration
     std::cout << "Loading bandit flags and models configuration..." << std::endl;
-    eppoclient::ConfigResponse banditFlags;
-    eppoclient::BanditResponse banditModels;
-    if (!loadFlagsConfiguration("config/bandit-flags-v1.json", banditFlags)) {
-        return 1;
-    }
-    if (!loadBanditModels("config/bandit-models-v1.json", banditModels)) {
+    eppoclient::Configuration config;
+    if (!loadConfiguration("config/bandit-flags-v1.json", "config/bandit-models-v1.json", config)) {
         return 1;
     }
 
     // Create configuration store and set the configuration with both flags and bandits
     auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
-    configStore->setConfiguration(eppoclient::Configuration(banditFlags, banditModels));
+    configStore->setConfiguration(config);
 
     // Create assignment logger, bandit logger, and application logger
     auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();

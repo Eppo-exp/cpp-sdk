@@ -68,7 +68,7 @@ TEST_CASE("ConfigResponse with bandits", "[configuration]") {
 
     // Parse configuration using parseConfigResponse
     std::string error;
-    ConfigResponse response = parseConfigResponse(jsonStr, error);
+    ConfigResponse response = internal::parseConfigResponse(jsonStr, error);
     REQUIRE(error.empty());
 
     // Verify structure
@@ -142,7 +142,7 @@ TEST_CASE("BanditResponse with multiple bandits", "[configuration]") {
 
     // Deserialize to BanditResponse
     std::string error;
-    BanditResponse response = parseBanditResponse(jsonStr, error);
+    BanditResponse response = internal::parseBanditResponse(jsonStr, error);
     CHECK(error.empty());
 
     // Verify structure
@@ -172,4 +172,161 @@ TEST_CASE("BanditResponse with multiple bandits", "[configuration]") {
     // Verify round-trip
     CHECK(j2["bandits"]["bandit-1"]["modelName"] == "falcon");
     CHECK(j2["bandits"]["bandit-2"]["modelName"] == "contextual");
+}
+
+TEST_CASE("parseConfiguration convenience function", "[configuration]") {
+    std::string flagConfigJson = R"({
+        "flags": {
+            "test-flag": {
+                "key": "test-flag",
+                "enabled": true,
+                "variationType": "STRING",
+                "variations": {
+                    "control": {
+                        "key": "control",
+                        "value": "default"
+                    }
+                },
+                "allocations": [],
+                "totalShards": 10000
+            }
+        }
+    })";
+
+    std::string banditModelsJson = R"({
+        "bandits": {
+            "test-bandit": {
+                "banditKey": "test-bandit",
+                "modelName": "falcon",
+                "modelVersion": "v1",
+                "updatedAt": "2024-01-15T10:30:00Z",
+                "modelData": {
+                    "gamma": 1.0,
+                    "defaultActionScore": 0.0,
+                    "actionProbabilityFloor": 0.0,
+                    "coefficients": {}
+                }
+            }
+        }
+    })";
+
+    // Parse both configurations
+    std::string error;
+    Configuration config = parseConfiguration(flagConfigJson, banditModelsJson, error);
+    CHECK(error.empty());
+
+    // Verify flag was parsed
+    const FlagConfiguration* flag = config.getFlagConfiguration("test-flag");
+    REQUIRE(flag != nullptr);
+    CHECK(flag->key == "test-flag");
+    CHECK(flag->enabled == true);
+
+    // Verify bandit was parsed
+    const BanditConfiguration* bandit = config.getBanditConfiguration("test-bandit");
+    REQUIRE(bandit != nullptr);
+    CHECK(bandit->banditKey == "test-bandit");
+    CHECK(bandit->modelName == "falcon");
+}
+
+TEST_CASE("parseConfiguration with invalid flag config", "[configuration]") {
+    std::string flagConfigJson = "invalid json";
+    std::string banditModelsJson = R"({"bandits": {}})";
+
+    std::string error;
+    Configuration config = parseConfiguration(flagConfigJson, banditModelsJson, error);
+
+    // Should have an error
+    CHECK(!error.empty());
+    CHECK(error.find("Configuration parsing error") != std::string::npos);
+}
+
+TEST_CASE("parseConfiguration with invalid bandit config", "[configuration]") {
+    std::string flagConfigJson = R"({"flags": {}})";
+    std::string banditModelsJson = "invalid json";
+
+    std::string error;
+    Configuration config = parseConfiguration(flagConfigJson, banditModelsJson, error);
+
+    // Should have an error
+    CHECK(!error.empty());
+    CHECK(error.find("Bandit models parsing error") != std::string::npos);
+}
+
+TEST_CASE("parseConfiguration without bandit models", "[configuration]") {
+    std::string flagConfigJson = R"({
+        "flags": {
+            "test-flag": {
+                "key": "test-flag",
+                "enabled": true,
+                "variationType": "BOOLEAN",
+                "variations": {
+                    "on": {
+                        "key": "on",
+                        "value": true
+                    },
+                    "off": {
+                        "key": "off",
+                        "value": false
+                    }
+                },
+                "allocations": [],
+                "totalShards": 10000
+            }
+        }
+    })";
+
+    // Parse with empty bandit models JSON
+    std::string error;
+    Configuration config = parseConfiguration(flagConfigJson, "", error);
+    CHECK(error.empty());
+
+    // Verify flag was parsed
+    const FlagConfiguration* flag = config.getFlagConfiguration("test-flag");
+    REQUIRE(flag != nullptr);
+    CHECK(flag->key == "test-flag");
+    CHECK(flag->enabled == true);
+
+    // Verify no bandit configuration
+    const BanditConfiguration* bandit = config.getBanditConfiguration("test-bandit");
+    CHECK(bandit == nullptr);
+}
+
+TEST_CASE("parseConfiguration flags-only overload", "[configuration]") {
+    std::string flagConfigJson = R"({
+        "flags": {
+            "simple-flag": {
+                "key": "simple-flag",
+                "enabled": true,
+                "variationType": "STRING",
+                "variations": {
+                    "a": {
+                        "key": "a",
+                        "value": "variant-a"
+                    },
+                    "b": {
+                        "key": "b",
+                        "value": "variant-b"
+                    }
+                },
+                "allocations": [],
+                "totalShards": 10000
+            }
+        }
+    })";
+
+    // Parse with two-parameter overload (no bandits)
+    std::string error;
+    Configuration config = parseConfiguration(flagConfigJson, error);
+    CHECK(error.empty());
+
+    // Verify flag was parsed
+    const FlagConfiguration* flag = config.getFlagConfiguration("simple-flag");
+    REQUIRE(flag != nullptr);
+    CHECK(flag->key == "simple-flag");
+    CHECK(flag->enabled == true);
+    CHECK(flag->variations.size() == 2);
+
+    // Verify no bandit configuration
+    const BanditConfiguration* bandit = config.getBanditConfiguration("any-bandit");
+    CHECK(bandit == nullptr);
 }

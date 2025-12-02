@@ -207,7 +207,7 @@ TEST_CASE("BanditResponse serialization", "[bandit_model]") {
 
     // Deserialize from JSON
     std::string error2;
-    BanditResponse response2 = parseBanditResponse(j.dump(), error2);
+    BanditResponse response2 = internal::parseBanditResponse(j.dump(), error2);
     CHECK(error2.empty());
     CHECK(response2.bandits.size() == 1);
     CHECK(response2.bandits["bandit1"].banditKey == "bandit1");
@@ -260,7 +260,7 @@ TEST_CASE("Complete JSON round-trip", "[bandit_model]") {
 
     // Deserialize to BanditResponse
     std::string error;
-    BanditResponse response = parseBanditResponse(jsonStr, error);
+    BanditResponse response = internal::parseBanditResponse(jsonStr, error);
     CHECK(error.empty());
 
     // Verify structure

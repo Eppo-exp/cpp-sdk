@@ -138,7 +138,7 @@ std::string configJson = R"({
 
 // Parse configuration from JSON string
 std::string error;
-eppoclient::ConfigResponse config = eppoclient::parseConfigResponse(configJson, error);
+eppoclient::Configuration config = eppoclient::parseConfiguration(configJson, error);
 if (!error.empty()) {
     std::cerr << "Configuration parsing error: " << error << std::endl;
     return 1;
@@ -146,7 +146,7 @@ if (!error.empty()) {
 
 // Create and initialize the configuration store
 eppoclient::ConfigurationStore configStore;
-configStore.setConfiguration(eppoclient::Configuration(config));
+configStore.setConfiguration(config);
 
 // Create the client (configStore must outlive client)
 eppoclient::EppoClient client(configStore);
@@ -268,12 +268,12 @@ int main() {
     eppoclient::ConfigurationStore configStore;
     std::string configJson = "...";  // Your JSON config string
     std::string error;
-    eppoclient::ConfigResponse config = eppoclient::parseConfigResponse(configJson, error);
+    eppoclient::Configuration config = eppoclient::parseConfiguration(configJson, error);
     if (!error.empty()) {
         std::cerr << "Configuration parsing error: " << error << std::endl;
         return 1;
     }
-    configStore.setConfiguration(eppoclient::Configuration(config));
+    configStore.setConfiguration(config);
 
     // Create loggers
     auto assignmentLogger = std::make_shared<MyAssignmentLogger>();
@@ -328,24 +328,19 @@ To use bandits, you need to load both flag configuration and bandit models:
 std::string flagConfigJson = "...";  // Your flag config JSON
 std::string banditModelsJson = "...";  // Your bandit models JSON
 
-// Parse flag configuration
-std::string configError;
-eppoclient::ConfigResponse flagConfig = eppoclient::parseConfigResponse(flagConfigJson, configError);
-if (!configError.empty()) {
-    std::cerr << "Configuration parsing error: " << configError << std::endl;
-    return 1;
-}
-
-// Parse bandit models
-std::string banditError;
-eppoclient::BanditResponse banditModels = eppoclient::parseBanditResponse(banditModelsJson, banditError);
-if (!banditError.empty()) {
-    std::cerr << "Bandit models parsing error: " << banditError << std::endl;
+std::string error;
+eppoclient::Configuration config = eppoclient::parseConfiguration(
+    flagConfigJson,
+    banditModelsJson,
+    error
+);
+if (!error.empty()) {
+    std::cerr << "Configuration parsing error: " << error << std::endl;
     return 1;
 }
 
 eppoclient::ConfigurationStore configStore;
-configStore.setConfiguration(eppoclient::Configuration(flagConfig, banditModels));
+configStore.setConfiguration(config);
 
 // Create bandit logger to track bandit actions
 class MyBanditLogger : public eppoclient::BanditLogger {
@@ -586,12 +581,12 @@ int main() {
     eppoclient::ConfigurationStore configStore;
     std::string configJson = "...";  // Your JSON config string
     std::string error;
-    eppoclient::ConfigResponse config = eppoclient::parseConfigResponse(configJson, error);
+    eppoclient::Configuration config = eppoclient::parseConfiguration(configJson, error);
     if (!error.empty()) {
         std::cerr << "Configuration parsing error: " << error << std::endl;
         return 1;
     }
-    configStore.setConfiguration(eppoclient::Configuration(config));
+    configStore.setConfiguration(config);
 
     auto applicationLogger = std::make_shared<MyApplicationLogger>();
     eppoclient::EppoClient client(

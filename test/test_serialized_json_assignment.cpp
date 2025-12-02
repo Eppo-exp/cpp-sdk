@@ -45,7 +45,7 @@ ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
 
     // Parse configuration using parseConfigResponse
     std::string error;
-    ConfigResponse response = parseConfigResponse(configJson, error);
+    ConfigResponse response = internal::parseConfigResponse(configJson, error);
 
     if (!error.empty()) {
         throw std::runtime_error("Failed to parse configuration: " + error);

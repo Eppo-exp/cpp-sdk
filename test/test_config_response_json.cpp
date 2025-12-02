@@ -166,7 +166,7 @@ TEST_CASE("ConfigResponse deserialization - empty config", "[config_response][js
     j["flags"] = json::object();
 
     std::string error;
-    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    ConfigResponse response = internal::parseConfigResponse(j.dump(), error);
     REQUIRE(error.empty());
 
     REQUIRE(response.flags.empty());
@@ -192,7 +192,7 @@ TEST_CASE("ConfigResponse deserialization - single simple flag", "[config_respon
     })"_json;
 
     std::string error;
-    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    ConfigResponse response = internal::parseConfigResponse(j.dump(), error);
     REQUIRE(error.empty());
 
     REQUIRE(response.flags.size() == 1);
@@ -252,7 +252,7 @@ TEST_CASE("ConfigResponse deserialization - all variation types", "[config_respo
     })"_json;
 
     std::string error;
-    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    ConfigResponse response = internal::parseConfigResponse(j.dump(), error);
     REQUIRE(error.empty());
 
     REQUIRE(response.flags.size() == 5);
@@ -310,7 +310,7 @@ TEST_CASE("ConfigResponse deserialization - flag with allocations", "[config_res
     })"_json;
 
     std::string error;
-    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    ConfigResponse response = internal::parseConfigResponse(j.dump(), error);
     REQUIRE(error.empty());
 
     REQUIRE(response.flags.size() == 1);
@@ -334,7 +334,7 @@ TEST_CASE("ConfigResponse deserialization - from real UFC file", "[config_respon
     file >> j;
 
     std::string error;
-    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    ConfigResponse response = internal::parseConfigResponse(j.dump(), error);
     REQUIRE(error.empty());
 
     // Verify some expected flags from the test file
@@ -374,7 +374,7 @@ TEST_CASE("ConfigResponse round-trip - simple flag", "[config_response][json]") 
 
     // Deserialize
     std::string error;
-    ConfigResponse deserialized = parseConfigResponse(j.dump(), error);
+    ConfigResponse deserialized = internal::parseConfigResponse(j.dump(), error);
     REQUIRE(error.empty());
 
     // Verify
@@ -459,7 +459,7 @@ TEST_CASE("ConfigResponse round-trip - complex flag with allocations", "[config_
 
     // Deserialize
     std::string error;
-    ConfigResponse deserialized = parseConfigResponse(j.dump(), error);
+    ConfigResponse deserialized = internal::parseConfigResponse(j.dump(), error);
     REQUIRE(error.empty());
 
     // Verify structure is preserved
@@ -503,7 +503,7 @@ TEST_CASE("ConfigResponse precompute after deserialization", "[config_response][
     })"_json;
 
     std::string error;
-    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    ConfigResponse response = internal::parseConfigResponse(j.dump(), error);
     REQUIRE(error.empty());
 
     // Precompute should not crash
@@ -560,7 +560,7 @@ TEST_CASE("ConfigResponse usage example - deserialize from file", "[config_respo
     file >> j;
 
     std::string error;
-    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    ConfigResponse response = internal::parseConfigResponse(j.dump(), error);
     REQUIRE(error.empty());
 
     // Verify the response is valid

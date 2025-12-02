@@ -617,6 +617,8 @@ void to_json(nlohmann::json& j, const ConfigResponse& cr) {
     j = nlohmann::json{{"flags", cr.flags}, {"bandits", cr.bandits}};
 }
 
+namespace internal {
+
 ConfigResponse parseConfigResponse(const std::string& configJson, std::string& error) {
     error.clear();
     ConfigResponse response;
@@ -682,5 +684,7 @@ ConfigResponse parseConfigResponse(const std::string& configJson, std::string& e
 
     return response;
 }
+
+}  // namespace internal
 
 }  // namespace eppoclient

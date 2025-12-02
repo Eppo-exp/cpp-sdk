@@ -60,4 +60,34 @@ const BanditConfiguration* Configuration::getBanditConfiguration(const std::stri
     return &(it->second);
 }
 
+Configuration parseConfiguration(const std::string& flagConfigJson,
+                                 const std::string& banditModelsJson, std::string& error) {
+    error.clear();
+
+    // Parse flag configuration
+    std::string flagError;
+    ConfigResponse flagConfig = internal::parseConfigResponse(flagConfigJson, flagError);
+    if (!flagError.empty()) {
+        error = "Configuration parsing error: " + flagError;
+        return Configuration();
+    }
+
+    // Parse bandit models if provided
+    BanditResponse banditModels;
+    if (!banditModelsJson.empty()) {
+        std::string banditError;
+        banditModels = internal::parseBanditResponse(banditModelsJson, banditError);
+        if (!banditError.empty()) {
+            error = "Bandit models parsing error: " + banditError;
+            return Configuration();
+        }
+    }
+
+    return Configuration(std::move(flagConfig), std::move(banditModels));
+}
+
+Configuration parseConfiguration(const std::string& flagConfigJson, std::string& error) {
+    return parseConfiguration(flagConfigJson, "", error);
+}
+
 }  // namespace eppoclient
