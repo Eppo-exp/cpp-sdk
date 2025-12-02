@@ -284,10 +284,9 @@ ParseResult<BanditResponse> parseBanditResponse(const nlohmann::json& j) {
         } else {
             std::string error;
             br.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>(), error);
-            // TODO: log error
-            // if (!error.empty()) {
-            //     logger.error("BanditResponse: Invalid updatedAt: " + error);
-            // }
+            if (!error.empty()) {
+                result.errors.push_back("BanditResponse: Invalid updatedAt: " + error);
+            }
         }
     }
 

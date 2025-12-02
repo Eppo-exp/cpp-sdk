@@ -124,14 +124,7 @@ Other dependencies (nlohmann/json, semver, etc.) are vendored and require no ins
 The Eppo SDK requires configuration data containing your feature flags. This SDK is designed for offline use, so you'll load configuration directly rather than using SDK keys or polling.
 
 ```cpp
-#include <nlohmann/json.hpp>
 #include "client.hpp"
-
-// Parse configuration from a JSON string
-eppoclient::ConfigResponse parseConfiguration(const std::string& configJson) {
-    nlohmann::json j = nlohmann::json::parse(configJson);
-    return j;
-}
 
 // Your configuration as a JSON string
 std::string configJson = R"({
@@ -143,10 +136,17 @@ std::string configJson = R"({
     }
 })";
 
+// Parse configuration from JSON string
+std::string error;
+eppoclient::Configuration config = eppoclient::parseConfiguration(configJson, error);
+if (!error.empty()) {
+    std::cerr << "Configuration parsing error: " << error << std::endl;
+    return 1;
+}
+
 // Create and initialize the configuration store
 eppoclient::ConfigurationStore configStore;
-eppoclient::ConfigResponse config = parseConfiguration(configJson);
-configStore.setConfiguration(eppoclient::Configuration(config));
+configStore.setConfiguration(config);
 
 // Create the client (configStore must outlive client)
 eppoclient::EppoClient client(configStore);
@@ -267,8 +267,13 @@ int main() {
     // Initialize configuration
     eppoclient::ConfigurationStore configStore;
     std::string configJson = "...";  // Your JSON config string
-    eppoclient::ConfigResponse config = parseConfiguration(configJson);
-    configStore.setConfiguration(eppoclient::Configuration(config));
+    std::string error;
+    eppoclient::Configuration config = eppoclient::parseConfiguration(configJson, error);
+    if (!error.empty()) {
+        std::cerr << "Configuration parsing error: " << error << std::endl;
+        return 1;
+    }
+    configStore.setConfiguration(config);
 
     // Create loggers
     auto assignmentLogger = std::make_shared<MyAssignmentLogger>();
@@ -317,25 +322,25 @@ Eppo's contextual bandits allow you to dynamically select the best variant based
 To use bandits, you need to load both flag configuration and bandit models:
 
 ```cpp
-#include <nlohmann/json.hpp>
 #include "client.hpp"
-
-// Parse bandit models from a JSON string
-eppoclient::BanditResponse parseBanditModels(const std::string& modelsJson) {
-    nlohmann::json j = nlohmann::json::parse(modelsJson);
-    return j;
-}
 
 // Your configuration and bandit models as JSON strings
 std::string flagConfigJson = "...";  // Your flag config JSON
 std::string banditModelsJson = "...";  // Your bandit models JSON
 
-// Initialize with both flags and bandit models
-eppoclient::ConfigResponse flagConfig = parseConfiguration(flagConfigJson);
-eppoclient::BanditResponse banditModels = parseBanditModels(banditModelsJson);
+std::string error;
+eppoclient::Configuration config = eppoclient::parseConfiguration(
+    flagConfigJson,
+    banditModelsJson,
+    error
+);
+if (!error.empty()) {
+    std::cerr << "Configuration parsing error: " << error << std::endl;
+    return 1;
+}
 
 eppoclient::ConfigurationStore configStore;
-configStore.setConfiguration(eppoclient::Configuration(flagConfig, banditModels));
+configStore.setConfiguration(config);
 
 // Create bandit logger to track bandit actions
 class MyBanditLogger : public eppoclient::BanditLogger {
@@ -435,9 +440,14 @@ int main() {
     eppoclient::ConfigurationStore configStore;
     std::string flagConfigJson = "...";  // Your flag config JSON
     std::string banditModelsJson = "...";  // Your bandit models JSON
-    eppoclient::ConfigResponse flagConfig = parseConfiguration(flagConfigJson);
-    eppoclient::BanditResponse banditModels = parseBanditModels(banditModelsJson);
-    configStore.setConfiguration(eppoclient::Configuration(flagConfig, banditModels));
+    std::string error;
+    eppoclient::Configuration config = eppoclient::parseConfiguration(
+        flagConfigJson, banditModelsJson, error);
+    if (!error.empty()) {
+        std::cerr << "Configuration parsing error: " << error << std::endl;
+        return 1;
+    }
+    configStore.setConfiguration(config);
 
     // Create loggers
     auto assignmentLogger = std::make_shared<MyAssignmentLogger>();
@@ -637,8 +647,14 @@ Always ensure these preconditions are met to avoid assertion failures.
 int main() {
     // Initialize client with application logger
     eppoclient::ConfigurationStore configStore;
-    eppoclient::ConfigResponse config = parseConfiguration(configJson);
-    configStore.setConfiguration(eppoclient::Configuration(config));
+    std::string configJson = "...";  // Your JSON config string
+    std::string error;
+    eppoclient::Configuration config = eppoclient::parseConfiguration(configJson, error);
+    if (!error.empty()) {
+        std::cerr << "Configuration parsing error: " << error << std::endl;
+        return 1;
+    }
+    configStore.setConfiguration(config);
 
     auto applicationLogger = std::make_shared<MyApplicationLogger>();
     eppoclient::EppoClient client(

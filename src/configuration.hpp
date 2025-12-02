@@ -54,6 +54,40 @@ private:
     std::map<std::string, std::map<std::string, BanditVariation>> banditFlagAssociations_;
 };
 
+/**
+ * Parse complete configuration from JSON strings with simplified error handling.
+ *
+ * This is a convenience wrapper around parseConfigResponse() and parseBanditResponse()
+ * that provides a simpler API for common use cases.
+ *
+ * @param flagConfigJson JSON string containing flag configuration
+ * @param banditModelsJson JSON string containing bandit models (optional - pass empty string to
+ * skip)
+ * @param error Output parameter that will contain error message if parsing fails
+ * @return Configuration object. Check error parameter to see if parsing was successful.
+ *
+ * Example usage:
+ * @code
+ *   std::string error;
+ *   Configuration config = parseConfiguration(flagsJson, banditsJson, error);
+ *   if (!error.empty()) {
+ *       std::cerr << "Configuration parsing error: " << error << std::endl;
+ *       return 1;
+ *   }
+ * @endcode
+ */
+Configuration parseConfiguration(const std::string& flagConfigJson,
+                                 const std::string& banditModelsJson, std::string& error);
+
+/**
+ * Parse flag configuration only (without bandit models) with simplified error handling.
+ *
+ * @param flagConfigJson JSON string containing flag configuration
+ * @param error Output parameter that will contain error message if parsing fails
+ * @return Configuration object. Check error parameter to see if parsing was successful.
+ */
+Configuration parseConfiguration(const std::string& flagConfigJson, std::string& error);
+
 }  // namespace eppoclient
 
 #endif  // CONFIGURATION_H

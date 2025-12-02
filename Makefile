@@ -91,17 +91,17 @@ examples:
 .PHONY: run-bandits
 run-bandits: examples
 	@echo "Running bandits example..."
-	@$(BUILD_DIR)/bandits
+	@cd examples && ../$(BUILD_DIR)/bandits
 
 .PHONY: run-flags
 run-flags: examples
 	@echo "Running flag_assignments example..."
-	@$(BUILD_DIR)/flag_assignments
+	@cd examples && ../$(BUILD_DIR)/flag_assignments
 
 .PHONY: run-assignment-details
 run-assignment-details: examples
 	@echo "Running assignment_details example..."
-	@$(BUILD_DIR)/assignment_details
+	@cd examples && ../$(BUILD_DIR)/assignment_details
 
 # Clean build artifacts
 .PHONY: clean

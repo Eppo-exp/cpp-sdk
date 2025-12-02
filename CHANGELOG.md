@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ConfigurationStore(Configuration config)` - constructor accepting Configuration by value
   - `setConfiguration(Configuration config)` - setter accepting Configuration by value
 - Move constructor and move assignment operator for `Configuration` class
+- `parseConfiguration()` convenience function for simplified configuration parsing:
+  - `parseConfiguration(flagConfigJson, error)` - parse flags only with error feedback
+  - `parseConfiguration(flagConfigJson, banditModelsJson, error)` - parse flags and bandits together
+  - Provides simple string-based error handling for common use cases
+  - Built on top of `ParseResult<T>` for structured error collection
+- `parseConfigResponse()` and `parseBanditResponse()` functions returning `ParseResult<T>`:
+  - Support parsing from both JSON strings and input streams
+  - Collect all parsing errors instead of failing on first error
+  - Enable partial success handling (return value with warnings)
+- New `ParseResult<T>` template for structured error reporting during parsing
 
 ### Changed
 
@@ -22,11 +32,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Eliminates expensive configuration copies on every flag evaluation
 - **BREAKING**: `Configuration` constructors now take parameters by value for better performance
 - `ConfigurationStore` now uses atomic operations instead of mutex internally for better performance
+- **BREAKING**: Parsing functions now report errors instead of silently skipping invalid entries:
+  - `parseConfigResponse()` and `parseBanditResponse()` return `ParseResult<T>` with error collection
+  - Use the new `parseConfiguration()` convenience function for simplified error handling
+  - Errors are aggregated and returned rather than causing silent data loss
 
 ### Removed
 
 - **BREAKING**: `Configuration::precompute()` removed from public API
   - It is now called automatically in constructors, so manual invocation is no longer needed
+- **BREAKING**: `from_json()` for `ConfigResponse` and `BanditResponse` removed
+  - Replaced with `parseConfigResponse()` and `parseBanditResponse()` for better error feedback
+  - Use `parseConfiguration()` convenience function for most use cases
 
 ## [1.0.0] - 2025-11-14
 
