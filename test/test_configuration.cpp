@@ -70,22 +70,24 @@ TEST_CASE("ConfigResponse with bandits", "[configuration]") {
     json j = json::parse(jsonStr);
 
     // Deserialize to ConfigResponse
-    ConfigResponse response = j;
+    auto result = parseConfigResponse(j);
+    REQUIRE(result.hasValue());
+    CHECK(result.errors.empty());
 
     // Verify structure
-    CHECK(response.flags.size() == 1);
-    CHECK(response.flags.count("recommendation-flag") == 1);
-    CHECK(response.bandits.size() == 1);
-    CHECK(response.bandits.count("bandit-var-1") == 1);
+    CHECK(result->flags.size() == 1);
+    CHECK(result->flags.count("recommendation-flag") == 1);
+    CHECK(result->bandits.size() == 1);
+    CHECK(result->bandits.count("bandit-var-1") == 1);
 
     // Verify flag data
-    const auto& flag = response.flags["recommendation-flag"];
+    const auto& flag = result->flags["recommendation-flag"];
     CHECK(flag.key == "recommendation-flag");
     CHECK(flag.enabled == true);
     CHECK(flag.variations.size() == 2);
 
     // Verify bandit data
-    const auto& banditVec = response.bandits["bandit-var-1"];
+    const auto& banditVec = result->bandits["bandit-var-1"];
     CHECK(banditVec.size() == 1);
     const auto& bandit = banditVec[0];
     CHECK(bandit.key == "bandit-var-1");
@@ -94,7 +96,7 @@ TEST_CASE("ConfigResponse with bandits", "[configuration]") {
     CHECK(bandit.variationValue == "ml-algo");
 
     // Serialize back to JSON
-    json j2 = response;
+    json j2 = *result.value;
 
     // Verify round-trip
     CHECK(j2["flags"]["recommendation-flag"]["key"] == "recommendation-flag");
@@ -145,15 +147,17 @@ TEST_CASE("BanditResponse with multiple bandits", "[configuration]") {
     json j = json::parse(jsonStr);
 
     // Deserialize to BanditResponse
-    BanditResponse response = j;
+    auto result = parseBanditResponse(j);
+    REQUIRE(result.hasValue());
+    CHECK(result.errors.empty());
 
     // Verify structure
-    CHECK(response.bandits.size() == 2);
-    CHECK(response.bandits.count("bandit-1") == 1);
-    CHECK(response.bandits.count("bandit-2") == 1);
+    CHECK(result->bandits.size() == 2);
+    CHECK(result->bandits.count("bandit-1") == 1);
+    CHECK(result->bandits.count("bandit-2") == 1);
 
     // Verify bandit-1
-    const auto& bandit1 = response.bandits["bandit-1"];
+    const auto& bandit1 = result->bandits["bandit-1"];
     CHECK(bandit1.banditKey == "bandit-1");
     CHECK(bandit1.modelName == "falcon");
     CHECK(bandit1.modelVersion == "v1");
@@ -161,7 +165,7 @@ TEST_CASE("BanditResponse with multiple bandits", "[configuration]") {
     CHECK(bandit1.modelData.coefficients.size() == 1);
 
     // Verify bandit-2
-    const auto& bandit2 = response.bandits["bandit-2"];
+    const auto& bandit2 = result->bandits["bandit-2"];
     CHECK(bandit2.banditKey == "bandit-2");
     CHECK(bandit2.modelName == "contextual");
     CHECK(bandit2.modelVersion == "v2");
@@ -169,7 +173,7 @@ TEST_CASE("BanditResponse with multiple bandits", "[configuration]") {
     CHECK(bandit2.modelData.coefficients.size() == 0);
 
     // Serialize back
-    json j2 = response;
+    json j2 = *result.value;
 
     // Verify round-trip
     CHECK(j2["bandits"]["bandit-1"]["modelName"] == "falcon");

@@ -89,8 +89,12 @@ ConfigResponse loadBanditFlagsConfiguration(const std::string& filepath) {
     json j;
     file >> j;
 
-    ConfigResponse response = j;
-    return response;
+    auto result = parseConfigResponse(j);
+    if (!result.hasValue() || result.hasErrors()) {
+        throw std::runtime_error("Failed to parse config: " +
+                                 (result.errors.empty() ? "unknown error" : result.errors[0]));
+    }
+    return *result.value;
 }
 
 // Helper function to load bandit models configuration from JSON file
@@ -103,8 +107,12 @@ BanditResponse loadBanditModelsConfiguration(const std::string& filepath) {
     json j;
     file >> j;
 
-    BanditResponse response = j;
-    return response;
+    auto result = parseBanditResponse(j);
+    if (!result.hasValue() || result.hasErrors()) {
+        throw std::runtime_error("Failed to parse bandit response: " +
+                                 (result.errors.empty() ? "unknown error" : result.errors[0]));
+    }
+    return *result.value;
 }
 
 // Helper function to load a single bandit test case from JSON file
@@ -222,10 +230,20 @@ TEST_CASE("UFC Bandit Test Cases - Bandit Action Selection", "[ufc][bandits]") {
     }
 
     // Create ConfigResponse from the flags JSON
-    ConfigResponse configResponse = configJson;
+    auto configResult = parseConfigResponse(configJson);
+    if (!configResult.hasValue() || configResult.hasErrors()) {
+        FAIL("Failed to parse config: " +
+             (configResult.errors.empty() ? "unknown error" : configResult.errors[0]));
+    }
+    ConfigResponse configResponse = *configResult.value;
 
     // Create BanditResponse from the models JSON
-    BanditResponse banditResponse = modelsJson;
+    auto banditResult = parseBanditResponse(modelsJson);
+    if (!banditResult.hasValue() || banditResult.hasErrors()) {
+        FAIL("Failed to parse bandit response: " +
+             (banditResult.errors.empty() ? "unknown error" : banditResult.errors[0]));
+    }
+    BanditResponse banditResponse = *banditResult.value;
 
     // Create configuration with both flags and bandit models
     Configuration combinedConfig(configResponse, banditResponse);

@@ -165,9 +165,11 @@ TEST_CASE("ConfigResponse deserialization - empty config", "[config_response][js
     json j = json::object();
     j["flags"] = json::object();
 
-    ConfigResponse response = j;
+    auto result = parseConfigResponse(j);
+    REQUIRE(result.hasValue());
+    REQUIRE(result.errors.empty());
 
-    REQUIRE(response.flags.empty());
+    REQUIRE(result->flags.empty());
 }
 
 TEST_CASE("ConfigResponse deserialization - single simple flag", "[config_response][json]") {
@@ -189,16 +191,18 @@ TEST_CASE("ConfigResponse deserialization - single simple flag", "[config_respon
         }
     })"_json;
 
-    ConfigResponse response = j;
+    auto result = parseConfigResponse(j);
+    REQUIRE(result.hasValue());
+    REQUIRE(result.errors.empty());
 
-    REQUIRE(response.flags.size() == 1);
-    REQUIRE(response.flags.count("test-flag") == 1);
-    REQUIRE(response.flags["test-flag"].key == "test-flag");
-    REQUIRE(response.flags["test-flag"].enabled == true);
-    REQUIRE(response.flags["test-flag"].variationType == VariationType::STRING);
-    REQUIRE(response.flags["test-flag"].totalShards == 10000);
-    REQUIRE(response.flags["test-flag"].variations.size() == 1);
-    REQUIRE(response.flags["test-flag"].variations["control"].key == "control");
+    REQUIRE(result->flags.size() == 1);
+    REQUIRE(result->flags.count("test-flag") == 1);
+    REQUIRE(result->flags["test-flag"].key == "test-flag");
+    REQUIRE(result->flags["test-flag"].enabled == true);
+    REQUIRE(result->flags["test-flag"].variationType == VariationType::STRING);
+    REQUIRE(result->flags["test-flag"].totalShards == 10000);
+    REQUIRE(result->flags["test-flag"].variations.size() == 1);
+    REQUIRE(result->flags["test-flag"].variations["control"].key == "control");
 }
 
 TEST_CASE("ConfigResponse deserialization - all variation types", "[config_response][json]") {
@@ -247,14 +251,16 @@ TEST_CASE("ConfigResponse deserialization - all variation types", "[config_respo
         }
     })"_json;
 
-    ConfigResponse response = j;
+    auto result = parseConfigResponse(j);
+    REQUIRE(result.hasValue());
+    REQUIRE(result.errors.empty());
 
-    REQUIRE(response.flags.size() == 5);
-    REQUIRE(response.flags["string-flag"].variationType == VariationType::STRING);
-    REQUIRE(response.flags["integer-flag"].variationType == VariationType::INTEGER);
-    REQUIRE(response.flags["numeric-flag"].variationType == VariationType::NUMERIC);
-    REQUIRE(response.flags["boolean-flag"].variationType == VariationType::BOOLEAN);
-    REQUIRE(response.flags["json-flag"].variationType == VariationType::JSON);
+    REQUIRE(result->flags.size() == 5);
+    REQUIRE(result->flags["string-flag"].variationType == VariationType::STRING);
+    REQUIRE(result->flags["integer-flag"].variationType == VariationType::INTEGER);
+    REQUIRE(result->flags["numeric-flag"].variationType == VariationType::NUMERIC);
+    REQUIRE(result->flags["boolean-flag"].variationType == VariationType::BOOLEAN);
+    REQUIRE(result->flags["json-flag"].variationType == VariationType::JSON);
 }
 
 TEST_CASE("ConfigResponse deserialization - flag with allocations", "[config_response][json]") {
@@ -303,19 +309,21 @@ TEST_CASE("ConfigResponse deserialization - flag with allocations", "[config_res
         }
     })"_json;
 
-    ConfigResponse response = j;
+    auto result = parseConfigResponse(j);
+    REQUIRE(result.hasValue());
+    REQUIRE(result.errors.empty());
 
-    REQUIRE(response.flags.size() == 1);
-    REQUIRE(response.flags["allocated-flag"].allocations.size() == 1);
-    REQUIRE(response.flags["allocated-flag"].allocations[0].key == "allocation-1");
-    REQUIRE(response.flags["allocated-flag"].allocations[0].rules.size() == 1);
-    REQUIRE(response.flags["allocated-flag"].allocations[0].rules[0].conditions.size() == 1);
-    REQUIRE(response.flags["allocated-flag"].allocations[0].rules[0].conditions[0].op ==
+    REQUIRE(result->flags.size() == 1);
+    REQUIRE(result->flags["allocated-flag"].allocations.size() == 1);
+    REQUIRE(result->flags["allocated-flag"].allocations[0].key == "allocation-1");
+    REQUIRE(result->flags["allocated-flag"].allocations[0].rules.size() == 1);
+    REQUIRE(result->flags["allocated-flag"].allocations[0].rules[0].conditions.size() == 1);
+    REQUIRE(result->flags["allocated-flag"].allocations[0].rules[0].conditions[0].op ==
             Operator::GT);
-    REQUIRE(response.flags["allocated-flag"].allocations[0].rules[0].conditions[0].attribute ==
+    REQUIRE(result->flags["allocated-flag"].allocations[0].rules[0].conditions[0].attribute ==
             "age");
-    REQUIRE(response.flags["allocated-flag"].allocations[0].splits.size() == 1);
-    REQUIRE(response.flags["allocated-flag"].allocations[0].splits[0].variationKey == "treatment");
+    REQUIRE(result->flags["allocated-flag"].allocations[0].splits.size() == 1);
+    REQUIRE(result->flags["allocated-flag"].allocations[0].splits[0].variationKey == "treatment");
 }
 
 TEST_CASE("ConfigResponse deserialization - from real UFC file", "[config_response][json]") {
@@ -325,16 +333,18 @@ TEST_CASE("ConfigResponse deserialization - from real UFC file", "[config_respon
     json j;
     file >> j;
 
-    ConfigResponse response = j;
+    auto result = parseConfigResponse(j);
+    REQUIRE(result.hasValue());
+    REQUIRE(result.errors.empty());
 
     // Verify some expected flags from the test file
-    REQUIRE(response.flags.size() > 0);
-    REQUIRE(response.flags.count("empty_flag") == 1);
-    REQUIRE(response.flags["empty_flag"].enabled == true);
-    REQUIRE(response.flags["empty_flag"].variationType == VariationType::STRING);
+    REQUIRE(result->flags.size() > 0);
+    REQUIRE(result->flags.count("empty_flag") == 1);
+    REQUIRE(result->flags["empty_flag"].enabled == true);
+    REQUIRE(result->flags["empty_flag"].variationType == VariationType::STRING);
 
-    if (response.flags.count("numeric_flag")) {
-        REQUIRE(response.flags["numeric_flag"].variationType == VariationType::NUMERIC);
+    if (result->flags.count("numeric_flag")) {
+        REQUIRE(result->flags["numeric_flag"].variationType == VariationType::NUMERIC);
     }
 }
 
@@ -363,17 +373,19 @@ TEST_CASE("ConfigResponse round-trip - simple flag", "[config_response][json]") 
     json j = original;
 
     // Deserialize
-    ConfigResponse deserialized = j;
+    auto deserialized = parseConfigResponse(j);
+    REQUIRE(deserialized.hasValue());
+    REQUIRE(deserialized.errors.empty());
 
     // Verify
-    REQUIRE(deserialized.flags.size() == 1);
-    REQUIRE(deserialized.flags["test-flag"].key == "test-flag");
-    REQUIRE(deserialized.flags["test-flag"].enabled == true);
-    REQUIRE(deserialized.flags["test-flag"].variationType == VariationType::INTEGER);
-    REQUIRE(deserialized.flags["test-flag"].totalShards == 10000);
-    REQUIRE(deserialized.flags["test-flag"].variations.size() == 2);
-    REQUIRE(deserialized.flags["test-flag"].variations["control"].key == "control");
-    REQUIRE(deserialized.flags["test-flag"].variations["treatment"].key == "treatment");
+    REQUIRE(deserialized->flags.size() == 1);
+    REQUIRE(deserialized->flags["test-flag"].key == "test-flag");
+    REQUIRE(deserialized->flags["test-flag"].enabled == true);
+    REQUIRE(deserialized->flags["test-flag"].variationType == VariationType::INTEGER);
+    REQUIRE(deserialized->flags["test-flag"].totalShards == 10000);
+    REQUIRE(deserialized->flags["test-flag"].variations.size() == 2);
+    REQUIRE(deserialized->flags["test-flag"].variations["control"].key == "control");
+    REQUIRE(deserialized->flags["test-flag"].variations["treatment"].key == "treatment");
 }
 
 TEST_CASE("ConfigResponse round-trip - complex flag with allocations", "[config_response][json]") {
@@ -446,22 +458,24 @@ TEST_CASE("ConfigResponse round-trip - complex flag with allocations", "[config_
     json j = original;
 
     // Deserialize
-    ConfigResponse deserialized = j;
+    auto deserialized = parseConfigResponse(j);
+    REQUIRE(deserialized.hasValue());
+    REQUIRE(deserialized.errors.empty());
 
     // Verify structure is preserved
-    REQUIRE(deserialized.flags.size() == 1);
-    REQUIRE(deserialized.flags["complex-flag"].key == "complex-flag");
-    REQUIRE(deserialized.flags["complex-flag"].variations.size() == 2);
-    REQUIRE(deserialized.flags["complex-flag"].allocations.size() == 1);
-    REQUIRE(deserialized.flags["complex-flag"].allocations[0].rules.size() == 1);
-    REQUIRE(deserialized.flags["complex-flag"].allocations[0].rules[0].conditions.size() == 2);
-    REQUIRE(deserialized.flags["complex-flag"].allocations[0].rules[0].conditions[0].op ==
+    REQUIRE(deserialized->flags.size() == 1);
+    REQUIRE(deserialized->flags["complex-flag"].key == "complex-flag");
+    REQUIRE(deserialized->flags["complex-flag"].variations.size() == 2);
+    REQUIRE(deserialized->flags["complex-flag"].allocations.size() == 1);
+    REQUIRE(deserialized->flags["complex-flag"].allocations[0].rules.size() == 1);
+    REQUIRE(deserialized->flags["complex-flag"].allocations[0].rules[0].conditions.size() == 2);
+    REQUIRE(deserialized->flags["complex-flag"].allocations[0].rules[0].conditions[0].op ==
             Operator::GT);
-    REQUIRE(deserialized.flags["complex-flag"].allocations[0].rules[0].conditions[1].op ==
+    REQUIRE(deserialized->flags["complex-flag"].allocations[0].rules[0].conditions[1].op ==
             Operator::MATCHES);
-    REQUIRE(deserialized.flags["complex-flag"].allocations[0].splits.size() == 1);
-    REQUIRE(deserialized.flags["complex-flag"].allocations[0].splits[0].shards.size() == 1);
-    REQUIRE(deserialized.flags["complex-flag"].allocations[0].splits[0].shards[0].ranges.size() ==
+    REQUIRE(deserialized->flags["complex-flag"].allocations[0].splits.size() == 1);
+    REQUIRE(deserialized->flags["complex-flag"].allocations[0].splits[0].shards.size() == 1);
+    REQUIRE(deserialized->flags["complex-flag"].allocations[0].splits[0].shards[0].ranges.size() ==
             2);
 }
 
@@ -488,15 +502,17 @@ TEST_CASE("ConfigResponse precompute after deserialization", "[config_response][
         }
     })"_json;
 
-    ConfigResponse response = j;
+    auto result = parseConfigResponse(j);
+    REQUIRE(result.hasValue());
+    REQUIRE(result.errors.empty());
 
     // Precompute should not crash
-    REQUIRE_NOTHROW(response.precompute());
+    REQUIRE_NOTHROW(result->precompute());
 
     // After precompute, parsed variations should be available
-    REQUIRE(response.flags["test-flag"].parsedVariations.size() == 2);
-    REQUIRE(response.flags["test-flag"].parsedVariations.count("control") == 1);
-    REQUIRE(response.flags["test-flag"].parsedVariations.count("treatment") == 1);
+    REQUIRE(result->flags["test-flag"].parsedVariations.size() == 2);
+    REQUIRE(result->flags["test-flag"].parsedVariations.count("control") == 1);
+    REQUIRE(result->flags["test-flag"].parsedVariations.count("treatment") == 1);
 }
 
 TEST_CASE("ConfigResponse usage example - serialize", "[config_response][json]") {
@@ -543,11 +559,13 @@ TEST_CASE("ConfigResponse usage example - deserialize from file", "[config_respo
     nlohmann::json j;
     file >> j;
 
-    ConfigResponse response = j;
+    auto result = parseConfigResponse(j);
+    REQUIRE(result.hasValue());
+    REQUIRE(result.errors.empty());
 
     // Verify the response is valid
-    REQUIRE(response.flags.size() > 0);
+    REQUIRE(result->flags.size() > 0);
 
     // Can use it with Configuration
-    Configuration configuration = Configuration(response);
+    Configuration configuration = Configuration(*result.value);
 }

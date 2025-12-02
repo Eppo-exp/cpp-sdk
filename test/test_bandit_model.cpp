@@ -206,10 +206,12 @@ TEST_CASE("BanditResponse serialization", "[bandit_model]") {
     CHECK(j["bandits"]["bandit1"]["banditKey"] == "bandit1");
 
     // Deserialize from JSON
-    BanditResponse response2 = j;
-    CHECK(response2.bandits.size() == 1);
-    CHECK(response2.bandits["bandit1"].banditKey == "bandit1");
-    CHECK(response2.bandits["bandit1"].modelData.gamma == 0.85);
+    auto result2 = parseBanditResponse(j);
+    REQUIRE(result2.hasValue());
+    CHECK(result2.errors.empty());
+    CHECK(result2->bandits.size() == 1);
+    CHECK(result2->bandits["bandit1"].banditKey == "bandit1");
+    CHECK(result2->bandits["bandit1"].modelData.gamma == 0.85);
 }
 
 TEST_CASE("Complete JSON round-trip", "[bandit_model]") {
@@ -260,13 +262,15 @@ TEST_CASE("Complete JSON round-trip", "[bandit_model]") {
     json j = json::parse(jsonStr);
 
     // Deserialize to BanditResponse
-    BanditResponse response = j;
+    auto result = parseBanditResponse(j);
+    REQUIRE(result.hasValue());
+    CHECK(result.errors.empty());
 
     // Verify structure
-    CHECK(response.bandits.size() == 1);
-    CHECK(response.bandits.count("recommendation-bandit") == 1);
+    CHECK(result->bandits.size() == 1);
+    CHECK(result->bandits.count("recommendation-bandit") == 1);
 
-    auto& config = response.bandits["recommendation-bandit"];
+    auto& config = result->bandits["recommendation-bandit"];
     CHECK(config.banditKey == "recommendation-bandit");
     CHECK(config.modelName == "falcon");
     CHECK(config.modelVersion == "v123");
@@ -280,7 +284,7 @@ TEST_CASE("Complete JSON round-trip", "[bandit_model]") {
     CHECK(action1.subjectCategoricalCoefficients.size() == 1);
 
     // Serialize back to JSON
-    json j2 = response;
+    json j2 = *result.value;
 
     // Verify round-trip
     CHECK(j2["bandits"]["recommendation-bandit"]["banditKey"] == "recommendation-bandit");

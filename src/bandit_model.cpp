@@ -246,25 +246,59 @@ void to_json(nlohmann::json& j, const BanditResponse& br) {
     j = nlohmann::json{{"bandits", br.bandits}, {"updatedAt", formatISOTimestamp(br.updatedAt)}};
 }
 
-void from_json(const nlohmann::json& j, BanditResponse& br) {
+ParseResult<BanditResponse> parseBanditResponse(const nlohmann::json& j) {
+    ParseResult<BanditResponse> result;
+    BanditResponse br;
     br.bandits.clear();
 
-    // Parse bandits - each bandit independently, skip invalid ones
-    if (j.contains("bandits") && j["bandits"].is_object()) {
-        for (auto& [banditKey, banditJson] : j["bandits"].items()) {
-            std::string parseError;
-            auto bandit = internal::parseBanditConfiguration(banditJson, parseError);
+    // Parse bandits - required field
+    if (!j.contains("bandits")) {
+        result.errors.push_back("BanditResponse: Missing required field: bandits");
+        return result;
+    }
 
-            if (bandit) {
-                br.bandits[banditKey] = *bandit;
-            }
-            // If parsing failed, bandit is simply not included in the map
+    if (!j["bandits"].is_object()) {
+        result.errors.push_back("BanditResponse: 'bandits' field must be an object");
+        return result;
+    }
+
+    // Parse each bandit independently, collect errors but continue parsing
+    for (auto& [banditKey, banditJson] : j["bandits"].items()) {
+        std::string parseError;
+        auto bandit = internal::parseBanditConfiguration(banditJson, parseError);
+
+        if (bandit) {
+            br.bandits[banditKey] = *bandit;
+        } else {
+            result.errors.push_back("Bandit '" + banditKey + "': " + parseError);
         }
     }
 
-    if (j.contains("updatedAt") && j["updatedAt"].is_string()) {
-        br.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>());
+    // Parse optional updatedAt timestamp
+    if (j.contains("updatedAt")) {
+        if (!j["updatedAt"].is_string()) {
+            result.errors.push_back("BanditResponse: 'updatedAt' field must be a string");
+        } else {
+            br.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>());
+        }
     }
+
+    result.value = br;
+    return result;
+}
+
+ParseResult<BanditResponse> parseBanditResponse(std::istream& is) {
+    ParseResult<BanditResponse> result;
+
+    // Parse JSON from stream (with exceptions disabled)
+    auto j = nlohmann::json::parse(is, nullptr, false);
+    if (j.is_discarded()) {
+        result.errors.push_back("JSON parse error: invalid JSON");
+        return result;
+    }
+
+    // Delegate to the JSON-based parser
+    return parseBanditResponse(j);
 }
 
 // BanditVariation serialization
