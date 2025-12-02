@@ -1,8 +1,5 @@
 #include "config_response.hpp"
-#include <iomanip>
 #include <semver/semver.hpp>
-#include <sstream>
-#include <unordered_set>
 #include "json_utils.hpp"
 #include "rules.hpp"
 #include "time_utils.hpp"
@@ -620,43 +617,83 @@ void to_json(nlohmann::json& j, const ConfigResponse& cr) {
     j = nlohmann::json{{"flags", cr.flags}, {"bandits", cr.bandits}};
 }
 
-void from_json(const nlohmann::json& j, ConfigResponse& cr) {
-    cr.flags.clear();
-    cr.bandits.clear();
+ParseResult<ConfigResponse> parseConfigResponse(const nlohmann::json& j) {
+    ParseResult<ConfigResponse> result;
+    ConfigResponse cr;
 
-    // Parse flags - each flag independently, skip invalid ones
-    if (j.contains("flags") && j["flags"].is_object()) {
-        for (auto& [flagKey, flagJson] : j["flags"].items()) {
-            std::string parseError;
-            auto flag = internal::parseFlagConfiguration(flagJson, parseError);
+    // Parse flags - required field
+    if (!j.contains("flags")) {
+        result.errors.push_back("ConfigResponse: Missing required field: flags");
+        return result;
+    }
 
-            if (flag) {
-                cr.flags[flagKey] = *flag;
-            }
-            // If parsing failed, flag is simply not included in the map
+    if (!j["flags"].is_object()) {
+        result.errors.push_back("ConfigResponse: 'flags' field must be an object");
+        return result;
+    }
+
+    // Parse each flag independently, collect errors but continue parsing
+    for (auto& [flagKey, flagJson] : j["flags"].items()) {
+        std::string parseError;
+        auto flag = internal::parseFlagConfiguration(flagJson, parseError);
+
+        if (flag) {
+            cr.flags[flagKey] = *flag;
+        } else {
+            // Report the error and continue parsing
+            result.errors.push_back("Flag '" + flagKey + "': " + parseError);
         }
     }
 
-    // Parse bandits - similar pattern
-    if (j.contains("bandits") && j["bandits"].is_object()) {
+    // Parse bandits - optional field
+    if (j.contains("bandits")) {
+        if (!j["bandits"].is_object()) {
+            result.errors.push_back("ConfigResponse: 'bandits' field must be an object");
+            return result;
+        }
+
         for (auto& [banditKey, banditJsonArray] : j["bandits"].items()) {
             // Each bandit entry is an array of BanditVariation
-            if (banditJsonArray.is_array()) {
-                std::vector<BanditVariation> variations;
-                for (const auto& varJson : banditJsonArray) {
-                    std::string parseError;
-                    auto banditVar = internal::parseBanditVariation(varJson, parseError);
-                    if (banditVar) {
-                        variations.push_back(*banditVar);
-                    }
-                    // If parsing failed, variation is simply not included
+            if (!banditJsonArray.is_array()) {
+                result.errors.push_back("Bandit '" + banditKey +
+                                        "': Expected an array of BanditVariation");
+                continue;
+            }
+
+            std::vector<BanditVariation> variations;
+            for (size_t i = 0; i < banditJsonArray.size(); ++i) {
+                std::string parseError;
+                auto banditVar = internal::parseBanditVariation(banditJsonArray[i], parseError);
+                if (banditVar) {
+                    variations.push_back(*banditVar);
+                } else {
+                    // Report the error and continue parsing
+                    result.errors.push_back("Bandit '" + banditKey + "' variation[" +
+                                            std::to_string(i) + "]: " + parseError);
                 }
-                if (!variations.empty()) {
-                    cr.bandits[banditKey] = variations;
-                }
+            }
+            if (!variations.empty()) {
+                cr.bandits[banditKey] = variations;
             }
         }
     }
+
+    result.value = cr;
+    return result;
+}
+
+ParseResult<ConfigResponse> parseConfigResponse(std::istream& is) {
+    ParseResult<ConfigResponse> result;
+
+    // Parse JSON from stream (with exceptions disabled)
+    auto j = nlohmann::json::parse(is, nullptr, false);
+    if (j.is_discarded()) {
+        result.errors.push_back("JSON parse error: invalid JSON");
+        return result;
+    }
+
+    // Delegate to the JSON-based parser
+    return parseConfigResponse(j);
 }
 
 }  // namespace eppoclient

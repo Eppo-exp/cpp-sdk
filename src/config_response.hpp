@@ -2,6 +2,7 @@
 #define CONFIG_RESPONSE_HPP
 
 #include <chrono>
+#include <istream>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <optional>
@@ -10,6 +11,7 @@
 #include <variant>
 #include <vector>
 #include "bandit_model.hpp"
+#include "parse_result.hpp"
 #include "re2/re2.h"
 
 namespace eppoclient {
@@ -153,9 +155,22 @@ struct ConfigResponse {
     void precompute();
 };
 
-// serialization/deserialization for the nlohmann::json library
+// serialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const ConfigResponse& cr);
-void from_json(const nlohmann::json& j, ConfigResponse& cr);
+
+/**
+ * Parse ConfigResponse from JSON with error collection.
+ * @param j The JSON object to parse
+ * @return ParseResult containing the parsed ConfigResponse and any errors encountered
+ */
+ParseResult<ConfigResponse> parseConfigResponse(const nlohmann::json& j);
+
+/**
+ * Parse ConfigResponse from an input stream with error collection.
+ * @param is The input stream containing JSON data
+ * @return ParseResult containing the parsed ConfigResponse and any errors encountered
+ */
+ParseResult<ConfigResponse> parseConfigResponse(std::istream& is);
 
 // Internal namespace for implementation details not covered by semver
 namespace internal {

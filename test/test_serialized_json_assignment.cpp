@@ -42,8 +42,12 @@ ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
     json j;
     file >> j;
 
-    ConfigResponse response = j;
-    return response;
+    auto result = parseConfigResponse(j);
+    if (!result.hasValue() || result.hasErrors()) {
+        throw std::runtime_error("Failed to parse config: " +
+                                 (result.errors.empty() ? "unknown error" : result.errors[0]));
+    }
+    return *result;
 }
 
 // Helper function to parse attributes from JSON

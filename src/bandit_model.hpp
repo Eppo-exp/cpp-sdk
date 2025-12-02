@@ -2,12 +2,14 @@
 #define BANDIT_MODEL_HPP
 
 #include <chrono>
+#include <istream>
 #include <map>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include <nlohmann/json.hpp>
+#include "parse_result.hpp"
 
 namespace eppoclient {
 
@@ -99,7 +101,20 @@ struct BanditResponse {
 };
 
 void to_json(nlohmann::json& j, const BanditResponse& br);
-void from_json(const nlohmann::json& j, BanditResponse& br);
+
+/**
+ * Parse BanditResponse from JSON with error collection.
+ * @param j The JSON object to parse
+ * @return ParseResult containing the parsed BanditResponse and any errors encountered
+ */
+ParseResult<BanditResponse> parseBanditResponse(const nlohmann::json& j);
+
+/**
+ * Parse BanditResponse from an input stream with error collection.
+ * @param is The input stream containing JSON data
+ * @return ParseResult containing the parsed BanditResponse and any errors encountered
+ */
+ParseResult<BanditResponse> parseBanditResponse(std::istream& is);
 
 /**
  * Associates a bandit with a specific flag variation.

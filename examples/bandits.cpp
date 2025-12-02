@@ -126,10 +126,24 @@ bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigRespo
         return false;
     }
 
-    nlohmann::json j;
-    file >> j;
+    auto result = eppoclient::parseConfigResponse(file);
 
-    response = j;
+    // Report all parsing errors/warnings
+    if (result.hasErrors()) {
+        std::cerr << "Warning: encountered " << result.errors.size()
+                  << " error(s) while parsing config:" << std::endl;
+        for (const auto& error : result.errors) {
+            std::cerr << "  - " << error << std::endl;
+        }
+    }
+
+    // Use the config if we got a value (even with warnings)
+    if (!result.hasValue()) {
+        std::cerr << "Error: Failed to parse config response" << std::endl;
+        return false;
+    }
+
+    response = *result;
     return true;
 }
 
@@ -141,10 +155,24 @@ bool loadBanditModels(const std::string& filepath, eppoclient::BanditResponse& r
         return false;
     }
 
-    nlohmann::json j;
-    file >> j;
+    auto result = eppoclient::parseBanditResponse(file);
 
-    response = j;
+    // Report all parsing errors/warnings
+    if (result.hasErrors()) {
+        std::cerr << "Warning: encountered " << result.errors.size()
+                  << " error(s) while parsing bandit models:" << std::endl;
+        for (const auto& error : result.errors) {
+            std::cerr << "  - " << error << std::endl;
+        }
+    }
+
+    // Use the bandit models if we got a value (even with warnings)
+    if (!result.hasValue()) {
+        std::cerr << "Error: Failed to parse bandit response" << std::endl;
+        return false;
+    }
+
+    response = *result;
     return true;
 }
 
