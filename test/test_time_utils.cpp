@@ -202,4 +202,3 @@ TEST_CASE("parseISOTimestamp and formatISOTimestamp - round trip preserves milli
     REQUIRE(milliseconds.count() == 123);
     REQUIRE(error.empty());
 }
-

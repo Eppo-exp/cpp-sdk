@@ -66,10 +66,7 @@ std::optional<T> extractTypedValue(nlohmann::json::const_iterator it) {
         return it->template get_ref<const nlohmann::json::boolean_t&>();
     } else {
         // This should never be reached for supported types
-        static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, int> ||
-                          std::is_same_v<T, int64_t> || std::is_same_v<T, double> ||
-                          std::is_same_v<T, bool>,
-                      "Unsupported type for extractTypedValue");
+        static_assert(false, "Unsupported type for extractTypedValue");
         return std::nullopt;
     }
 }

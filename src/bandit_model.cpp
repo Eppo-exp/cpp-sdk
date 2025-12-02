@@ -288,7 +288,6 @@ ParseResult<BanditResponse> parseBanditResponse(const nlohmann::json& j) {
             // if (!error.empty()) {
             //     logger.error("BanditResponse: Invalid updatedAt: " + error);
             // }
-
         }
     }
 
