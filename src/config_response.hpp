@@ -155,7 +155,10 @@ struct ConfigResponse {
 
 // serialization/deserialization for the nlohmann::json library
 void to_json(nlohmann::json& j, const ConfigResponse& cr);
-void from_json(const nlohmann::json& j, ConfigResponse& cr);
+
+// Parse configuration from a JSON string
+// Returns a ConfigResponse. If parsing fails, error will contain the error message.
+ConfigResponse parseConfigResponse(const std::string& configJson, std::string& error);
 
 // Internal namespace for implementation details not covered by semver
 namespace internal {

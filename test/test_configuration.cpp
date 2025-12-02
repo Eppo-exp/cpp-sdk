@@ -66,11 +66,10 @@ TEST_CASE("ConfigResponse with bandits", "[configuration]") {
         }
     })";
 
-    // Parse the JSON
-    json j = json::parse(jsonStr);
-
-    // Deserialize to ConfigResponse
-    ConfigResponse response = j;
+    // Parse configuration using parseConfigResponse
+    std::string error;
+    ConfigResponse response = parseConfigResponse(jsonStr, error);
+    REQUIRE(error.empty());
 
     // Verify structure
     CHECK(response.flags.size() == 1);

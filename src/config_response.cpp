@@ -1,8 +1,5 @@
 #include "config_response.hpp"
-#include <iomanip>
 #include <semver/semver.hpp>
-#include <sstream>
-#include <unordered_set>
 #include "json_utils.hpp"
 #include "rules.hpp"
 #include "time_utils.hpp"
@@ -620,20 +617,31 @@ void to_json(nlohmann::json& j, const ConfigResponse& cr) {
     j = nlohmann::json{{"flags", cr.flags}, {"bandits", cr.bandits}};
 }
 
-void from_json(const nlohmann::json& j, ConfigResponse& cr) {
-    cr.flags.clear();
-    cr.bandits.clear();
+ConfigResponse parseConfigResponse(const std::string& configJson, std::string& error) {
+    error.clear();
+    ConfigResponse response;
 
-    // Parse flags - each flag independently, skip invalid ones
+    // Use the non-throwing version of parse (returns discarded value on error)
+    nlohmann::json j = nlohmann::json::parse(configJson, nullptr, false);
+
+    if (j.is_discarded()) {
+        error = "Failed to parse JSON configuration string";
+        return ConfigResponse();  // Return empty ConfigResponse on error
+    }
+
+    std::vector<std::string> allErrors;
+
+    // Parse flags - each flag independently, collect errors
     if (j.contains("flags") && j["flags"].is_object()) {
         for (auto& [flagKey, flagJson] : j["flags"].items()) {
             std::string parseError;
             auto flag = internal::parseFlagConfiguration(flagJson, parseError);
 
             if (flag) {
-                cr.flags[flagKey] = *flag;
+                response.flags[flagKey] = *flag;
+            } else if (!parseError.empty()) {
+                allErrors.push_back("Flag '" + flagKey + "': " + parseError);
             }
-            // If parsing failed, flag is simply not included in the map
         }
     }
 
@@ -643,20 +651,36 @@ void from_json(const nlohmann::json& j, ConfigResponse& cr) {
             // Each bandit entry is an array of BanditVariation
             if (banditJsonArray.is_array()) {
                 std::vector<BanditVariation> variations;
+                int varIndex = 0;
                 for (const auto& varJson : banditJsonArray) {
                     std::string parseError;
                     auto banditVar = internal::parseBanditVariation(varJson, parseError);
                     if (banditVar) {
                         variations.push_back(*banditVar);
+                    } else if (!parseError.empty()) {
+                        allErrors.push_back("Bandit '" + banditKey + "' variation[" +
+                                            std::to_string(varIndex) + "]: " + parseError);
                     }
-                    // If parsing failed, variation is simply not included
+                    varIndex++;
                 }
                 if (!variations.empty()) {
-                    cr.bandits[banditKey] = variations;
+                    response.bandits[banditKey] = variations;
                 }
+            } else {
+                allErrors.push_back("Bandit '" + banditKey + "': Expected array of variations");
             }
         }
     }
+
+    // Consolidate all errors into a single error message
+    if (!allErrors.empty()) {
+        error = "Configuration parsing encountered errors:\n";
+        for (const auto& err : allErrors) {
+            error += "  - " + err + "\n";
+        }
+    }
+
+    return response;
 }
 
 }  // namespace eppoclient

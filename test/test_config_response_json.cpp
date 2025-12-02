@@ -165,7 +165,9 @@ TEST_CASE("ConfigResponse deserialization - empty config", "[config_response][js
     json j = json::object();
     j["flags"] = json::object();
 
-    ConfigResponse response = j;
+    std::string error;
+    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    REQUIRE(error.empty());
 
     REQUIRE(response.flags.empty());
 }
@@ -189,7 +191,9 @@ TEST_CASE("ConfigResponse deserialization - single simple flag", "[config_respon
         }
     })"_json;
 
-    ConfigResponse response = j;
+    std::string error;
+    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    REQUIRE(error.empty());
 
     REQUIRE(response.flags.size() == 1);
     REQUIRE(response.flags.count("test-flag") == 1);
@@ -247,7 +251,9 @@ TEST_CASE("ConfigResponse deserialization - all variation types", "[config_respo
         }
     })"_json;
 
-    ConfigResponse response = j;
+    std::string error;
+    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    REQUIRE(error.empty());
 
     REQUIRE(response.flags.size() == 5);
     REQUIRE(response.flags["string-flag"].variationType == VariationType::STRING);
@@ -303,7 +309,9 @@ TEST_CASE("ConfigResponse deserialization - flag with allocations", "[config_res
         }
     })"_json;
 
-    ConfigResponse response = j;
+    std::string error;
+    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    REQUIRE(error.empty());
 
     REQUIRE(response.flags.size() == 1);
     REQUIRE(response.flags["allocated-flag"].allocations.size() == 1);
@@ -325,7 +333,9 @@ TEST_CASE("ConfigResponse deserialization - from real UFC file", "[config_respon
     json j;
     file >> j;
 
-    ConfigResponse response = j;
+    std::string error;
+    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    REQUIRE(error.empty());
 
     // Verify some expected flags from the test file
     REQUIRE(response.flags.size() > 0);
@@ -363,7 +373,9 @@ TEST_CASE("ConfigResponse round-trip - simple flag", "[config_response][json]") 
     json j = original;
 
     // Deserialize
-    ConfigResponse deserialized = j;
+    std::string error;
+    ConfigResponse deserialized = parseConfigResponse(j.dump(), error);
+    REQUIRE(error.empty());
 
     // Verify
     REQUIRE(deserialized.flags.size() == 1);
@@ -446,7 +458,9 @@ TEST_CASE("ConfigResponse round-trip - complex flag with allocations", "[config_
     json j = original;
 
     // Deserialize
-    ConfigResponse deserialized = j;
+    std::string error;
+    ConfigResponse deserialized = parseConfigResponse(j.dump(), error);
+    REQUIRE(error.empty());
 
     // Verify structure is preserved
     REQUIRE(deserialized.flags.size() == 1);
@@ -488,7 +502,9 @@ TEST_CASE("ConfigResponse precompute after deserialization", "[config_response][
         }
     })"_json;
 
-    ConfigResponse response = j;
+    std::string error;
+    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    REQUIRE(error.empty());
 
     // Precompute should not crash
     REQUIRE_NOTHROW(response.precompute());
@@ -543,7 +559,9 @@ TEST_CASE("ConfigResponse usage example - deserialize from file", "[config_respo
     nlohmann::json j;
     file >> j;
 
-    ConfigResponse response = j;
+    std::string error;
+    ConfigResponse response = parseConfigResponse(j.dump(), error);
+    REQUIRE(error.empty());
 
     // Verify the response is valid
     REQUIRE(response.flags.size() > 0);

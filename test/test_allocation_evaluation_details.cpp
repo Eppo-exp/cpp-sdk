@@ -16,9 +16,19 @@ ConfigResponse loadFlagsConfiguration(const std::string& filepath) {
         throw std::runtime_error("Failed to open flags configuration file: " + filepath);
     }
 
-    json j;
-    file >> j;
-    return j.get<ConfigResponse>();
+    // Read entire file content into a string
+    std::string configJson((std::istreambuf_iterator<char>(file)),
+                           std::istreambuf_iterator<char>());
+
+    // Parse configuration using parseConfigResponse
+    std::string error;
+    ConfigResponse response = parseConfigResponse(configJson, error);
+
+    if (!error.empty()) {
+        throw std::runtime_error("Failed to parse configuration: " + error);
+    }
+
+    return response;
 }
 }  // namespace
 

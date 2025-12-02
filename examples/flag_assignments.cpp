@@ -74,10 +74,19 @@ bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigRespo
         return false;
     }
 
-    nlohmann::json j;
-    file >> j;
+    // Read entire file content into a string
+    std::string configJson((std::istreambuf_iterator<char>(file)),
+                           std::istreambuf_iterator<char>());
 
-    response = j;
+    // Parse configuration using parseConfigResponse
+    std::string error;
+    response = eppoclient::parseConfigResponse(configJson, error);
+
+    if (!error.empty()) {
+        std::cerr << "Failed to parse configuration: " << error << std::endl;
+        return false;
+    }
+
     return true;
 }
 
