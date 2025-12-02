@@ -140,14 +140,25 @@ bool loadConfiguration(const std::string& flagsFilepath, const std::string& band
                             std::istreambuf_iterator<char>());
 
     // Parse both configurations at once
-    std::string error;
-    config = eppoclient::parseConfiguration(flagsJson, banditsJson, error);
+    auto result = eppoclient::parseConfiguration(flagsJson, banditsJson);
 
-    if (!error.empty()) {
-        std::cerr << "Failed to parse configuration: " << error << std::endl;
+    if (!result.hasValue()) {
+        std::cerr << "Failed to parse configuration:" << std::endl;
+        for (const auto& error : result.errors) {
+            std::cerr << "  - " << error << std::endl;
+        }
         return false;
     }
 
+    // Report any warnings
+    if (result.hasErrors()) {
+        std::cerr << "Configuration parsing had errors:" << std::endl;
+        for (const auto& error : result.errors) {
+            std::cerr << "  - " << error << std::endl;
+        }
+    }
+
+    config = std::move(*result.value);
     return true;
 }
 

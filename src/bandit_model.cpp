@@ -308,6 +308,20 @@ ParseResult<BanditResponse> parseBanditResponse(std::istream& is) {
     return parseBanditResponse(j);
 }
 
+ParseResult<BanditResponse> parseBanditResponse(const std::string& jsonString) {
+    ParseResult<BanditResponse> result;
+
+    // Parse JSON from string (with exceptions disabled)
+    auto j = nlohmann::json::parse(jsonString, nullptr, false);
+    if (j.is_discarded()) {
+        result.errors.push_back("JSON parse error: invalid JSON");
+        return result;
+    }
+
+    // Delegate to the JSON-based parser
+    return parseBanditResponse(j);
+}
+
 // BanditVariation serialization
 void to_json(nlohmann::json& j, const BanditVariation& bv) {
     j = nlohmann::json{{"key", bv.key},

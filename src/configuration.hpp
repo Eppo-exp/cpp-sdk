@@ -4,6 +4,7 @@
 #include <string>
 #include "bandit_model.hpp"
 #include "config_response.hpp"
+#include "parse_result.hpp"
 
 namespace eppoclient {
 
@@ -55,7 +56,7 @@ private:
 };
 
 /**
- * Parse complete configuration from JSON strings with simplified error handling.
+ * Parse complete configuration from JSON strings.
  *
  * This is a convenience wrapper around parseConfigResponse() and parseBanditResponse()
  * that provides a simpler API for common use cases.
@@ -63,30 +64,28 @@ private:
  * @param flagConfigJson JSON string containing flag configuration
  * @param banditModelsJson JSON string containing bandit models (optional - pass empty string to
  * skip)
- * @param error Output parameter that will contain error message if parsing fails
- * @return Configuration object. Check error parameter to see if parsing was successful.
+ * @return ParseResult containing Configuration object and any errors encountered during parsing
  *
  * Example usage:
  * @code
- *   std::string error;
- *   Configuration config = parseConfiguration(flagsJson, banditsJson, error);
- *   if (!error.empty()) {
- *       std::cerr << "Configuration parsing error: " << error << std::endl;
+ *   // Parse flags only
+ *   auto result = parseConfiguration(flagsJson);
+ *
+ *   // Parse flags and bandits
+ *   auto result = parseConfiguration(flagsJson, banditsJson);
+ *
+ *   if (!result.hasValue()) {
+ *       std::cerr << "Configuration parsing failed:" << std::endl;
+ *       for (const auto& error : result.errors) {
+ *           std::cerr << "  - " << error << std::endl;
+ *       }
  *       return 1;
  *   }
+ *   Configuration config = std::move(*result.value);
  * @endcode
  */
-Configuration parseConfiguration(const std::string& flagConfigJson,
-                                 const std::string& banditModelsJson, std::string& error);
-
-/**
- * Parse flag configuration only (without bandit models) with simplified error handling.
- *
- * @param flagConfigJson JSON string containing flag configuration
- * @param error Output parameter that will contain error message if parsing fails
- * @return Configuration object. Check error parameter to see if parsing was successful.
- */
-Configuration parseConfiguration(const std::string& flagConfigJson, std::string& error);
+ParseResult<Configuration> parseConfiguration(const std::string& flagConfigJson,
+                                              const std::string& banditModelsJson = "");
 
 }  // namespace eppoclient
 

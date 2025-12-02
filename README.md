@@ -137,16 +137,18 @@ std::string configJson = R"({
 })";
 
 // Parse configuration from JSON string
-std::string error;
-eppoclient::Configuration config = eppoclient::parseConfiguration(configJson, error);
-if (!error.empty()) {
-    std::cerr << "Configuration parsing error: " << error << std::endl;
+auto result = eppoclient::parseConfiguration(configJson);
+if (!result.hasValue()) {
+    std::cerr << "Configuration parsing failed:" << std::endl;
+    for (const auto& error : result.errors) {
+        std::cerr << "  - " << error << std::endl;
+    }
     return 1;
 }
 
 // Create and initialize the configuration store
 eppoclient::ConfigurationStore configStore;
-configStore.setConfiguration(config);
+configStore.setConfiguration(std::move(*result.value));
 
 // Create the client (configStore must outlive client)
 eppoclient::EppoClient client(configStore);
@@ -267,13 +269,15 @@ int main() {
     // Initialize configuration
     eppoclient::ConfigurationStore configStore;
     std::string configJson = "...";  // Your JSON config string
-    std::string error;
-    eppoclient::Configuration config = eppoclient::parseConfiguration(configJson, error);
-    if (!error.empty()) {
-        std::cerr << "Configuration parsing error: " << error << std::endl;
+    auto result = eppoclient::parseConfiguration(configJson);
+    if (!result.hasValue()) {
+        std::cerr << "Configuration parsing failed:" << std::endl;
+        for (const auto& error : result.errors) {
+            std::cerr << "  - " << error << std::endl;
+        }
         return 1;
     }
-    configStore.setConfiguration(config);
+    configStore.setConfiguration(std::move(*result.value));
 
     // Create loggers
     auto assignmentLogger = std::make_shared<MyAssignmentLogger>();
@@ -328,19 +332,17 @@ To use bandits, you need to load both flag configuration and bandit models:
 std::string flagConfigJson = "...";  // Your flag config JSON
 std::string banditModelsJson = "...";  // Your bandit models JSON
 
-std::string error;
-eppoclient::Configuration config = eppoclient::parseConfiguration(
-    flagConfigJson,
-    banditModelsJson,
-    error
-);
-if (!error.empty()) {
-    std::cerr << "Configuration parsing error: " << error << std::endl;
+auto result = eppoclient::parseConfiguration(flagConfigJson, banditModelsJson);
+if (!result.hasValue()) {
+    std::cerr << "Configuration parsing failed:" << std::endl;
+    for (const auto& error : result.errors) {
+        std::cerr << "  - " << error << std::endl;
+    }
     return 1;
 }
 
 eppoclient::ConfigurationStore configStore;
-configStore.setConfiguration(config);
+configStore.setConfiguration(std::move(*result.value));
 
 // Create bandit logger to track bandit actions
 class MyBanditLogger : public eppoclient::BanditLogger {
@@ -440,14 +442,15 @@ int main() {
     eppoclient::ConfigurationStore configStore;
     std::string flagConfigJson = "...";  // Your flag config JSON
     std::string banditModelsJson = "...";  // Your bandit models JSON
-    std::string error;
-    eppoclient::Configuration config = eppoclient::parseConfiguration(
-        flagConfigJson, banditModelsJson, error);
-    if (!error.empty()) {
-        std::cerr << "Configuration parsing error: " << error << std::endl;
+    auto result = eppoclient::parseConfiguration(flagConfigJson, banditModelsJson);
+    if (!result.hasValue()) {
+        std::cerr << "Configuration parsing failed:" << std::endl;
+        for (const auto& error : result.errors) {
+            std::cerr << "  - " << error << std::endl;
+        }
         return 1;
     }
-    configStore.setConfiguration(config);
+    configStore.setConfiguration(std::move(*result.value));
 
     // Create loggers
     auto assignmentLogger = std::make_shared<MyAssignmentLogger>();
@@ -648,13 +651,15 @@ int main() {
     // Initialize client with application logger
     eppoclient::ConfigurationStore configStore;
     std::string configJson = "...";  // Your JSON config string
-    std::string error;
-    eppoclient::Configuration config = eppoclient::parseConfiguration(configJson, error);
-    if (!error.empty()) {
-        std::cerr << "Configuration parsing error: " << error << std::endl;
+    auto result = eppoclient::parseConfiguration(configJson);
+    if (!result.hasValue()) {
+        std::cerr << "Configuration parsing failed:" << std::endl;
+        for (const auto& error : result.errors) {
+            std::cerr << "  - " << error << std::endl;
+        }
         return 1;
     }
-    configStore.setConfiguration(config);
+    configStore.setConfiguration(std::move(*result.value));
 
     auto applicationLogger = std::make_shared<MyApplicationLogger>();
     eppoclient::EppoClient client(

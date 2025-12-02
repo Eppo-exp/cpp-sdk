@@ -61,28 +61,27 @@ const BanditConfiguration* Configuration::getBanditConfiguration(const std::stri
     return &(it->second);
 }
 
-Configuration parseConfiguration(const std::string& flagConfigJson,
-                                 const std::string& banditModelsJson, std::string& error) {
-    error.clear();
+ParseResult<Configuration> parseConfiguration(const std::string& flagConfigJson,
+                                              const std::string& banditModelsJson) {
+    ParseResult<Configuration> result;
 
     // Parse flag configuration JSON
     nlohmann::json flagsJson = nlohmann::json::parse(flagConfigJson, nullptr, false);
     if (flagsJson.is_discarded()) {
-        error = "Failed to parse flag configuration JSON: invalid JSON";
-        return Configuration();
+        result.errors.push_back("Failed to parse flag configuration JSON: invalid JSON");
+        return result;
     }
 
     // Parse the flag configuration
     auto flagResult = parseConfigResponse(flagsJson);
     if (!flagResult.hasValue()) {
-        error = "Failed to parse flag configuration";
+        result.errors.push_back("Failed to parse flag configuration");
         if (flagResult.hasErrors()) {
-            error += ":\n";
             for (const auto& err : flagResult.errors) {
-                error += "  - " + err + "\n";
+                result.errors.push_back("  " + err);
             }
         }
-        return Configuration();
+        return result;
     }
 
     // Optionally parse bandit models if provided
@@ -90,27 +89,25 @@ Configuration parseConfiguration(const std::string& flagConfigJson,
     if (!banditModelsJson.empty()) {
         nlohmann::json banditsJson = nlohmann::json::parse(banditModelsJson, nullptr, false);
         if (banditsJson.is_discarded()) {
-            error = "Failed to parse bandit models JSON: invalid JSON";
-            return Configuration();
+            result.errors.push_back("Failed to parse bandit models JSON: invalid JSON");
+            return result;
         }
 
         auto banditResult = parseBanditResponse(banditsJson);
         if (!banditResult.hasValue()) {
-            error = "Failed to parse bandit models";
+            result.errors.push_back("Failed to parse bandit models");
             if (banditResult.hasErrors()) {
-                error += ":\n";
                 for (const auto& err : banditResult.errors) {
-                    error += "  - " + err + "\n";
+                    result.errors.push_back("  " + err);
                 }
             }
-            return Configuration();
+            return result;
         }
 
         // Collect any warnings from bandit parsing
         if (banditResult.hasErrors()) {
-            error = "Bandit models parsed with warnings:\n";
             for (const auto& err : banditResult.errors) {
-                error += "  - " + err + "\n";
+                result.errors.push_back("Bandit warning: " + err);
             }
         }
 
@@ -119,20 +116,14 @@ Configuration parseConfiguration(const std::string& flagConfigJson,
 
     // Collect any warnings from flag parsing
     if (flagResult.hasErrors()) {
-        if (!error.empty()) {
-            error += "\n";
-        }
-        error += "Flag configuration parsed with warnings:\n";
         for (const auto& err : flagResult.errors) {
-            error += "  - " + err + "\n";
+            result.errors.push_back("Flag warning: " + err);
         }
     }
 
-    return Configuration(std::move(*flagResult.value), std::move(banditModels));
-}
-
-Configuration parseConfiguration(const std::string& flagConfigJson, std::string& error) {
-    return parseConfiguration(flagConfigJson, "", error);
+    // Set the configuration value
+    result.value = Configuration(std::move(*flagResult.value), std::move(banditModels));
+    return result;
 }
 
 }  // namespace eppoclient

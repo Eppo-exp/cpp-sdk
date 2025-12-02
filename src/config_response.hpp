@@ -172,6 +172,13 @@ ParseResult<ConfigResponse> parseConfigResponse(const nlohmann::json& j);
  */
 ParseResult<ConfigResponse> parseConfigResponse(std::istream& is);
 
+/**
+ * Parse ConfigResponse from a JSON string with error collection.
+ * @param jsonString The JSON string to parse
+ * @return ParseResult containing the parsed ConfigResponse and any errors encountered
+ */
+ParseResult<ConfigResponse> parseConfigResponse(const std::string& jsonString);
+
 // Internal namespace for implementation details not covered by semver
 namespace internal {
 
