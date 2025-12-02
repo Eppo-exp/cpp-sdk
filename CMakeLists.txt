@@ -54,11 +54,12 @@ if(NOT re2_FOUND)
     if(PkgConfig_FOUND)
         pkg_check_modules(RE2 REQUIRED re2)
     else()
-        message(FATAL_ERROR "RE2 library not found. Please install RE2:\n"
+        message(FATAL_ERROR "Could not find RE2: CMake config not found and pkg-config not available.\n"
+            "Please install RE2 with CMake support or ensure pkg-config is installed:\n"
             "  - On Windows: Use vcpkg and set CMAKE_TOOLCHAIN_FILE environment variable\n"
             "    vcpkg install re2:x64-windows\n"
-            "  - On Ubuntu/Debian: sudo apt-get install libre2-dev\n"
-            "  - On macOS: brew install re2")
+            "  - On Ubuntu/Debian: sudo apt-get install libre2-dev pkg-config\n"
+            "  - On macOS: brew install re2 pkg-config")
     endif()
 endif()
 
