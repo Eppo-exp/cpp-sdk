@@ -267,9 +267,9 @@ BanditResponse parseBanditResponse(const std::string& banditJson, std::string& e
 
     // Parse bandits - each bandit independently, collect errors
     if (j.contains("bandits") && j["bandits"].is_object()) {
-        for (auto& [banditKey, banditJson] : j["bandits"].items()) {
+        for (auto& [banditKey, banditJsonObj] : j["bandits"].items()) {
             std::string parseError;
-            auto bandit = internal::parseBanditConfiguration(banditJson, parseError);
+            auto bandit = internal::parseBanditConfiguration(banditJsonObj, parseError);
 
             if (bandit) {
                 response.bandits[banditKey] = *bandit;
