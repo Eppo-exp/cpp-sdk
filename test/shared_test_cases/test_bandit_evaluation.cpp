@@ -108,10 +108,13 @@ BanditResponse loadBanditModelsConfiguration(const std::string& filepath) {
         throw std::runtime_error("Failed to open bandit models configuration file: " + filepath);
     }
 
-    json j;
-    file >> j;
+    std::string jsonStr((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-    BanditResponse response = j;
+    std::string error;
+    BanditResponse response = parseBanditResponse(jsonStr, error);
+    if (!error.empty()) {
+        throw std::runtime_error("Failed to parse bandit models configuration: " + error);
+    }
     return response;
 }
 
@@ -237,7 +240,11 @@ TEST_CASE("UFC Bandit Test Cases - Bandit Action Selection", "[ufc][bandits]") {
     }
 
     // Create BanditResponse from the models JSON
-    BanditResponse banditResponse = modelsJson;
+    std::string banditError;
+    BanditResponse banditResponse = parseBanditResponse(modelsJson.dump(), banditError);
+    if (!banditError.empty()) {
+        throw std::runtime_error("Failed to parse bandit response: " + banditError);
+    }
 
     // Create configuration with both flags and bandit models
     Configuration combinedConfig(configResponse, banditResponse);

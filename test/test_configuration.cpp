@@ -140,11 +140,10 @@ TEST_CASE("BanditResponse with multiple bandits", "[configuration]") {
         "updatedAt": "2024-01-15T11:00:00Z"
     })";
 
-    // Parse JSON
-    json j = json::parse(jsonStr);
-
     // Deserialize to BanditResponse
-    BanditResponse response = j;
+    std::string error;
+    BanditResponse response = parseBanditResponse(jsonStr, error);
+    CHECK(error.empty());
 
     // Verify structure
     CHECK(response.bandits.size() == 2);

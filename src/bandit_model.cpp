@@ -249,30 +249,52 @@ void to_json(nlohmann::json& j, const BanditResponse& br) {
     j = nlohmann::json{{"bandits", br.bandits}, {"updatedAt", formatISOTimestamp(br.updatedAt)}};
 }
 
-void from_json(const nlohmann::json& j, BanditResponse& br) {
-    br.bandits.clear();
+BanditResponse parseBanditResponse(const std::string& banditJson, std::string& error) {
+    error.clear();
+    BanditResponse response;
 
-    // Parse bandits - each bandit independently, skip invalid ones
+    // Use the non-throwing version of parse (returns discarded value on error)
+    nlohmann::json j = nlohmann::json::parse(banditJson, nullptr, false);
+
+    if (j.is_discarded()) {
+        error = "Failed to parse JSON bandit response string";
+        return BanditResponse();  // Return empty BanditResponse on error
+    }
+
+    std::vector<std::string> allErrors;
+
+    // Parse bandits - each bandit independently, collect errors
     if (j.contains("bandits") && j["bandits"].is_object()) {
         for (auto& [banditKey, banditJson] : j["bandits"].items()) {
             std::string parseError;
             auto bandit = internal::parseBanditConfiguration(banditJson, parseError);
 
             if (bandit) {
-                br.bandits[banditKey] = *bandit;
+                response.bandits[banditKey] = *bandit;
+            } else if (!parseError.empty()) {
+                allErrors.push_back("Bandit '" + banditKey + "': " + parseError);
             }
-            // If parsing failed, bandit is simply not included in the map
         }
     }
 
+    // Parse updatedAt field
     if (j.contains("updatedAt") && j["updatedAt"].is_string()) {
-        std::string error;
-        br.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>(), error);
-        // TODO: log error
-        // if (!error.empty()) {
-        //     logger.error("BanditResponse: Invalid updatedAt: " + error);
-        // }
+        std::string parseError;
+        response.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>(), parseError);
+        if (!parseError.empty()) {
+            allErrors.push_back("Invalid updatedAt: " + parseError);
+        }
     }
+
+    // Consolidate all errors into a single error message
+    if (!allErrors.empty()) {
+        error = "Bandit response parsing encountered errors:\n";
+        for (const auto& err : allErrors) {
+            error += "  - " + err + "\n";
+        }
+    }
+
+    return response;
 }
 
 // BanditVariation serialization

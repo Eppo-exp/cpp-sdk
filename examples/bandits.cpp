@@ -150,10 +150,16 @@ bool loadBanditModels(const std::string& filepath, eppoclient::BanditResponse& r
         return false;
     }
 
-    nlohmann::json j;
-    file >> j;
+    std::string jsonStr((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-    response = j;
+    std::string error;
+    response = eppoclient::parseBanditResponse(jsonStr, error);
+
+    if (!error.empty()) {
+        std::cerr << "Error parsing bandit models: " << error << std::endl;
+        return false;
+    }
+
     return true;
 }
 

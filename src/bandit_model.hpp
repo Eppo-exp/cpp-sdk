@@ -99,7 +99,10 @@ struct BanditResponse {
 };
 
 void to_json(nlohmann::json& j, const BanditResponse& br);
-void from_json(const nlohmann::json& j, BanditResponse& br);
+
+// Parse bandit response from a JSON string
+// Returns a BanditResponse. If parsing fails, error will contain the error message.
+BanditResponse parseBanditResponse(const std::string& banditJson, std::string& error);
 
 /**
  * Associates a bandit with a specific flag variation.

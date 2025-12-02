@@ -206,7 +206,9 @@ TEST_CASE("BanditResponse serialization", "[bandit_model]") {
     CHECK(j["bandits"]["bandit1"]["banditKey"] == "bandit1");
 
     // Deserialize from JSON
-    BanditResponse response2 = j;
+    std::string error2;
+    BanditResponse response2 = parseBanditResponse(j.dump(), error2);
+    CHECK(error2.empty());
     CHECK(response2.bandits.size() == 1);
     CHECK(response2.bandits["bandit1"].banditKey == "bandit1");
     CHECK(response2.bandits["bandit1"].modelData.gamma == 0.85);
@@ -256,11 +258,10 @@ TEST_CASE("Complete JSON round-trip", "[bandit_model]") {
         "updatedAt": "2024-01-15T10:30:00Z"
     })";
 
-    // Parse JSON
-    json j = json::parse(jsonStr);
-
     // Deserialize to BanditResponse
-    BanditResponse response = j;
+    std::string error;
+    BanditResponse response = parseBanditResponse(jsonStr, error);
+    CHECK(error.empty());
 
     // Verify structure
     CHECK(response.bandits.size() == 1);

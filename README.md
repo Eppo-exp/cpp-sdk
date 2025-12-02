@@ -322,7 +322,6 @@ Eppo's contextual bandits allow you to dynamically select the best variant based
 To use bandits, you need to load both flag configuration and bandit models:
 
 ```cpp
-#include <nlohmann/json.hpp>
 #include "client.hpp"
 
 // Your configuration and bandit models as JSON strings
@@ -337,9 +336,13 @@ if (!configError.empty()) {
     return 1;
 }
 
-// Parse bandit models (using nlohmann::json deserialization)
-nlohmann::json banditJson = nlohmann::json::parse(banditModelsJson);
-eppoclient::BanditResponse banditModels = banditJson;
+// Parse bandit models
+std::string banditError;
+eppoclient::BanditResponse banditModels = eppoclient::parseBanditResponse(banditModelsJson, banditError);
+if (!banditError.empty()) {
+    std::cerr << "Bandit models parsing error: " << banditError << std::endl;
+    return 1;
+}
 
 eppoclient::ConfigurationStore configStore;
 configStore.setConfiguration(eppoclient::Configuration(flagConfig, banditModels));
