@@ -82,7 +82,14 @@ jobs:
           cmake --build build
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    name: Test on ${{ matrix.os }}
 
     steps:
       - name: Checkout code
@@ -91,13 +98,35 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name || 'Eppo-exp/cpp-sdk' }}
           ref: ${{ env.SDK_BRANCH_NAME }}
 
-      - name: Set up build environment
+      - name: Set up build environment (Ubuntu)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential g++ cmake pkg-config libre2-dev
 
+      - name: Set up build environment (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install re2
+          brew install cmake
+
+      - name: Set up MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install re2 via vcpkg (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          # Use the standalone C:/vcpkg (bash on Windows accepts forward slashes)
+          /c/vcpkg/vcpkg install re2:x64-windows
+          echo "CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+        shell: bash
+
       - name: Run tests
-        run: make test TEST_DATA_BRANCH=${{env.TEST_DATA_BRANCH_NAME}}
+        shell: bash
+        run: |
+          echo "CMAKE_TOOLCHAIN_FILE is: $CMAKE_TOOLCHAIN_FILE"
+          make test TEST_DATA_BRANCH=${{env.TEST_DATA_BRANCH_NAME}}
 
   memory-test:
     runs-on: ubuntu-latest

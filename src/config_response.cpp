@@ -363,12 +363,18 @@ std::optional<Allocation> parseAllocation(const nlohmann::json& j, std::string& 
     // Parse optional timestamp fields using getOptionalField
     auto startAt = getOptionalField<std::string>(j, "startAt");
     if (startAt) {
-        a.startAt = parseISOTimestamp(*startAt);
+        a.startAt = parseISOTimestamp(*startAt, error);
+        if (!error.empty()) {
+            return std::nullopt;
+        }
     }
 
     auto endAt = getOptionalField<std::string>(j, "endAt");
     if (endAt) {
-        a.endAt = parseISOTimestamp(*endAt);
+        a.endAt = parseISOTimestamp(*endAt, error);
+        if (!error.empty()) {
+            return std::nullopt;
+        }
     }
 
     auto doLog = getOptionalField<bool>(j, "doLog");

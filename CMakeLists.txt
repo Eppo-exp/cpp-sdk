@@ -46,12 +46,21 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Find RE2 library (required for safe regex handling without exceptions)
-# Try CONFIG mode first (for modern RE2 installations)
+# Try CONFIG mode first (for modern RE2 installations with CMake support)
 find_package(re2 CONFIG)
 if(NOT re2_FOUND)
-    # Fall back to PkgConfig for system installations
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(RE2 REQUIRED re2)
+    # Fall back to PkgConfig for system installations (Linux/macOS)
+    find_package(PkgConfig)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(RE2 REQUIRED re2)
+    else()
+        message(FATAL_ERROR "Could not find RE2: CMake config not found and pkg-config not available.\n"
+            "Please install RE2 with CMake support or ensure pkg-config is installed:\n"
+            "  - On Windows: Use vcpkg and set CMAKE_TOOLCHAIN_FILE environment variable\n"
+            "    vcpkg install re2:x64-windows\n"
+            "  - On Ubuntu/Debian: sudo apt-get install libre2-dev pkg-config\n"
+            "  - On macOS: brew install re2 pkg-config")
+    endif()
 endif()
 
 # Collect source files
@@ -64,10 +73,22 @@ set(THIRD_PARTY_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/md5_wrapper.c"
 )
 
+# Create a separate library for third-party code to avoid applying our warning flags
+add_library(eppoclient_third_party OBJECT ${THIRD_PARTY_SOURCES})
+target_include_directories(eppoclient_third_party PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party>
+)
+# Disable warnings for third-party code
+if(MSVC)
+    target_compile_options(eppoclient_third_party PRIVATE /W0)
+else()
+    target_compile_options(eppoclient_third_party PRIVATE -w)
+endif()
+
 # Create the library
 add_library(eppoclient STATIC
     ${EPPOCLIENT_SOURCES}
-    ${THIRD_PARTY_SOURCES}
+    $<TARGET_OBJECTS:eppoclient_third_party>
 )
 
 # Link RE2 library
@@ -223,6 +244,8 @@ if(EPPOCLIENT_BUILD_TESTS)
     # Re-enable exceptions for test code (Catch2 requires them)
     if(MSVC)
         target_compile_options(test_runner PRIVATE /EHsc /U_HAS_EXCEPTIONS)
+        # Disable CRT security warnings for test code (gmtime, etc.)
+        target_compile_definitions(test_runner PRIVATE _CRT_SECURE_NO_WARNINGS)
     else()
         target_compile_options(test_runner PRIVATE -fexceptions)
     endif()

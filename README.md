@@ -85,6 +85,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture support and cro
 - CMake 3.14+ (if using CMake)
 - Make (if using Make)
 - RE2 - Google's safe regex library
+- 64-bit architecture (x86_64, aarch64/ARM64)
 
 #### Installing RE2
 
@@ -113,6 +114,8 @@ sudo make install
 ```
 
 Other dependencies (nlohmann/json, semver, etc.) are vendored and require no installation.
+
+**Note:** Only 64-bit architectures are supported. 32-bit (x86) builds are not supported.
 
 ## Quick Start
 

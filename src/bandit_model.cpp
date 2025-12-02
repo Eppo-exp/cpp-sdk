@@ -178,7 +178,10 @@ std::optional<BanditConfiguration> parseBanditConfiguration(const nlohmann::json
     bc.modelData = *modelData;
 
     if (j.contains("updatedAt") && j["updatedAt"].is_string()) {
-        bc.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>());
+        bc.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>(), error);
+        if (!error.empty()) {
+            error = "BanditConfiguration: Invalid updatedAt: " + error;
+        }
     }
 
     return bc;
@@ -279,7 +282,12 @@ ParseResult<BanditResponse> parseBanditResponse(const nlohmann::json& j) {
         if (!j["updatedAt"].is_string()) {
             result.errors.push_back("BanditResponse: 'updatedAt' field must be a string");
         } else {
-            br.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>());
+            std::string error;
+            br.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>(), error);
+            // TODO: log error
+            // if (!error.empty()) {
+            //     logger.error("BanditResponse: Invalid updatedAt: " + error);
+            // }
         }
     }
 

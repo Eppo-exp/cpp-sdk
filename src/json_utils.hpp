@@ -64,9 +64,11 @@ std::optional<T> extractTypedValue(nlohmann::json::const_iterator it) {
         if (!it->is_boolean())
             return std::nullopt;
         return it->template get_ref<const nlohmann::json::boolean_t&>();
+    } else {
+        // This should never be reached for supported types
+        static_assert(false, "Unsupported type for extractTypedValue");
+        return std::nullopt;
     }
-
-    return std::nullopt;
 }
 
 // Helper to get an optional field with type validation

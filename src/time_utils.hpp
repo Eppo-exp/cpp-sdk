@@ -12,11 +12,14 @@ namespace eppoclient {
  * Supports ISO8601 timestamps with optional millisecond precision.
  * Examples: "2024-06-09T14:23:11", "2024-06-09T14:23:11.123"
  *
+ * Handles edge cases including date underflow and overflow scenarios.
+ *
  * @param timestamp The ISO 8601 formatted timestamp string
- * @return A time_point representing the parsed timestamp, or a default-constructed
- *         time_point if parsing fails
+ * @param error Output parameter that will contain an error message if parsing fails
+ * @return A time_point representing the parsed timestamp
  */
-std::chrono::system_clock::time_point parseISOTimestamp(const std::string& timestamp);
+std::chrono::system_clock::time_point parseISOTimestamp(const std::string& timestamp,
+                                                        std::string& error);
 
 /**
  * Format a system_clock::time_point into an ISO 8601 timestamp string.

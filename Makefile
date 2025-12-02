@@ -3,17 +3,28 @@ BUILD_DIR = build
 # Test data branch (override with: make test TEST_DATA_BRANCH=my-branch)
 TEST_DATA_BRANCH ?= main
 
+# CMake toolchain file (for vcpkg on Windows, set via environment variable)
+CMAKE_TOOLCHAIN_FILE ?=
+
+# If CMAKE_TOOLCHAIN_FILE is set, add it to cmake args with proper quoting
+ifneq ($(CMAKE_TOOLCHAIN_FILE),)
+    CMAKE_TOOLCHAIN_ARG := -DCMAKE_TOOLCHAIN_FILE="$(CMAKE_TOOLCHAIN_FILE)"
+else
+    CMAKE_TOOLCHAIN_ARG :=
+endif
+
 # Default target - comprehensive development build (library + tests + examples)
 .PHONY: all
 all:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_TESTS=ON \
 		-DEPPOCLIENT_BUILD_EXAMPLES=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
 		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH)
-	@cd $(BUILD_DIR) && $(MAKE)
+	@cmake --build $(BUILD_DIR) --config Debug
 	@# Copy compile_commands.json to root for IDE support
 	@if [ -f $(BUILD_DIR)/compile_commands.json ]; then \
 		cp $(BUILD_DIR)/compile_commands.json .; \
@@ -29,10 +40,11 @@ all:
 build:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_TESTS=OFF \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=OFF
-	@cd $(BUILD_DIR) && $(MAKE)
+	@cmake --build $(BUILD_DIR) --config Release
 	@# Copy compile_commands.json to root for IDE support
 	@if [ -f $(BUILD_DIR)/compile_commands.json ]; then \
 		cp $(BUILD_DIR)/compile_commands.json .; \
@@ -44,28 +56,30 @@ build:
 test:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_TESTS=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
 		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH)
-	@cd $(BUILD_DIR) && $(MAKE)
+	@cmake --build $(BUILD_DIR) --config Debug
 	@# Copy compile_commands.json to root for IDE support
 	@if [ -f $(BUILD_DIR)/compile_commands.json ]; then \
 		cp $(BUILD_DIR)/compile_commands.json .; \
 		echo "Updated compile_commands.json for IDE support"; \
 	fi
 	@echo "Running tests..."
-	@cd $(BUILD_DIR) && ctest -V
+	@cd $(BUILD_DIR) && ctest -V -C Debug
 
 # Build all examples
 .PHONY: examples
 examples:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_EXAMPLES=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=OFF
-	@cd $(BUILD_DIR) && $(MAKE)
+	@cmake --build $(BUILD_DIR) --config Release
 	@echo "Examples built in $(BUILD_DIR)/"
 	@echo ""
 	@echo "Run examples with:"
@@ -101,13 +115,14 @@ clean:
 test-memory:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_TESTS=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
 		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH) \
 		-DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O0" \
 		-DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O0"
-	@cd $(BUILD_DIR) && $(MAKE)
+	@cmake --build $(BUILD_DIR) --config Debug
 	@echo "Running tests with AddressSanitizer and UndefinedBehaviorSanitizer..."
 	@env ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:print_stats=1 \
 		UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
@@ -118,12 +133,13 @@ test-memory:
 test-eval-performance:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. \
+		$(CMAKE_TOOLCHAIN_ARG) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DEPPOCLIENT_BUILD_TESTS=ON \
 		-DEPPOCLIENT_ERR_ON_WARNINGS=ON \
 		-DTEST_DATA_BRANCH=$(TEST_DATA_BRANCH) \
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo
-	@cd $(BUILD_DIR) && $(MAKE)
+	@cmake --build $(BUILD_DIR) --config RelWithDebInfo
 	@echo "Running performance tests..."
 	@./build/test_runner "[performance]"
 
