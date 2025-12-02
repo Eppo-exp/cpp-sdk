@@ -17,9 +17,8 @@ namespace eppoclient {
  * @return A time_point representing the parsed timestamp, or the fallback time_point if parsing
  * fails time_point if parsing fails
  */
-std::chrono::system_clock::time_point parseISOTimestamp(
-    const std::string& timestamp,
-    std::chrono::system_clock::time_point fallbackTime = std::chrono::system_clock::time_point());
+std::chrono::system_clock::time_point parseISOTimestamp(const std::string& timestamp,
+                                                        std::string& error);
 
 /**
  * Format a system_clock::time_point into an ISO 8601 timestamp string.

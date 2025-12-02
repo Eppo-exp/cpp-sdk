@@ -5,8 +5,8 @@
 
 namespace eppoclient {
 
-std::chrono::system_clock::time_point parseISOTimestamp(
-    const std::string& timestamp, std::chrono::system_clock::time_point fallbackTime) {
+std::chrono::system_clock::time_point parseISOTimestamp(const std::string& timestamp,
+                                                        std::string& error) {
     std::tm tm = {};
     char dot = '\0';
     int milliseconds = 0;
@@ -18,7 +18,8 @@ std::chrono::system_clock::time_point parseISOTimestamp(
     ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
 
     if (ss.fail()) {
-        return fallbackTime;
+        error = "Invalid timestamp: " + timestamp;
+        return std::chrono::system_clock::time_point();
     }
 
     // Check if the next character is '.'
@@ -53,7 +54,32 @@ std::chrono::system_clock::time_point parseISOTimestamp(
 #endif
 
     if (time_c == -1) {
-        return fallbackTime;
+        // Validate that we have at least 4 characters and they're all digits
+        if (timestamp.length() < 4) {
+            error = "Invalid timestamp: " + timestamp;
+            return std::chrono::system_clock::time_point();
+        }
+
+        std::string yearStr = timestamp.substr(0, 4);
+        for (char c : yearStr) {
+            if (!std::isdigit(static_cast<unsigned char>(c))) {
+                error = "Invalid timestamp: " + timestamp;
+                return std::chrono::system_clock::time_point();
+            }
+        }
+
+        // Validate that the 5th character is a dash (if it exists)
+        if (timestamp.length() > 4 && timestamp[4] != '-') {
+            error = "Invalid timestamp: " + timestamp;
+            return std::chrono::system_clock::time_point();
+        }
+
+        int year = std::stoi(yearStr);
+        if (year < 1970) {
+            return std::chrono::system_clock::time_point::min();
+        } else {
+            return std::chrono::system_clock::time_point::max();
+        }
     }
     auto tp = std::chrono::system_clock::from_time_t(time_c);
     tp += std::chrono::milliseconds(milliseconds);
