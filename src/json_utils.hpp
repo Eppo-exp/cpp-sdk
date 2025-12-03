@@ -66,7 +66,7 @@ std::optional<T> extractTypedValue(nlohmann::json::const_iterator it) {
         return it->template get_ref<const nlohmann::json::boolean_t&>();
     } else {
         // This should never be reached for supported types
-        static_assert(false, "Unsupported type for extractTypedValue");
+        static_assert(!sizeof(T), "Unsupported type for extractTypedValue");
         return std::nullopt;
     }
 }

@@ -83,7 +83,7 @@ jobs:
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
-        run: brew install re2 pkg-config
+        run: brew install re2
 
       - name: Build with CMake
         run: |
@@ -125,7 +125,7 @@ jobs:
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
-        run: brew install re2 pkg-config
+        run: brew install re2
 
       - name: Build Universal Binary
         run: |
