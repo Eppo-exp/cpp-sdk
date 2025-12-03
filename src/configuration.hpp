@@ -62,8 +62,7 @@ private:
  * that provides a simpler API for common use cases.
  *
  * @param flagConfigJson JSON string containing flag configuration
- * @param banditModelsJson JSON string containing bandit models (optional - pass empty string to
- * skip)
+ * @param banditModelsJson JSON string containing bandit models
  * @return ParseResult containing Configuration object and any errors encountered during parsing
  *
  * Example usage:
@@ -85,7 +84,18 @@ private:
  * @endcode
  */
 ParseResult<Configuration> parseConfiguration(const std::string& flagConfigJson,
-                                              const std::string& banditModelsJson = "");
+                                              const std::string& banditModelsJson);
+
+/**
+ * Parse configuration from flag configuration JSON only.
+ *
+ * This is a convenience overload for when you only have flag configuration
+ * and no bandit models.
+ *
+ * @param flagConfigJson JSON string containing flag configuration
+ * @return ParseResult containing Configuration object and any errors encountered during parsing
+ */
+ParseResult<Configuration> parseConfiguration(const std::string& flagConfigJson);
 
 }  // namespace eppoclient
 

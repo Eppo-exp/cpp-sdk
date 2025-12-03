@@ -126,4 +126,8 @@ ParseResult<Configuration> parseConfiguration(const std::string& flagConfigJson,
     return result;
 }
 
+ParseResult<Configuration> parseConfiguration(const std::string& flagConfigJson) {
+    return parseConfiguration(flagConfigJson, "");
+}
+
 }  // namespace eppoclient
