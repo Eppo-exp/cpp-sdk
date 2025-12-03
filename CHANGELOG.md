@@ -9,8 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2025-12-02
+
 ### Added
 
+- `EvaluationClient` - lightweight client for flag evaluation without logging
 - `ConfigurationStore` convenience API for setting configuration by value:
   - `ConfigurationStore(Configuration config)` - constructor accepting Configuration by value
   - `setConfiguration(Configuration config)` - setter accepting Configuration by value
@@ -25,12 +28,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Collect all parsing errors instead of failing on first error
   - Enable partial success handling (return value with warnings)
 - New `ParseResult<T>` template for structured error reporting during parsing
+- Support for building without exceptions via `-fno-exceptions` flag
+- Abort-free configuration parsing - all parsing operations can now fail gracefully
 
 ### Changed
 
 - **BREAKING**: `ConfigurationStore::getConfiguration()` now returns `std::shared_ptr<const Configuration>` instead of `Configuration` by value
   - Eliminates expensive configuration copies on every flag evaluation
 - **BREAKING**: `Configuration` constructors now take parameters by value for better performance
+- **BREAKING**: SDK now uses RE2 regex library instead of `std::regex`
+  - RE2 is not vulnerable to ReDoS (Regular Expression Denial of Service) attacks
+  - RE2 works without exceptions, enabling exception-free builds
+  - This change improves security and reliability
 - `ConfigurationStore` now uses atomic operations instead of mutex internally for better performance
 - **BREAKING**: Parsing functions now report errors instead of silently skipping invalid entries:
   - `parseConfigResponse()` and `parseBanditResponse()` return `ParseResult<T>` with error collection
@@ -63,4 +72,5 @@ Initial release of the Eppo C++ SDK.
 - Example applications for flags and bandits
 - Comprehensive documentation and README
 
+[2.0.0]: https://github.com/Eppo-exp/cpp-sdk/releases/tag/v2.0.0
 [1.0.0]: https://github.com/Eppo-exp/cpp-sdk/releases/tag/v1.0.0
