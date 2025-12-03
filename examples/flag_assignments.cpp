@@ -126,7 +126,7 @@ int main() {
     eppoclient::Attributes attributes1;
     attributes1["company_id"] = "42";
     bool result1 =
-        client.getBoolAssignment("boolean-false-assignment", "my-subject", attributes1, false);
+        client.getBooleanAssignment("boolean-false-assignment", "my-subject", attributes1, false);
     if (result1) {
         std::cout << "Hello Universe!" << std::endl;
     } else {
@@ -138,7 +138,7 @@ int main() {
     eppoclient::Attributes attributes2;
     attributes2["should_disable_feature"] = false;
     bool result2 =
-        client.getBoolAssignment("boolean-false-assignment", "my-subject", attributes2, false);
+        client.getBooleanAssignment("boolean-false-assignment", "my-subject", attributes2, false);
     if (result2) {
         std::cout << "Hello Universe!" << std::endl;
     } else {
@@ -150,7 +150,7 @@ int main() {
     eppoclient::Attributes attributes3;
     attributes3["should_disable_feature"] = true;
     bool result3 =
-        client.getBoolAssignment("boolean-false-assignment", "my-subject", attributes3, false);
+        client.getBooleanAssignment("boolean-false-assignment", "my-subject", attributes3, false);
     if (result3) {
         std::cout << "Hello Universe!" << std::endl;
     } else {

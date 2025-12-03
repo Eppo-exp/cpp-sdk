@@ -178,7 +178,7 @@ Once initialized, you can evaluate feature flags for different types:
 
 ```cpp
 // Boolean flag
-bool showNewFeature = client.getBoolAssignment(
+bool showNewFeature = client.getBooleanAssignment(
     "new-feature-flag",            // flag key
     "user-123",                    // subject key
     attributes,                    // subject attributes
@@ -319,7 +319,7 @@ int main() {
     attributes["is_premium"] = true;
 
     // Evaluate a feature flag
-    bool showNewUI = client.getBoolAssignment(
+    bool showNewUI = client.getBooleanAssignment(
         "new-ui-rollout",
         "user-abc-123",
         attributes,
@@ -545,7 +545,7 @@ eppoclient::Attributes attributes;
 
 // If the flag doesn't exist, returns the default value (false)
 // and logs an info message through applicationLogger
-bool result = client.getBoolAssignment(
+bool result = client.getBooleanAssignment(
     "non-existent-flag",
     "user-123",
     attributes,
@@ -555,7 +555,7 @@ bool result = client.getBoolAssignment(
 
 // If parameters are invalid (e.g., empty subject key),
 // returns the default value and logs an error
-bool result2 = client.getBoolAssignment(
+bool result2 = client.getBooleanAssignment(
     "my-flag",
     "",  // Empty subject key
     attributes,
@@ -701,7 +701,7 @@ int main() {
     attributes["company_id"] = std::string("42");
 
     // SDK handles errors gracefully - no exceptions thrown
-    bool isEnabled = client.getBoolAssignment(
+    bool isEnabled = client.getBooleanAssignment(
         "new-checkout-flow",
         "user-123",
         attributes,
@@ -788,7 +788,7 @@ eppoclient::EppoClient client(
     applicationLogger  // optional
 );
 
-bool result = client.getBoolAssignment("flag-key", "user-123", attrs, false);
+bool result = client.getBooleanAssignment("flag-key", "user-123", attrs, false);
 ```
 
 **Benefits:**
@@ -813,7 +813,7 @@ eppoclient::EvaluationClient evaluationClient(
     applicationLogger  // required reference
 );
 
-bool result = evaluationClient.getBoolAssignment("flag-key", "user-123", attrs, false);
+bool result = evaluationClient.getBooleanAssignment("flag-key", "user-123", attrs, false);
 ```
 
 **When to use EvaluationClient:**
@@ -852,8 +852,8 @@ configStore->setConfiguration(std::move(*result.value));
 eppoclient::EppoClient client(configStore, assignmentLogger);
 
 // All flag evaluations happen on the same thread - safe
-bool feature1 = client.getBoolAssignment("flag1", "user-123", attrs, false);
-bool feature2 = client.getBoolAssignment("flag2", "user-123", attrs, false);
+bool feature1 = client.getBooleanAssignment("flag1", "user-123", attrs, false);
+bool feature2 = client.getBooleanAssignment("flag2", "user-123", attrs, false);
 ```
 
 ### Multi-Threaded Usage (Synchronization Required)
@@ -887,14 +887,14 @@ public:
     }
 
     // Thread-safe flag evaluation
-    bool getBoolAssignment(
+    bool getBooleanAssignment(
         const std::string& flagKey,
         const std::string& subjectKey,
         const eppoclient::Attributes& attributes,
         bool defaultValue
     ) {
         std::lock_guard<std::mutex> lock(mutex_);
-        return client_->getBoolAssignment(flagKey, subjectKey, attributes, defaultValue);
+        return client_->getBooleanAssignment(flagKey, subjectKey, attributes, defaultValue);
     }
 
     // Add other methods as needed...
@@ -904,8 +904,8 @@ public:
 ThreadSafeEppoClient client(assignmentLogger);
 
 // Can now safely call from multiple threads
-bool result1 = client.getBoolAssignment("flag1", "user-123", attrs, false);
-bool result2 = client.getBoolAssignment("flag2", "user-456", attrs, false);
+bool result1 = client.getBooleanAssignment("flag1", "user-123", attrs, false);
+bool result2 = client.getBooleanAssignment("flag2", "user-456", attrs, false);
 ```
 
 ### Design Philosophy

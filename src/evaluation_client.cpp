@@ -16,8 +16,10 @@ EvaluationClient::EvaluationClient(const Configuration& configuration,
       banditLogger_(banditLogger),
       applicationLogger_(applicationLogger) {}
 
-bool EvaluationClient::getBoolAssignment(const std::string& flagKey, const std::string& subjectKey,
-                                         const Attributes& subjectAttributes, bool defaultValue) {
+bool EvaluationClient::getBooleanAssignment(const std::string& flagKey,
+                                            const std::string& subjectKey,
+                                            const Attributes& subjectAttributes,
+                                            bool defaultValue) {
     auto variation = getAssignment(configuration_, flagKey, subjectKey, subjectAttributes,
                                    VariationType::BOOLEAN);
     return extractVariation(variation, flagKey, VariationType::BOOLEAN, defaultValue);

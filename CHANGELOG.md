@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `parseConfigResponse()` and `parseBanditResponse()` return `ParseResult<T>` with error collection
   - Use the new `parseConfiguration()` convenience function for simplified error handling
   - Errors are aggregated and returned rather than causing silent data loss
+- **BREAKING**: client.getBoolAssignment renamed to client.getBooleanAssignment for consistency with getBooleanAssignmentDetails
 
 ### Removed
 

@@ -47,8 +47,8 @@ TEST_CASE("Error handling - returns default values and logs errors", "[error-han
     Attributes attrs;
     attrs["test"] = std::string("value");
 
-    SECTION("getBoolAssignment returns default value on empty subject key error") {
-        bool result = client.getBoolAssignment("test-flag", "", attrs, true);
+    SECTION("getBooleanAssignment returns default value on empty subject key error") {
+        bool result = client.getBooleanAssignment("test-flag", "", attrs, true);
 
         // Should return default value
         CHECK(result == true);
@@ -177,7 +177,7 @@ TEST_CASE("Error handling - Empty subject key errors", "[error-handling]") {
     attrs["test"] = std::string("value");
 
     SECTION("Empty subject key returns default and logs error") {
-        bool result = client.getBoolAssignment("test-flag", "", attrs, true);
+        bool result = client.getBooleanAssignment("test-flag", "", attrs, true);
         CHECK(result == true);
 
         // Should have logged error
@@ -206,7 +206,7 @@ TEST_CASE("Error handling - Empty flag key errors", "[error-handling]") {
     attrs["test"] = std::string("value");
 
     SECTION("Empty flag key returns default and logs error") {
-        bool result = client.getBoolAssignment("", "test-subject", attrs, false);
+        bool result = client.getBooleanAssignment("", "test-subject", attrs, false);
         CHECK(result == false);
 
         // Should have logged error
@@ -235,7 +235,7 @@ TEST_CASE("Error handling - Missing flag configuration", "[error-handling]") {
     attrs["test"] = std::string("value");
 
     SECTION("Missing flag returns default and logs info") {
-        bool result = client.getBoolAssignment("nonexistent-flag", "test-subject", attrs, true);
+        bool result = client.getBooleanAssignment("nonexistent-flag", "test-subject", attrs, true);
         CHECK(result == true);
 
         // Should have logged info about missing flag

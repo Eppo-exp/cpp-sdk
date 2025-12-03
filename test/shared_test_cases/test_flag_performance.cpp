@@ -261,8 +261,8 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
                 switch (testCase.variationType) {
                     case VariationType::BOOLEAN: {
                         bool defaultVal = testCase.defaultValue.get<bool>();
-                        client.getBoolAssignment(testCase.flag, subject.subjectKey,
-                                                 subject.subjectAttributes, defaultVal);
+                        client.getBooleanAssignment(testCase.flag, subject.subjectKey,
+                                                    subject.subjectAttributes, defaultVal);
                         break;
                     }
                     case VariationType::STRING: {
@@ -315,8 +315,8 @@ TEST_CASE("Performance - Flag Evaluation Timing", "[performance][flags]") {
             switch (testCase.variationType) {
                 case VariationType::BOOLEAN: {
                     bool defaultVal = testCase.defaultValue.get<bool>();
-                    client.getBoolAssignment(testCase.flag, subject.subjectKey,
-                                             subject.subjectAttributes, defaultVal);
+                    client.getBooleanAssignment(testCase.flag, subject.subjectKey,
+                                                subject.subjectAttributes, defaultVal);
                     break;
                 }
                 case VariationType::STRING: {

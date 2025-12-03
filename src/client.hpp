@@ -55,7 +55,7 @@ public:
  * eppoclient::EppoClient client(configStore, nullptr, nullptr, logger);
  *
  * // If flag doesn't exist, logs an info message and returns false
- * bool result = client.getBoolAssignment("my-flag", "user-123", attrs, false);
+ * bool result = client.getBooleanAssignment("my-flag", "user-123", attrs, false);
  * @endcode
  */
 class EppoClient {
@@ -76,8 +76,8 @@ public:
                std::shared_ptr<ApplicationLogger> applicationLogger = nullptr);
 
     // Get boolean assignment
-    bool getBoolAssignment(const std::string& flagKey, const std::string& subjectKey,
-                           const Attributes& subjectAttributes, bool defaultValue);
+    bool getBooleanAssignment(const std::string& flagKey, const std::string& subjectKey,
+                              const Attributes& subjectAttributes, bool defaultValue);
 
     // Get numeric assignment
     double getNumericAssignment(const std::string& flagKey, const std::string& subjectKey,
