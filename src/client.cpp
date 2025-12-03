@@ -21,11 +21,11 @@ EvaluationClient EppoClient::evaluationClient(const Configuration& config) const
     return EvaluationClient(config, *assignmentLogger_, *banditLogger_, *applicationLogger_);
 }
 
-bool EppoClient::getBoolAssignment(const std::string& flagKey, const std::string& subjectKey,
-                                   const Attributes& subjectAttributes, bool defaultValue) {
+bool EppoClient::getBooleanAssignment(const std::string& flagKey, const std::string& subjectKey,
+                                      const Attributes& subjectAttributes, bool defaultValue) {
     auto config = configurationStore_->getConfiguration();
-    return evaluationClient(*config).getBoolAssignment(flagKey, subjectKey, subjectAttributes,
-                                                       defaultValue);
+    return evaluationClient(*config).getBooleanAssignment(flagKey, subjectKey, subjectAttributes,
+                                                          defaultValue);
 }
 
 double EppoClient::getNumericAssignment(const std::string& flagKey, const std::string& subjectKey,

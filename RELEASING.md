@@ -16,8 +16,7 @@ Before creating a release, ensure:
 - [ ] All tests pass (`make test`)
 - [ ] Examples compile and run correctly
 - [ ] Documentation is up to date
-- [ ] CHANGELOG has been updated (if maintained)
-- [ ] Version number follows semantic versioning
+- [ ] CHANGELOG has been updated
 - [ ] Version is updated in `src/version.hpp`
 
 ## Creating a Release

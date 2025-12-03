@@ -66,7 +66,7 @@ public:
  *                                               banditLogger, applicationLogger);
  *
  * // If flag doesn't exist, logs an info message and returns false
- * bool result = evaluationClient.getBoolAssignment("my-flag", "user-123", attrs, false);
+ * bool result = evaluationClient.getBooleanAssignment("my-flag", "user-123", attrs, false);
  * @endcode
  *
  * @note Most users should use EppoClient instead, which provides a simpler API
@@ -78,8 +78,8 @@ public:
                      BanditLogger& banditLogger, ApplicationLogger& applicationLogger);
 
     // Get boolean assignment
-    bool getBoolAssignment(const std::string& flagKey, const std::string& subjectKey,
-                           const Attributes& subjectAttributes, bool defaultValue);
+    bool getBooleanAssignment(const std::string& flagKey, const std::string& subjectKey,
+                              const Attributes& subjectAttributes, bool defaultValue);
 
     // Get numeric assignment
     double getNumericAssignment(const std::string& flagKey, const std::string& subjectKey,

@@ -203,6 +203,9 @@ if(EPPOCLIENT_BUILD_EXAMPLES)
 
     add_executable(assignment_details examples/assignment_details.cpp)
     target_link_libraries(assignment_details PRIVATE eppoclient)
+
+    add_executable(manual_sync examples/manual_sync.cpp)
+    target_link_libraries(manual_sync PRIVATE eppoclient)
 endif()
 
 # Optional: Build tests

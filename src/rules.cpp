@@ -1,5 +1,4 @@
 #include "rules.hpp"
-#include <memory>
 #include <semver/semver.hpp>
 #include "config_response.hpp"
 #include "json_utils.hpp"

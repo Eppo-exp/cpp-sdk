@@ -217,8 +217,8 @@ TEST_CASE("UFC Test Cases - Flag Assignments", "[ufc][flags]") {
                         case VariationType::BOOLEAN: {
                             bool defaultVal = testCase.defaultValue.get<bool>();
                             bool result =
-                                client.getBoolAssignment(testCase.flag, subject.subjectKey,
-                                                         subject.subjectAttributes, defaultVal);
+                                client.getBooleanAssignment(testCase.flag, subject.subjectKey,
+                                                            subject.subjectAttributes, defaultVal);
                             assignment = result;
                             break;
                         }

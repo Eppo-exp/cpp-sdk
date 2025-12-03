@@ -24,7 +24,7 @@ include(FetchContent)
 FetchContent_Declare(
   eppoclient
   GIT_REPOSITORY https://github.com/Eppo-exp/cpp-sdk.git
-  GIT_TAG v1.0.0  # Use the latest version
+  GIT_TAG v2.0.0  # Use the latest version
 )
 FetchContent_MakeAvailable(eppoclient)
 
@@ -147,12 +147,30 @@ if (!result.hasValue()) {
 }
 
 // Create and initialize the configuration store
-eppoclient::ConfigurationStore configStore;
-configStore.setConfiguration(std::move(*result.value));
+auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+configStore->setConfiguration(std::move(*result.value));
 
-// Create the client (configStore must outlive client)
+// Create the client
 eppoclient::EppoClient client(configStore);
 ```
+
+#### Alternative: Initialize ConfigurationStore with Configuration
+
+You can also initialize the `ConfigurationStore` directly with a `Configuration` object using one of the convenience constructors:
+
+```cpp
+// Option 1: Pass Configuration by value
+auto configStore = std::make_shared<eppoclient::ConfigurationStore>(std::move(*result.value));
+
+// Option 2: Pass Configuration as shared_ptr
+auto config = std::make_shared<const eppoclient::Configuration>(std::move(*result.value));
+auto configStore = std::make_shared<eppoclient::ConfigurationStore>(config);
+
+// Both options create a ConfigurationStore with the configuration already set
+eppoclient::EppoClient client(configStore);
+```
+
+This is more concise than the two-step approach and is useful when you have your configuration ready at initialization time.
 
 ### 2. Evaluate Feature Flags
 
@@ -160,7 +178,7 @@ Once initialized, you can evaluate feature flags for different types:
 
 ```cpp
 // Boolean flag
-bool showNewFeature = client.getBoolAssignment(
+bool showNewFeature = client.getBooleanAssignment(
     "new-feature-flag",            // flag key
     "user-123",                    // subject key
     attributes,                    // subject attributes
@@ -247,6 +265,8 @@ public:
 // Create client with loggers
 auto assignmentLogger = std::make_shared<MyAssignmentLogger>();
 auto applicationLogger = std::make_shared<MyApplicationLogger>();
+auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+// ... (after configStore->setConfiguration())
 
 eppoclient::EppoClient client(
     configStore,
@@ -267,7 +287,6 @@ Here's a complete example showing flag evaluation with logging:
 
 int main() {
     // Initialize configuration
-    eppoclient::ConfigurationStore configStore;
     std::string configJson = "...";  // Your JSON config string
     auto result = eppoclient::parseConfiguration(configJson);
     if (!result.hasValue()) {
@@ -277,7 +296,9 @@ int main() {
         }
         return 1;
     }
-    configStore.setConfiguration(std::move(*result.value));
+
+    auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+    configStore->setConfiguration(std::move(*result.value));
 
     // Create loggers
     auto assignmentLogger = std::make_shared<MyAssignmentLogger>();
@@ -298,7 +319,7 @@ int main() {
     attributes["is_premium"] = true;
 
     // Evaluate a feature flag
-    bool showNewUI = client.getBoolAssignment(
+    bool showNewUI = client.getBooleanAssignment(
         "new-ui-rollout",
         "user-abc-123",
         attributes,
@@ -341,8 +362,8 @@ if (!result.hasValue()) {
     return 1;
 }
 
-eppoclient::ConfigurationStore configStore;
-configStore.setConfiguration(std::move(*result.value));
+auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+configStore->setConfiguration(std::move(*result.value));
 
 // Create bandit logger to track bandit actions
 class MyBanditLogger : public eppoclient::BanditLogger {
@@ -439,7 +460,6 @@ Here's a complete example from `examples/bandits.cpp` showing bandit-powered car
 
 int main() {
     // Load configuration
-    eppoclient::ConfigurationStore configStore;
     std::string flagConfigJson = "...";  // Your flag config JSON
     std::string banditModelsJson = "...";  // Your bandit models JSON
     auto result = eppoclient::parseConfiguration(flagConfigJson, banditModelsJson);
@@ -450,7 +470,9 @@ int main() {
         }
         return 1;
     }
-    configStore.setConfiguration(std::move(*result.value));
+
+    auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+    configStore->setConfiguration(std::move(*result.value));
 
     // Create loggers
     auto assignmentLogger = std::make_shared<MyAssignmentLogger>();
@@ -509,6 +531,9 @@ See the **Getting Detailed Error Information** section below for more refined er
 ### Error Handling Behavior
 
 ```cpp
+auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+// ... (after configStore->setConfiguration())
+
 eppoclient::EppoClient client(
     configStore,
     assignmentLogger,
@@ -520,7 +545,7 @@ eppoclient::Attributes attributes;
 
 // If the flag doesn't exist, returns the default value (false)
 // and logs an info message through applicationLogger
-bool result = client.getBoolAssignment(
+bool result = client.getBooleanAssignment(
     "non-existent-flag",
     "user-123",
     attributes,
@@ -530,7 +555,7 @@ bool result = client.getBoolAssignment(
 
 // If parameters are invalid (e.g., empty subject key),
 // returns the default value and logs an error
-bool result2 = client.getBoolAssignment(
+bool result2 = client.getBooleanAssignment(
     "my-flag",
     "",  // Empty subject key
     attributes,
@@ -566,12 +591,14 @@ public:
 };
 
 auto logger = std::make_shared<MyApplicationLogger>();
+auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+// ... (after configStore->setConfiguration())
 eppoclient::EppoClient client(configStore, nullptr, nullptr, logger);
 ```
 
 ### Getting Detailed Error Information
 
-For more granular error handling, use the `*Details()` variants of assignment functions (such as `getBoolAssignmentDetails()`, `getStringAssignmentDetails()`, etc.). These functions return evaluation details that include:
+For more granular error handling, use the `*Details()` variants of assignment functions (such as `getBooleanAssignmentDetails()`, `getStringAssignmentDetails()`, etc.). These functions return evaluation details that include:
 
 1. **Flag evaluation code**: Indicates why a particular assignment was made or what error occurred
 2. **Flag evaluation details**: Contains specific error messages when errors are encountered
@@ -580,7 +607,7 @@ For more granular error handling, use the `*Details()` variants of assignment fu
 eppoclient::Attributes attributes;
 
 // Use the *Details function to get evaluation information
-auto result = client.getBoolAssignmentDetails(
+auto result = client.getBooleanAssignmentDetails(
     "my-flag",
     "user-123",
     attributes,
@@ -649,7 +676,6 @@ Always ensure these preconditions are met to avoid assertion failures.
 
 int main() {
     // Initialize client with application logger
-    eppoclient::ConfigurationStore configStore;
     std::string configJson = "...";  // Your JSON config string
     auto result = eppoclient::parseConfiguration(configJson);
     if (!result.hasValue()) {
@@ -659,7 +685,9 @@ int main() {
         }
         return 1;
     }
-    configStore.setConfiguration(std::move(*result.value));
+
+    auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+    configStore->setConfiguration(std::move(*result.value));
 
     auto applicationLogger = std::make_shared<MyApplicationLogger>();
     eppoclient::EppoClient client(
@@ -673,7 +701,7 @@ int main() {
     attributes["company_id"] = std::string("42");
 
     // SDK handles errors gracefully - no exceptions thrown
-    bool isEnabled = client.getBoolAssignment(
+    bool isEnabled = client.getBooleanAssignment(
         "new-checkout-flow",
         "user-123",
         attributes,
@@ -730,107 +758,157 @@ if (result.evaluationDetails.has_value()) {
 ```
 
 All assignment methods have corresponding `*Details()` variants:
-- `getBoolAssignmentDetails()`
+- `getBooleanAssignmentDetails()`
 - `getStringAssignmentDetails()`
 - `getNumericAssignmentDetails()`
 - `getIntegerAssignmentDetails()`
-- `getJSONAssignmentDetails()`
-- `getSerializedJSONAssignmentDetails()`
+- `getJsonAssignmentDetails()`
+- `getSerializedJsonAssignmentDetails()`
 - `getBanditActionDetails()`
 
 For more information on debugging flag assignments and using evaluation details, see the [Eppo SDK debugging documentation](https://docs.geteppo.com/sdks/sdk-features/debugging-flag-assignment#allocation-evaluation-scenarios). You can find working examples in [examples/assignment_details.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/assignment_details.cpp).
 
-## Thread Safety and Concurrency
+## EvaluationClient vs EppoClient
 
-The Eppo C++ SDK is **not thread-safe by design**. If you need to use the SDK from multiple threads, you are responsible for providing appropriate synchronization mechanisms in your application.
+The SDK provides two client classes for different use cases:
 
-### Key Points
+### EppoClient (Recommended for Most Users)
 
-- `ConfigurationStore::setConfiguration()` is not thread-safe - updating configuration while reading requires external synchronization
-- `ConfigurationStore::getConfiguration()` returns a `std::shared_ptr<const Configuration>` with thread-safe reference counting
-- Retrieved configurations are immutable (`const`) and safe to use concurrently once obtained
-- `EppoClient` is not thread-safe - concurrent flag evaluations require external synchronization
-- The caller is responsible for implementing any required synchronization when updating configuration
-
-### Single-Threaded Usage (No Synchronization Required)
-
-If your application evaluates flags from a single thread, no special synchronization is needed:
+`EppoClient` is the high-level client that manages configuration storage and provides optional logging:
 
 ```cpp
-eppoclient::ConfigurationStore configStore;
-configStore.setConfiguration(eppoclient::Configuration(config));
+auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+configStore->setConfiguration(config);
+
+// Loggers are optional (can be nullptr)
+eppoclient::EppoClient client(
+    configStore,
+    assignmentLogger,  // optional
+    banditLogger,      // optional
+    applicationLogger  // optional
+);
+
+bool result = client.getBooleanAssignment("flag-key", "user-123", attrs, false);
+```
+
+**Benefits:**
+- Works with `ConfigurationStore` for easy configuration updates
+- Optional loggers (can pass `nullptr`)
+- Simpler API for most use cases
+
+### EvaluationClient (Advanced Use Cases)
+
+`EvaluationClient` is the low-level evaluation engine designed to **separate evaluation logic from state management**. Use this approach for more manual control over synchronization. 
+
+```cpp
+const Configuration& config = ...;  // Must outlive EvaluationClient
+MyAssignmentLogger assignmentLogger;
+MyBanditLogger banditLogger;
+MyApplicationLogger applicationLogger;
+
+eppoclient::EvaluationClient evaluationClient(
+    config,
+    assignmentLogger,  // required reference
+    banditLogger,      // required reference
+    applicationLogger  // required reference
+);
+
+bool result = evaluationClient.getBooleanAssignment("flag-key", "user-123", attrs, false);
+```
+
+**Design Philosophy:**
+
+`EvaluationClient` was introduced to provide maximum flexibility and performance:
+
+- **Zero synchronization overhead**: Takes configuration and loggers by reference with no shared pointers or mutex locking
+- **Cheap construction**: Extremely lightweight to create and destroy instances
+- **Flexible synchronization strategies**: Instead of forcing a one-size-fits-all locking approach (like protecting the entire client with a mutex), you can implement your own synchronization strategy around `ConfigurationStore`
+- **Parallel evaluation**: Enables efficient concurrent evaluations—you can guard only the cheap `shared_ptr` copying operation when retrieving configuration, then evaluate in parallel
+- **Custom configuration management**: Allows building your own configuration management system without being constrained by `ConfigurationStore`'s internal implementation
+
+**When to use EvaluationClient:**
+- You need maximum performance with custom synchronization strategies
+- You want to evaluate flags in parallel across multiple threads with minimal locking
+- You want direct control over the `Configuration` object lifetime
+
+**Important notes:**
+- All parameters (configuration and loggers) are passed by reference and must outlive the `EvaluationClient` instance
+- All loggers are required (not optional)
+- You're responsible for managing the `Configuration` lifetime and any necessary synchronization
+
+**For most applications, use `EppoClient`**. Only use `EvaluationClient` if you need the advanced control and performance characteristics it provides.
+
+For a complete working example of using `EvaluationClient` with manual synchronization, see [examples/manual_sync.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/manual_sync.cpp).
+
+```cpp
+auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
+configStore->setConfiguration(std::move(*result.value));
+
+// Create thread-safe loggers
+auto assignmentLogger = std::make_shared<ThreadSafeAssignmentLogger>();
 
 eppoclient::EppoClient client(configStore, assignmentLogger);
 
-// All flag evaluations happen on the same thread - safe
-bool feature1 = client.getBoolAssignment("flag1", "user-123", attrs, false);
-bool feature2 = client.getBoolAssignment("flag2", "user-123", attrs, false);
+// ✅ Safe to call from multiple threads without any additional synchronization
+// Thread 1:
+bool feature1 = client.getBooleanAssignment("flag1", "user-123", attrs, false);
+
+// Thread 2:
+bool feature2 = client.getBooleanAssignment("flag2", "user-456", attrs, false);
+
+// Thread 3:
+std::string variant = client.getStringAssignment("flag3", "user-789", attrs, "default");
 ```
 
-### Multi-Threaded Usage (Synchronization Required)
+### Updating Configuration
 
-If you need to evaluate flags from multiple threads or update configuration while reading, you must provide synchronization:
+Configuration updates are also thread-safe and can happen concurrently with flag evaluations:
 
 ```cpp
-#include <mutex>
-#include <memory>
+// Thread 1: Evaluating flags
+bool result = client.getBooleanAssignment("flag", "user", attrs, false);
 
-// Wrap the configuration store and client with a mutex
-class ThreadSafeEppoClient {
-private:
-    eppoclient::ConfigurationStore configStore_;
-    std::unique_ptr<eppoclient::EppoClient> client_;
-    mutable std::mutex mutex_;
+// Thread 2: Updating configuration (safe!)
+eppoclient::Configuration newConfig = ...;
+configStore->setConfiguration(newConfig);
 
-public:
-    ThreadSafeEppoClient(
-        std::shared_ptr<eppoclient::AssignmentLogger> assignmentLogger = nullptr,
-        std::shared_ptr<eppoclient::BanditLogger> banditLogger = nullptr,
-        std::shared_ptr<eppoclient::ApplicationLogger> applicationLogger = nullptr
-    ) : client_(std::make_unique<eppoclient::EppoClient>(
-            configStore_, assignmentLogger, banditLogger, applicationLogger)) {}
-
-    // Thread-safe configuration update
-    void updateConfiguration(const eppoclient::Configuration& config) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        configStore_.setConfiguration(config);
-    }
-
-    // Thread-safe flag evaluation
-    bool getBoolAssignment(
-        const std::string& flagKey,
-        const std::string& subjectKey,
-        const eppoclient::Attributes& attributes,
-        bool defaultValue
-    ) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        return client_->getBoolAssignment(flagKey, subjectKey, attributes, defaultValue);
-    }
-
-    // Add other methods as needed...
-};
-
-// Usage:
-ThreadSafeEppoClient client(assignmentLogger);
-
-// Can now safely call from multiple threads
-bool result1 = client.getBoolAssignment("flag1", "user-123", attrs, false);
-bool result2 = client.getBoolAssignment("flag2", "user-456", attrs, false);
+// Subsequent evaluations on Thread 1 will use the new configuration
 ```
+
+### Advanced: EvaluationClient for Maximum Performance
+
+For advanced use cases requiring maximum performance, you can use `EvaluationClient` directly with custom synchronization strategies. This approach avoids creating temporary objects on each evaluation:
+
+```cpp
+// Get configuration once (thread-safe)
+auto config = configStore->getConfiguration();
+
+// Create long-lived EvaluationClient (cheap, no locking)
+eppoclient::EvaluationClient evaluationClient(*config, assignmentLogger,
+                                             banditLogger, applicationLogger);
+
+// Evaluate many flags without any locking overhead
+bool result1 = evaluationClient.getBooleanAssignment("flag1", "user", attrs, false);
+bool result2 = evaluationClient.getBooleanAssignment("flag2", "user", attrs, false);
+// ... thousands more evaluations ...
+```
+
+For a complete example of this advanced pattern, see [examples/manual_sync.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/manual_sync.cpp).
 
 ### Design Philosophy
 
-This design choice allows:
-- **Maximum flexibility**: Applications can choose their preferred synchronization strategy (mutexes, read-write locks, lock-free structures, etc.)
-- **Zero overhead for single-threaded applications**: No unnecessary locking when concurrency isn't needed
-- **Better integration**: The SDK adapts to your application's existing concurrency model rather than imposing its own
+The SDK's thread-safety design provides:
+- **Zero synchronization overhead** - No mutexes during flag evaluation
+- **Immutable configurations** - Safe concurrent access without locking
+- **Atomic configuration updates** - Updates don't block ongoing evaluations
+- **Simple API** - No need for wrapper classes or manual locking in most cases
 
 ### Important Notes
 
 - `ConfigurationStore` must outlive any `EppoClient` instances that reference it
-- Configuration objects retrieved via `getConfiguration()` use `std::shared_ptr` and remain valid even if the store is updated
-- Only `setConfiguration()` needs synchronization when called concurrently with flag evaluations
-- Logger interfaces (`AssignmentLogger`, `BanditLogger`, `ApplicationLogger`) should be thread-safe if used concurrently
+- Configuration objects retrieved via `getConfiguration()` remain valid even if the store is updated
+- Logger interfaces must be thread-safe if used from multiple threads (use mutexes in logger implementations if needed)
+- `EvaluationClient` instances are lightweight and cheap to create per-evaluation if needed
 
 ## Additional Resources
 
@@ -838,4 +916,5 @@ This design choice allows:
 - See [examples/flag_assignments.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/flag_assignments.cpp) for feature flag examples
 - See [examples/bandits.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/bandits.cpp) for contextual bandit examples
 - See [examples/assignment_details.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/assignment_details.cpp) for evaluation details examples
+- See [examples/manual_sync.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/manual_sync.cpp) for advanced usage with EvaluationClient and manual synchronization
 

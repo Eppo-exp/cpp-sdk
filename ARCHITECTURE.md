@@ -25,8 +25,8 @@ Download the appropriate binary for your platform from the [releases page](https
 
 ```bash
 # Example: Linux x86_64
-wget https://github.com/Eppo-exp/cpp-sdk/releases/download/v1.0.0/eppoclient-1.0.0-linux-x86_64.tar.gz
-tar -xzf eppoclient-1.0.0-linux-x86_64.tar.gz
+wget https://github.com/Eppo-exp/cpp-sdk/releases/download/v2.0.0/eppoclient-2.0.0-linux-x86_64.tar.gz
+tar -xzf eppoclient-2.0.0-linux-x86_64.tar.gz
 
 # Headers are in: include/
 # Library is in: lib/libeppoclient.a
