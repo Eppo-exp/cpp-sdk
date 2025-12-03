@@ -28,10 +28,14 @@ jobs:
         id: get_version
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libre2-dev
+
       - name: Install cross-compilation tools (aarch64)
         if: matrix.arch == 'aarch64'
         run: |
-          sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Build with CMake
@@ -78,6 +82,9 @@ jobs:
         id: get_version
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
+      - name: Install dependencies
+        run: brew install re2 pkg-config
+
       - name: Build with CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
@@ -116,6 +123,9 @@ jobs:
       - name: Get version from tag
         id: get_version
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: brew install re2 pkg-config
 
       - name: Build Universal Binary
         run: |
@@ -179,9 +189,13 @@ jobs:
       - name: Setup MSVC
         uses: microsoft/setup-msbuild@v2
 
+      - name: Install vcpkg dependencies
+        run: |
+          vcpkg install re2:${{ matrix.platform }}-windows
+
       - name: Build with CMake
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -A ${{ matrix.arch }}
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -A ${{ matrix.arch }} -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
           cmake --build build --config Release
 
       - name: Package artifacts
