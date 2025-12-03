@@ -117,6 +117,13 @@ ParseResult<BanditResponse> parseBanditResponse(const nlohmann::json& j);
 ParseResult<BanditResponse> parseBanditResponse(std::istream& is);
 
 /**
+ * Parse BanditResponse from a JSON string with error collection.
+ * @param jsonString The JSON string to parse
+ * @return ParseResult containing the parsed BanditResponse and any errors encountered
+ */
+ParseResult<BanditResponse> parseBanditResponse(const std::string& jsonString);
+
+/**
  * Associates a bandit with a specific flag variation.
  * Used to link feature flag variations to bandit experiments.
  */

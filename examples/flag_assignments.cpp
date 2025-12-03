@@ -67,45 +67,51 @@ public:
 };
 
 // Helper function to load flags configuration from JSON file
-bool loadFlagsConfiguration(const std::string& filepath, eppoclient::ConfigResponse& response) {
+bool loadFlagsConfiguration(const std::string& filepath, eppoclient::Configuration& config) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
         std::cerr << "Failed to open flags configuration file: " << filepath << std::endl;
         return false;
     }
 
-    auto result = eppoclient::parseConfigResponse(file);
+    // Read entire file content into a string
+    std::string configJson((std::istreambuf_iterator<char>(file)),
+                           std::istreambuf_iterator<char>());
 
-    // Report all parsing errors/warnings
+    // Parse configuration using parseConfiguration
+    auto result = eppoclient::parseConfiguration(configJson);
+
+    if (!result.hasValue()) {
+        std::cerr << "Failed to parse configuration:" << std::endl;
+        for (const auto& error : result.errors) {
+            std::cerr << "  - " << error << std::endl;
+        }
+        return false;
+    }
+
+    // Report any warnings
     if (result.hasErrors()) {
-        std::cerr << "Warning: encountered " << result.errors.size()
-                  << " error(s) while parsing config:" << std::endl;
+        std::cerr << "Configuration parsing had errors:" << std::endl;
         for (const auto& error : result.errors) {
             std::cerr << "  - " << error << std::endl;
         }
     }
 
-    // Use the config if we got a value (even with warnings)
-    if (!result.hasValue()) {
-        std::cerr << "Error: Failed to parse config response" << std::endl;
-        return false;
-    }
-
-    response = *result;
+    config = std::move(*result.value);
     return true;
 }
 
 int main() {
     // Load the flags configuration
     std::cout << "Loading flags configuration..." << std::endl;
-    eppoclient::ConfigResponse ufc;
-    if (!loadFlagsConfiguration("config/flags-v1.json", ufc)) {
+    eppoclient::Configuration config;
+    if (!loadFlagsConfiguration("config/flags-v1.json", config)) {
         return 1;
     }
 
     // Create configuration store and set the configuration
     auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
-    configStore->setConfiguration(eppoclient::Configuration(ufc));
+    configStore->setConfiguration(config);
 
     // Create assignment logger and application logger
     auto assignmentLogger = std::make_shared<ConsoleAssignmentLogger>();

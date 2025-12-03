@@ -284,10 +284,9 @@ ParseResult<BanditResponse> parseBanditResponse(const nlohmann::json& j) {
         } else {
             std::string error;
             br.updatedAt = parseISOTimestamp(j["updatedAt"].get_ref<const std::string&>(), error);
-            // TODO: log error
-            // if (!error.empty()) {
-            //     logger.error("BanditResponse: Invalid updatedAt: " + error);
-            // }
+            if (!error.empty()) {
+                result.errors.push_back("BanditResponse: Invalid updatedAt: " + error);
+            }
         }
     }
 
@@ -300,6 +299,20 @@ ParseResult<BanditResponse> parseBanditResponse(std::istream& is) {
 
     // Parse JSON from stream (with exceptions disabled)
     auto j = nlohmann::json::parse(is, nullptr, false);
+    if (j.is_discarded()) {
+        result.errors.push_back("JSON parse error: invalid JSON");
+        return result;
+    }
+
+    // Delegate to the JSON-based parser
+    return parseBanditResponse(j);
+}
+
+ParseResult<BanditResponse> parseBanditResponse(const std::string& jsonString) {
+    ParseResult<BanditResponse> result;
+
+    // Parse JSON from string (with exceptions disabled)
+    auto j = nlohmann::json::parse(jsonString, nullptr, false);
     if (j.is_discarded()) {
         result.errors.push_back("JSON parse error: invalid JSON");
         return result;

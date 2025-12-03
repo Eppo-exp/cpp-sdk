@@ -702,4 +702,18 @@ ParseResult<ConfigResponse> parseConfigResponse(std::istream& is) {
     return parseConfigResponse(j);
 }
 
+ParseResult<ConfigResponse> parseConfigResponse(const std::string& jsonString) {
+    ParseResult<ConfigResponse> result;
+
+    // Parse JSON from string (with exceptions disabled)
+    auto j = nlohmann::json::parse(jsonString, nullptr, false);
+    if (j.is_discarded()) {
+        result.errors.push_back("JSON parse error: invalid JSON");
+        return result;
+    }
+
+    // Delegate to the JSON-based parser
+    return parseConfigResponse(j);
+}
+
 }  // namespace eppoclient

@@ -4,6 +4,7 @@
 #include <string>
 #include "bandit_model.hpp"
 #include "config_response.hpp"
+#include "parse_result.hpp"
 
 namespace eppoclient {
 
@@ -53,6 +54,48 @@ private:
     // This is cached from bandits response for easier access in evaluation
     std::map<std::string, std::map<std::string, BanditVariation>> banditFlagAssociations_;
 };
+
+/**
+ * Parse complete configuration from JSON strings.
+ *
+ * This is a convenience wrapper around parseConfigResponse() and parseBanditResponse()
+ * that provides a simpler API for common use cases.
+ *
+ * @param flagConfigJson JSON string containing flag configuration
+ * @param banditModelsJson JSON string containing bandit models
+ * @return ParseResult containing Configuration object and any errors encountered during parsing
+ *
+ * Example usage:
+ * @code
+ *   // Parse flags only
+ *   auto result = parseConfiguration(flagsJson);
+ *
+ *   // Parse flags and bandits
+ *   auto result = parseConfiguration(flagsJson, banditsJson);
+ *
+ *   if (!result.hasValue()) {
+ *       std::cerr << "Configuration parsing failed:" << std::endl;
+ *       for (const auto& error : result.errors) {
+ *           std::cerr << "  - " << error << std::endl;
+ *       }
+ *       return 1;
+ *   }
+ *   Configuration config = std::move(*result.value);
+ * @endcode
+ */
+ParseResult<Configuration> parseConfiguration(const std::string& flagConfigJson,
+                                              const std::string& banditModelsJson);
+
+/**
+ * Parse configuration from flag configuration JSON only.
+ *
+ * This is a convenience overload for when you only have flag configuration
+ * and no bandit models.
+ *
+ * @param flagConfigJson JSON string containing flag configuration
+ * @return ParseResult containing Configuration object and any errors encountered during parsing
+ */
+ParseResult<Configuration> parseConfiguration(const std::string& flagConfigJson);
 
 }  // namespace eppoclient
 
