@@ -798,7 +798,7 @@ bool result = client.getBooleanAssignment("flag-key", "user-123", attrs, false);
 
 ### EvaluationClient (Advanced Use Cases)
 
-`EvaluationClient` is the low-level evaluation engine used internally by `EppoClient`. It operates directly on a `Configuration` object and requires all logger references:
+`EvaluationClient` is the low-level evaluation engine designed to **separate evaluation logic from state management**. Use this approach for more manual control over synchronization. 
 
 ```cpp
 const Configuration& config = ...;  // Must outlive EvaluationClient
@@ -816,112 +816,99 @@ eppoclient::EvaluationClient evaluationClient(
 bool result = evaluationClient.getBooleanAssignment("flag-key", "user-123", attrs, false);
 ```
 
+**Design Philosophy:**
+
+`EvaluationClient` was introduced to provide maximum flexibility and performance:
+
+- **Zero synchronization overhead**: Takes configuration and loggers by reference with no shared pointers or mutex locking
+- **Cheap construction**: Extremely lightweight to create and destroy instances
+- **Flexible synchronization strategies**: Instead of forcing a one-size-fits-all locking approach (like protecting the entire client with a mutex), you can implement your own synchronization strategy around `ConfigurationStore`
+- **Parallel evaluation**: Enables efficient concurrent evaluations—you can guard only the cheap `shared_ptr` copying operation when retrieving configuration, then evaluate in parallel
+- **Custom configuration management**: Allows building your own configuration management system without being constrained by `ConfigurationStore`'s internal implementation
+
 **When to use EvaluationClient:**
-- You need direct control over the `Configuration` object
-- You're building a custom configuration management system
-- You want to avoid the overhead of `ConfigurationStore`
-- You always have all loggers available (no optional logging)
+- You need maximum performance with custom synchronization strategies
+- You want to evaluate flags in parallel across multiple threads with minimal locking
+- You want direct control over the `Configuration` object lifetime
 
 **Important notes:**
 - All parameters (configuration and loggers) are passed by reference and must outlive the `EvaluationClient` instance
 - All loggers are required (not optional)
-- You're responsible for managing the `Configuration` lifetime
+- You're responsible for managing the `Configuration` lifetime and any necessary synchronization
 
-**For most applications, use `EppoClient`**. Only use `EvaluationClient` if you have specific requirements that the high-level API doesn't support.
+**For most applications, use `EppoClient`**. Only use `EvaluationClient` if you need the advanced control and performance characteristics it provides.
 
-## Thread Safety and Concurrency
-
-The Eppo C++ SDK has mixed thread-safety guarantees. Understanding what is and isn't thread-safe is important when using the SDK from multiple threads.
-
-### Key Points
-
-- `ConfigurationStore::setConfiguration()` and `ConfigurationStore::getConfiguration()` **ARE thread-safe** - they use atomic operations internally
-- `ConfigurationStore::getConfiguration()` returns a `std::shared_ptr<const Configuration>` with thread-safe reference counting
-- Retrieved configurations are immutable (`const`) and safe to use concurrently once obtained
-- `EppoClient` flag evaluation methods **ARE NOT thread-safe** - concurrent flag evaluations from multiple threads require external synchronization
-- If you need to evaluate flags concurrently from multiple threads, you must provide synchronization around `EppoClient` method calls
-
-### Single-Threaded Usage (No Synchronization Required)
-
-If your application evaluates flags from a single thread, no special synchronization is needed:
+For a complete working example of using `EvaluationClient` with manual synchronization, see [examples/manual_sync.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/manual_sync.cpp).
 
 ```cpp
 auto configStore = std::make_shared<eppoclient::ConfigurationStore>();
 configStore->setConfiguration(std::move(*result.value));
 
+// Create thread-safe loggers
+auto assignmentLogger = std::make_shared<ThreadSafeAssignmentLogger>();
+
 eppoclient::EppoClient client(configStore, assignmentLogger);
 
-// All flag evaluations happen on the same thread - safe
+// ✅ Safe to call from multiple threads without any additional synchronization
+// Thread 1:
 bool feature1 = client.getBooleanAssignment("flag1", "user-123", attrs, false);
-bool feature2 = client.getBooleanAssignment("flag2", "user-123", attrs, false);
+
+// Thread 2:
+bool feature2 = client.getBooleanAssignment("flag2", "user-456", attrs, false);
+
+// Thread 3:
+std::string variant = client.getStringAssignment("flag3", "user-789", attrs, "default");
 ```
 
-### Multi-Threaded Usage (Synchronization Required)
+### Updating Configuration
 
-If you need to evaluate flags from multiple threads or update configuration while reading, you must provide synchronization:
+Configuration updates are also thread-safe and can happen concurrently with flag evaluations:
 
 ```cpp
-#include <mutex>
-#include <memory>
+// Thread 1: Evaluating flags
+bool result = client.getBooleanAssignment("flag", "user", attrs, false);
 
-// Wrap the client with a mutex for thread-safe flag evaluation
-class ThreadSafeEppoClient {
-private:
-    std::shared_ptr<eppoclient::ConfigurationStore> configStore_;
-    std::unique_ptr<eppoclient::EppoClient> client_;
-    mutable std::mutex mutex_;
+// Thread 2: Updating configuration (safe!)
+eppoclient::Configuration newConfig = ...;
+configStore->setConfiguration(newConfig);
 
-public:
-    ThreadSafeEppoClient(
-        std::shared_ptr<eppoclient::AssignmentLogger> assignmentLogger = nullptr,
-        std::shared_ptr<eppoclient::BanditLogger> banditLogger = nullptr,
-        std::shared_ptr<eppoclient::ApplicationLogger> applicationLogger = nullptr
-    ) : configStore_(std::make_shared<eppoclient::ConfigurationStore>()),
-        client_(std::make_unique<eppoclient::EppoClient>(
-            configStore_, assignmentLogger, banditLogger, applicationLogger)) {}
-
-    // Thread-safe configuration update
-    void updateConfiguration(std::shared_ptr<const eppoclient::Configuration> config) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        configStore_->setConfiguration(config);
-    }
-
-    // Thread-safe flag evaluation
-    bool getBooleanAssignment(
-        const std::string& flagKey,
-        const std::string& subjectKey,
-        const eppoclient::Attributes& attributes,
-        bool defaultValue
-    ) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        return client_->getBooleanAssignment(flagKey, subjectKey, attributes, defaultValue);
-    }
-
-    // Add other methods as needed...
-};
-
-// Usage:
-ThreadSafeEppoClient client(assignmentLogger);
-
-// Can now safely call from multiple threads
-bool result1 = client.getBooleanAssignment("flag1", "user-123", attrs, false);
-bool result2 = client.getBooleanAssignment("flag2", "user-456", attrs, false);
+// Subsequent evaluations on Thread 1 will use the new configuration
 ```
+
+### Advanced: EvaluationClient for Maximum Performance
+
+For advanced use cases requiring maximum performance, you can use `EvaluationClient` directly with custom synchronization strategies. This approach avoids creating temporary objects on each evaluation:
+
+```cpp
+// Get configuration once (thread-safe)
+auto config = configStore->getConfiguration();
+
+// Create long-lived EvaluationClient (cheap, no locking)
+eppoclient::EvaluationClient evaluationClient(*config, assignmentLogger,
+                                             banditLogger, applicationLogger);
+
+// Evaluate many flags without any locking overhead
+bool result1 = evaluationClient.getBooleanAssignment("flag1", "user", attrs, false);
+bool result2 = evaluationClient.getBooleanAssignment("flag2", "user", attrs, false);
+// ... thousands more evaluations ...
+```
+
+For a complete example of this advanced pattern, see [examples/manual_sync.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/manual_sync.cpp).
 
 ### Design Philosophy
 
-This design choice allows:
-- **Maximum flexibility**: Applications can choose their preferred synchronization strategy (mutexes, read-write locks, lock-free structures, etc.)
-- **Zero overhead for single-threaded applications**: No unnecessary locking when concurrency isn't needed
-- **Better integration**: The SDK adapts to your application's existing concurrency model rather than imposing its own
+The SDK's thread-safety design provides:
+- **Zero synchronization overhead** - No mutexes during flag evaluation
+- **Immutable configurations** - Safe concurrent access without locking
+- **Atomic configuration updates** - Updates don't block ongoing evaluations
+- **Simple API** - No need for wrapper classes or manual locking in most cases
 
 ### Important Notes
 
 - `ConfigurationStore` must outlive any `EppoClient` instances that reference it
-- Configuration objects retrieved via `getConfiguration()` use `std::shared_ptr` and remain valid even if the store is updated
-- `ConfigurationStore` methods (`setConfiguration()` and `getConfiguration()`) are internally thread-safe
-- `EppoClient` flag evaluation requires synchronization if called concurrently from multiple threads
-- Logger interfaces (`AssignmentLogger`, `BanditLogger`, `ApplicationLogger`) should be thread-safe if used concurrently
+- Configuration objects retrieved via `getConfiguration()` remain valid even if the store is updated
+- Logger interfaces must be thread-safe if used from multiple threads (use mutexes in logger implementations if needed)
+- `EvaluationClient` instances are lightweight and cheap to create per-evaluation if needed
 
 ## Additional Resources
 
@@ -929,4 +916,5 @@ This design choice allows:
 - See [examples/flag_assignments.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/flag_assignments.cpp) for feature flag examples
 - See [examples/bandits.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/bandits.cpp) for contextual bandit examples
 - See [examples/assignment_details.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/assignment_details.cpp) for evaluation details examples
+- See [examples/manual_sync.cpp](https://github.com/Eppo-exp/cpp-sdk/blob/main/examples/manual_sync.cpp) for advanced usage with EvaluationClient and manual synchronization
 

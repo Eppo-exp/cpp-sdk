@@ -86,6 +86,7 @@ examples:
 	@echo "  make run-bandits"
 	@echo "  make run-flags"
 	@echo "  make run-assignment-details"
+	@echo "  make run-manual-sync"
 
 # Run example binaries
 .PHONY: run-bandits
@@ -102,6 +103,11 @@ run-flags: examples
 run-assignment-details: examples
 	@echo "Running assignment_details example..."
 	@cd examples && ../$(BUILD_DIR)/assignment_details
+
+.PHONY: run-manual-sync
+run-manual-sync: examples
+	@echo "Running manual_sync example..."
+	@cd examples && ../$(BUILD_DIR)/manual_sync
 
 # Clean build artifacts
 .PHONY: clean
@@ -169,6 +175,7 @@ help:
 	@echo "  run-bandits            - Build and run the bandits example"
 	@echo "  run-flag-assignments   - Build and run the flag_assignments example"
 	@echo "  run-assignment-details - Build and run the assignment_details example"
+	@echo "  run-manual-sync        - Build and run the manual_sync example"
 	@echo "  format                 - Format all C++ source files with clang-format"
 	@echo "  format-check           - Check if files are properly formatted (CI-friendly)"
 	@echo "  clean                  - Remove build artifacts"
