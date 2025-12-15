@@ -77,17 +77,28 @@ bool conditionMatches(const Condition& condition, const Attributes& subjectAttri
 
     } else if (condition.op == Operator::GTE || condition.op == Operator::GT ||
                condition.op == Operator::LTE || condition.op == Operator::LT) {
-        // Try semver comparison first if subject is a string and condition has valid semver
-        if (std::holds_alternative<std::string>(subjectValue) && condition.semVerValueValid) {
+        if (std::holds_alternative<std::string>(subjectValue)) {
             const std::string& subjectValueStr = std::get<std::string>(subjectValue);
-
-            semver::version<> subjectSemVer;
-            auto result = semver::parse(subjectValueStr, subjectSemVer);
-            if (result) {
-                return evaluateSemVerCondition(&subjectSemVer, condition.semVerValue.get(),
-                                               condition.op);
+            // Try semver comparison first if subject is a string and condition has valid semver
+            if (condition.semVerValueValid) {
+                semver::version<> subjectSemVer;
+                auto result = semver::parse(subjectValueStr, subjectSemVer);
+                if (result) {
+                    return evaluateSemVerCondition(&subjectSemVer, condition.semVerValue.get(),
+                                                   condition.op);
+                }
             }
-            // Failed to parse as semver, fall through to numeric comparison
+
+            // Try four part version comparison
+            if (condition.fourPartVersionValid) {
+                auto subjectFourPartVersion =
+                    internal::safeParseFourPartVersionString(subjectValueStr);
+                if (subjectFourPartVersion.has_value()) {
+                    return evaluateFourPartVersionCondition(subjectFourPartVersion.value(),
+                                                            condition.fourPartVersionValue,
+                                                            condition.op);
+                }
+            }
         }
 
         // Try numeric comparison
@@ -211,6 +222,39 @@ bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValu
         return *subject < *condition;
     } else if (op == Operator::LTE) {
         return *subject <= *condition;
+    }
+
+    // Unknown operator - should not reach here
+    return false;
+}
+
+// Four part version comparison
+bool evaluateFourPartVersionCondition(const std::tuple<int, int, int, int>& subjectValue,
+                                      const std::tuple<int, int, int, int>& conditionValue,
+                                      Operator op) {
+    // C++20 supports lexicographical compares out of the box,
+    // but we need to support C++17.
+    auto cmp = [](auto& subject, auto& condition, auto opFunc) {
+        if (std::get<0>(subject) != std::get<0>(condition)) {
+            return opFunc(std::get<0>(subject), std::get<0>(condition));
+        }
+        if (std::get<1>(subject) != std::get<1>(condition)) {
+            return opFunc(std::get<1>(subject), std::get<1>(condition));
+        }
+        if (std::get<2>(subject) != std::get<2>(condition)) {
+            return opFunc(std::get<2>(subject), std::get<2>(condition));
+        }
+        return opFunc(std::get<3>(subject), std::get<3>(condition));
+    };
+
+    if (op == Operator::GT) {
+        return cmp(subjectValue, conditionValue, std::greater<int>{});
+    } else if (op == Operator::GTE) {
+        return cmp(subjectValue, conditionValue, std::greater_equal<int>{});
+    } else if (op == Operator::LT) {
+        return cmp(subjectValue, conditionValue, std::less<int>{});
+    } else if (op == Operator::LTE) {
+        return cmp(subjectValue, conditionValue, std::less_equal<int>{});
     }
 
     // Unknown operator - should not reach here

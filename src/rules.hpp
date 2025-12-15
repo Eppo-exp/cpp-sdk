@@ -50,6 +50,12 @@ bool isOne(const AttributeValue& attributeValue, const std::string& s);
 // Returns true/false for comparison
 bool evaluateSemVerCondition(const void* subjectValue, const void* conditionValue, Operator op);
 
+// Four part version comparison
+// Returns true/false for comparison
+bool evaluateFourPartVersionCondition(const std::tuple<int, int, int, int>& subjectValue,
+                                      const std::tuple<int, int, int, int>& conditionValue,
+                                      Operator op);
+
 // Numeric comparison
 // Returns true/false for comparison
 bool evaluateNumericCondition(double subjectValue, double conditionValue, Operator op);

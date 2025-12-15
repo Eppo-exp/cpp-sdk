@@ -502,6 +502,7 @@ void Condition::precompute() {
 
     // Try to parse as semantic version if operator indicates version comparison
     semVerValueValid = false;
+    fourPartVersionValid = false;
     if (op == Operator::GTE || op == Operator::GT || op == Operator::LTE || op == Operator::LT) {
         // Try to parse the condition value as a semantic version
         if (value.is_string()) {
@@ -510,6 +511,14 @@ void Condition::precompute() {
             if (result) {
                 semVerValue = version;
                 semVerValueValid = true;
+            }
+
+            // Also see if we can parse it as 4 part version.
+            auto fourPartVersion =
+                internal::safeParseFourPartVersionString(value.get<std::string>());
+            if (fourPartVersion.has_value()) {
+                fourPartVersionValue = fourPartVersion.value();
+                fourPartVersionValid = true;
             }
         }
     }

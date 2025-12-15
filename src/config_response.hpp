@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -77,6 +78,8 @@ struct Condition {
     bool numericValueValid;
     std::shared_ptr<void> semVerValue;
     bool semVerValueValid;
+    std::tuple<int, int, int, int> fourPartVersionValue;
+    bool fourPartVersionValid;
     std::shared_ptr<re2::RE2> regexValue;  // Precompiled RE2 pattern
     bool regexValueValid;
 

@@ -182,5 +182,56 @@ inline std::optional<int64_t> safeStrtoll(const std::string& str, int base = 10)
     return static_cast<int64_t>(result);
 }
 
+// Helper function to safely parse four part version string (w.x.y.z).
+// Returns std::nullopt if parsing fails.
+inline std::optional<std::tuple<int, int, int, int>> safeParseFourPartVersionString(
+    const std::string& str) {
+    // Find the dot separators (4th part is optional)
+    size_t dot1 = str.find('.');
+    if (dot1 == std::string::npos) {
+        return std::nullopt;
+    }
+
+    size_t dot2 = str.find('.', dot1 + 1);
+    if (dot2 == std::string::npos) {
+        return std::nullopt;
+    }
+
+    size_t dot3 = str.find('.', dot2 + 1);
+
+    auto v1 = safeStrtoll(str.substr(0, dot1));
+    auto v2 = safeStrtoll(str.substr(dot1 + 1, dot2 - dot1 - 1));
+
+    std::optional<int64_t> v3, v4;
+
+    if (dot3 == std::string::npos) {
+        // Three-part version: use 0 for 4th part
+        v3 = safeStrtoll(str.substr(dot2 + 1));
+        v4 = 0;
+    } else {
+        // Four-part version
+        // Ensure no fifth dot exists
+        if (str.find('.', dot3 + 1) != std::string::npos)
+            return std::nullopt;
+        v3 = safeStrtoll(str.substr(dot2 + 1, dot3 - dot2 - 1));
+        v4 = safeStrtoll(str.substr(dot3 + 1));
+    }
+
+    // Check all parsed successfully
+    if (!v1 || !v2 || !v3 || !v4)
+        return std::nullopt;
+
+    // Range check: ensure each value fits in int
+    if (*v1 < std::numeric_limits<int>::min() || *v1 > std::numeric_limits<int>::max() ||
+        *v2 < std::numeric_limits<int>::min() || *v2 > std::numeric_limits<int>::max() ||
+        *v3 < std::numeric_limits<int>::min() || *v3 > std::numeric_limits<int>::max() ||
+        *v4 < std::numeric_limits<int>::min() || *v4 > std::numeric_limits<int>::max()) {
+        return std::nullopt;
+    }
+
+    return std::make_tuple(static_cast<int>(*v1), static_cast<int>(*v2), static_cast<int>(*v3),
+                           static_cast<int>(*v4));
+}
+
 }  // namespace internal
 }  // namespace eppoclient
