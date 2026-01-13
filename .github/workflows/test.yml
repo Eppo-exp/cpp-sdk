@@ -144,3 +144,26 @@ jobs:
 
       - name: Run memory tests
         run: make test-memory TEST_DATA_BRANCH=${{env.TEST_DATA_BRANCH_NAME}}
+
+  cxx-modules-test:
+    runs-on: macos-latest
+    name: Build with C++20 modules
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || 'Eppo-exp/cpp-sdk' }}
+          ref: ${{ env.SDK_BRANCH_NAME }}
+
+      - name: Set up build environment
+        run: |
+          brew install re2
+          brew install cmake
+
+      - name: Build with -fmodules flag
+        run: |
+          mkdir -p build-modules
+          cd build-modules
+          cmake .. -DCMAKE_CXX_FLAGS="-fmodules" -DEPPOCLIENT_BUILD_TESTS=OFF -DEPPOCLIENT_ERR_ON_WARNINGS=OFF
+          cmake --build .

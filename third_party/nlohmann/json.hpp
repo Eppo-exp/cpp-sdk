@@ -6159,6 +6159,7 @@ NLOHMANN_JSON_NAMESPACE_END
 #ifndef JSON_NO_IO
     #include <cstdio>   // FILE *
     #include <istream>  // istream
+    #include <streambuf> // streambuf
 #endif                  // JSON_NO_IO
 
 // #include <nlohmann/detail/iterators/iterator_traits.hpp>
@@ -7378,6 +7379,7 @@ NLOHMANN_JSON_NAMESPACE_END
 #include <array> // array
 #include <clocale> // localeconv
 #include <cstddef> // size_t
+#include <cerrno> // errno
 #include <cstdio> // snprintf
 #include <cstdlib> // strtof, strtod, strtold, strtoll, strtoull
 #include <initializer_list> // initializer_list
