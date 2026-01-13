@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Note**: Semantic Versioning applies to source-level compatibility only. No guarantees are made regarding Application Binary Interface (ABI) stability. When upgrading versions, always recompile your application against the new SDK version. Avoid mixing object files or libraries compiled against different SDK versions.
 
-## [Unreleased]
+## [2.0.1] - 2026-01-13
+
+- fix build issues with -fmodules flag
 
 ## [2.0.0] - 2025-12-02
 
