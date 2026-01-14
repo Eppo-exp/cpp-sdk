@@ -1,6 +1,8 @@
 #include "time_utils.hpp"
 #include <cctype>
+#include <ctime>
 #include <iomanip>
+#include <iterator>
 #include <sstream>
 
 namespace eppoclient {
