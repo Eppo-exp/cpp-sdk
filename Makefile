@@ -173,7 +173,7 @@ help:
 	@echo "  test-eval-performance  - Run flag evaluation performance tests (min/max/avg μs)"
 	@echo "  examples               - Build all examples"
 	@echo "  run-bandits            - Build and run the bandits example"
-	@echo "  run-flag-assignments   - Build and run the flag_assignments example"
+	@echo "  run-flags              - Build and run the flag_assignments example"
 	@echo "  run-assignment-details - Build and run the assignment_details example"
 	@echo "  run-manual-sync        - Build and run the manual_sync example"
 	@echo "  format                 - Format all C++ source files with clang-format"
