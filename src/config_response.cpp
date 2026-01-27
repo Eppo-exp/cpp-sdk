@@ -627,6 +627,13 @@ ParseResult<ConfigResponse> parseConfigResponse(const nlohmann::json& j) {
     ParseResult<ConfigResponse> result;
     ConfigResponse cr;
 
+    // Validate that input is a JSON object
+    if (!j.is_object()) {
+        result.errors.push_back("ConfigResponse: Expected a JSON object, got " +
+                                std::string(j.type_name()));
+        return result;
+    }
+
     // Parse flags - required field
     if (!j.contains("flags")) {
         result.errors.push_back("ConfigResponse: Missing required field: flags");
