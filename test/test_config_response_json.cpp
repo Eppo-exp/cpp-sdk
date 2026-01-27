@@ -172,6 +172,96 @@ TEST_CASE("ConfigResponse deserialization - empty config", "[config_response][js
     REQUIRE(result->flags.empty());
 }
 
+TEST_CASE("ConfigResponse deserialization - empty string input", "[config_response][json]") {
+    std::string emptyString = "";
+
+    auto result = parseConfigResponse(emptyString);
+    REQUIRE_FALSE(result.hasValue());
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0].find("JSON parse error") != std::string::npos);
+}
+
+TEST_CASE("ConfigResponse deserialization - null JSON input", "[config_response][json]") {
+    json j = nullptr;
+
+    auto result = parseConfigResponse(j);
+    REQUIRE_FALSE(result.hasValue());
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0].find("Expected a JSON object") != std::string::npos);
+}
+
+TEST_CASE("ConfigResponse deserialization - null JSON string input", "[config_response][json]") {
+    std::string nullString = "null";
+
+    auto result = parseConfigResponse(nullString);
+    REQUIRE_FALSE(result.hasValue());
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0].find("Expected a JSON object") != std::string::npos);
+}
+
+TEST_CASE("ConfigResponse deserialization - array JSON input", "[config_response][json]") {
+    json j = json::array();
+
+    auto result = parseConfigResponse(j);
+    REQUIRE_FALSE(result.hasValue());
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0].find("Expected a JSON object") != std::string::npos);
+}
+
+TEST_CASE("ConfigResponse deserialization - array JSON string input", "[config_response][json]") {
+    std::string arrayString = "[]";
+
+    auto result = parseConfigResponse(arrayString);
+    REQUIRE_FALSE(result.hasValue());
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0].find("Expected a JSON object") != std::string::npos);
+}
+
+TEST_CASE("ConfigResponse deserialization - number JSON input", "[config_response][json]") {
+    json j = 123;
+
+    auto result = parseConfigResponse(j);
+    REQUIRE_FALSE(result.hasValue());
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0].find("Expected a JSON object") != std::string::npos);
+}
+
+TEST_CASE("ConfigResponse deserialization - string JSON input", "[config_response][json]") {
+    json j = "not an object";
+
+    auto result = parseConfigResponse(j);
+    REQUIRE_FALSE(result.hasValue());
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0].find("Expected a JSON object") != std::string::npos);
+}
+
+TEST_CASE("ConfigResponse deserialization - boolean JSON input", "[config_response][json]") {
+    json j = true;
+
+    auto result = parseConfigResponse(j);
+    REQUIRE_FALSE(result.hasValue());
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0].find("Expected a JSON object") != std::string::npos);
+}
+
+TEST_CASE("ConfigResponse deserialization - malformed JSON string", "[config_response][json]") {
+    std::string malformed = "{invalid json";
+
+    auto result = parseConfigResponse(malformed);
+    REQUIRE_FALSE(result.hasValue());
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0].find("JSON parse error") != std::string::npos);
+}
+
+TEST_CASE("ConfigResponse deserialization - truncated JSON string", "[config_response][json]") {
+    std::string truncated = R"({"flags": {"test": {"key": "t)";
+
+    auto result = parseConfigResponse(truncated);
+    REQUIRE_FALSE(result.hasValue());
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0].find("JSON parse error") != std::string::npos);
+}
+
 TEST_CASE("ConfigResponse deserialization - single simple flag", "[config_response][json]") {
     json j = R"({
         "flags": {
